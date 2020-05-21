@@ -31,6 +31,8 @@ from .const import (
     ATTR_SERIAL,
     ATTR_OPERATING_HOURS,
 )
+from .sensor import GardenaSensor
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +49,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     for mower in hass.data[GARDENA_LOCATION].find_device_by_type("MOWER"):
         dev.append(GardenaSmartMower(hass, mower, hass.data[GARDENA_CONFIG]))
+        # Add battery sensor for mower
+        dev.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
     _LOGGER.debug("Adding mower as vacuums %s", dev)
     async_add_entities(dev, True)
 
@@ -59,6 +63,7 @@ class GardenaSmartMower(StateVacuumEntity):
         self._device = mower
         self._config = config
         self._name = "{}".format(self._device.name)
+        self._unique_id = f"{self._device.serial}-mower"
         self._state = None
         self._error_message = ""
 
@@ -176,3 +181,20 @@ class GardenaSmartMower(StateVacuumEntity):
     def stop(self, **kwargs):
         """Stop the lawn mower."""
         self.turn_off()
+
+    @property
+    def unique_id(self) -> str:
+        """Return a unique ID."""
+        return self._unique_id
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self._device.serial)
+            },
+            "name": self._device.name,
+            "manufacturer": "Gardena",
+            "model": self._device.model_type,
+        }
