@@ -33,7 +33,6 @@ from .const import(
     GARDENA_LOCATION,
     GARDENA_SYSTEM,
 )
-#from . import config_flow
 
 
 _LOGGER = logging.getLogger(__name__)
