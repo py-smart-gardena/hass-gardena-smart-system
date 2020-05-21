@@ -4,6 +4,6 @@
   "config_flow": true,
   "documentation": "https://github.com/osks/hass-gardena-smart-system",
   "dependencies": [],
-  "codeowners": ["@osks"],
+  "codeowners": ["@grm", "@osks"],
   "requirements": ["py-smart-gardena2==0.7.1"]
 }
