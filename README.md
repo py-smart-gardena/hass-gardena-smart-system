@@ -1,1 +1,1 @@
-# hass_gardena_smart_system
+# hass-gardena-smart-system
