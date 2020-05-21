@@ -1,0 +1,13 @@
+# Packages
+*.egg
+*.egg-info
+eggs
+.eggs
+
+# GITHUB Proposed Python stuff:
+*.py[cod]
+
+# emacs auto backups
+*~
+*#
+*.orig
