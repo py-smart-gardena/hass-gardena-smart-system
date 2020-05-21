@@ -19,7 +19,7 @@ from .const import (
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
 )
-from .sensor import GardenaSensor, SENSOR_TYPES
+from .sensor import GardenaSensor
 
 
 _LOGGER = logging.getLogger(__name__)
