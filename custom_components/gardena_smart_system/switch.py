@@ -9,7 +9,7 @@ from homeassistant.const import ATTR_BATTERY_LEVEL
 from .const import (
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
-    ATTR_LAST_ERRORS,
+    ATTR_LAST_ERROR,
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
@@ -129,7 +129,7 @@ class GardenaSmartWaterControl(SwitchEntity):
             ATTR_BATTERY_STATE: self._device.battery_state,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_LAST_ERRORS: self._error_message,
+            ATTR_LAST_ERROR: self._error_message,
         }
 
     @property
@@ -231,7 +231,7 @@ class GardenaPowerSocket(SwitchEntity):
             ATTR_ACTIVITY: self._device.activity,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_LAST_ERRORS: self._error_message,
+            ATTR_LAST_ERROR: self._error_message,
         }
 
     def turn_on(self, **kwargs):
@@ -316,7 +316,7 @@ class GardenaSmartIrrigationControl(SwitchEntity):
             ATTR_ACTIVITY: self._device["activity"],
             ATTR_RF_LINK_LEVEL: self._sic.rf_link_level,
             ATTR_RF_LINK_STATE: self._sic.rf_link_state,
-            ATTR_LAST_ERRORS: self._error_message,
+            ATTR_LAST_ERROR: self._error_message,
         }
 
     @property

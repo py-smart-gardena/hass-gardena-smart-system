@@ -22,7 +22,6 @@ from homeassistant.helpers import discovery
 from .const import(
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
-    ATTR_LAST_ERRORS,
     ATTR_NAME,
     ATTR_OPERATING_HOURS,
     ATTR_RF_LINK_LEVEL,
