@@ -248,16 +248,16 @@ class GardenaSmartIrrigationControl(SwitchEntity):
 
     def __init__(self, sic, valve, options):
         """Initialize the Gardena Smart Irrigation Control."""
-        self._device = valve
-        self._sic = sic
+        self._device = sic
+        self._valve = valve
         self._options = options
-        self._name = f'{self._sic.name} - {self._device["name"]}'
+        self._name = f"{self._device.name]} - {self._valve['name']}"
         self._state = None
         self._error_message = ""
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
-        self._sic.add_callback(self.update_callback)
+        self._device.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
@@ -272,15 +272,15 @@ class GardenaSmartIrrigationControl(SwitchEntity):
         """Update the states of Gardena devices."""
         _LOGGER.debug("Running Gardena update")
         # Managing state
-        state = self._device["state"]
+        state = self._valve["state"]
         _LOGGER.debug("Valve has state %s", state)
         if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
             _LOGGER.debug("Valve has an error")
             self._state = False
-            self._error_message = self._device["last_error_code"]
+            self._error_message = self._valve["last_error_code"]
         else:
             _LOGGER.debug("Getting Valve state")
-            activity = self._device["activity"]
+            activity = self._valve["activity"]
             self._error_message = ""
             _LOGGER.debug("Valve has activity %s", activity)
             if activity == "OFF":
@@ -303,7 +303,7 @@ class GardenaSmartIrrigationControl(SwitchEntity):
     @property
     def available(self):
         """Return True if the device is available."""
-        return self._device["state"] != "UNAVAILABLE"
+        return self._valve["state"] != "UNAVAILABLE"
 
     def error(self):
         """Return the error message."""
@@ -313,9 +313,9 @@ class GardenaSmartIrrigationControl(SwitchEntity):
     def device_state_attributes(self):
         """Return the state attributes of the smart irrigation control."""
         return {
-            ATTR_ACTIVITY: self._device["activity"],
-            ATTR_RF_LINK_LEVEL: self._sic.rf_link_level,
-            ATTR_RF_LINK_STATE: self._sic.rf_link_state,
+            ATTR_ACTIVITY: self._valve["activity"],
+            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
+            ATTR_RF_LINK_STATE: self._device.rf_link_state,
             ATTR_LAST_ERROR: self._error_message,
         }
 
@@ -328,8 +328,8 @@ class GardenaSmartIrrigationControl(SwitchEntity):
     def turn_on(self, **kwargs):
         """Start watering."""
         duration = self.option_smart_irrigation_duration * 60
-        self._device.start_seconds_to_override(duration, self._device["id"])
+        self._device.start_seconds_to_override(duration, self._valve["id"])
 
     def turn_off(self, **kwargs):
         """Stop watering."""
-        self._device.stop_until_next_task(self._device["id"])
+        self._device.stop_until_next_task(self._valve["id"])
