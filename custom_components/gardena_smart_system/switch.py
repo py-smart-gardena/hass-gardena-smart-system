@@ -7,17 +7,18 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import ATTR_BATTERY_LEVEL
 
 from .const import (
-    DOMAIN,
-    GARDENA_LOCATION,
-    GARDENA_CONFIG,
-    CONF_SMART_IRRIGATION_DURATION,
-    CONF_SMART_WATERING_DURATION,
-    ATTR_LAST_ERRORS,
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
+    ATTR_LAST_ERRORS,
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
+    CONF_SMART_IRRIGATION_DURATION,
+    CONF_SMART_WATERING_DURATION,
+    DEFAULT_SMART_IRRIGATION_DURATION,
+    DEFAULT_SMART_WATERING_DURATION,
+    DOMAIN,
+    GARDENA_LOCATION,
 )
 from .sensor import GardenaSensor
 
@@ -27,35 +28,34 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the switches platform."""
-    dev = []
 
+    entities = []
     for water_control in hass.data[GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
-        dev.append(GardenaSmartWaterControl(water_control, hass.data[GARDENA_CONFIG]))
+        entities.append(GardenaSmartWaterControl(water_control, config_entry.options))
         # Add battery sensor for water control
-        dev.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
+        entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
+
     for power_switch in hass.data[GARDENA_LOCATION].find_device_by_type("POWER_SOCKET"):
-        dev.append(GardenaPowerSocket(power_switch, hass.data[GARDENA_CONFIG]))
+        entities.append(GardenaPowerSocket(power_switch))
+
     for smart_irrigation in hass.data[GARDENA_LOCATION].find_device_by_type("SMART_IRRIGATION_CONTROL"):
         for valve in smart_irrigation.valves.values():
-            dev.append(
-                GardenaSmartIrrigationControl(
-                    smart_irrigation, valve, hass.data[GARDENA_CONFIG]
-                )
-            )
+            entities.append(GardenaSmartIrrigationControl(
+                smart_irrigation, valve, config_entry.options))
+
     _LOGGER.debug(
-        "Adding water control, power socket and smart irrigation control as switch %s",
-        dev,
-    )
-    async_add_entities(dev, True)
+        "Adding water control, power socket and smart irrigation control as switch: %s",
+        entities)
+    async_add_entities(entities, True)
 
 
 class GardenaSmartWaterControl(SwitchEntity):
     """Representation of a Gardena Smart Water Control."""
 
-    def __init__(self, wc, config):
+    def __init__(self, wc, options):
         """Initialize the Gardena Smart Water Control."""
         self._device = wc
-        self._config = config
+        self._options = options
         self._name = f"{self._device.name}"
         self._unique_id = f"{self._device.serial}-valve"
         self._state = None
@@ -63,15 +63,14 @@ class GardenaSmartWaterControl(SwitchEntity):
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
-        self._device.add_callback(self.async_update_callback)
+        self._device.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
         """No polling needed for a water valve."""
         return False
 
-    @callback
-    def async_update_callback(self, device):
+    def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
@@ -134,11 +133,15 @@ class GardenaSmartWaterControl(SwitchEntity):
             ATTR_LAST_ERRORS: self._error_message,
         }
 
+    @property
+    def option_smart_watering_duration(self) -> int:
+        return self._options.get(
+            CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION
+        )
+
     def turn_on(self, **kwargs):
         """Start watering."""
-        duration = 3600
-        if self._config[CONF_SMART_WATERING_DURATION]:
-            duration = str(int(self._config[CONF_SMART_WATERING_DURATION]) * 60)
+        duration = self.option_smart_watering_duration * 60
         self._device.start_seconds_to_override(duration)
 
     def turn_off(self, **kwargs):
@@ -161,25 +164,23 @@ class GardenaSmartWaterControl(SwitchEntity):
 class GardenaPowerSocket(SwitchEntity):
     """Representation of a Gardena Power Socket."""
 
-    def __init__(self, ps, config):
+    def __init__(self, ps):
         """Initialize the Gardena Power Socket."""
         self._device = ps
-        self._config = config
         self._name = f"{self._device.name}"
         self._state = None
         self._error_message = ""
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
-        self._device.add_callback(self.async_update_callback)
+        self._device.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
         """No polling needed for a power socket."""
         return False
 
-    @callback
-    def async_update_callback(self, device):
+    def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
@@ -247,26 +248,25 @@ class GardenaPowerSocket(SwitchEntity):
 class GardenaSmartIrrigationControl(SwitchEntity):
     """Representation of a Gardena Smart Irrigation Control."""
 
-    def __init__(self, sic, valve, config):
+    def __init__(self, sic, valve, options):
         """Initialize the Gardena Smart Irrigation Control."""
         self._device = valve
         self._sic = sic
-        self._config = config
+        self._options = options
         self._name = f'{self._sic.name} - {self._device["name"]}'
         self._state = None
         self._error_message = ""
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
-        self._sic.add_callback(self.async_update_callback)
+        self._sic.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
         """No polling needed for a smart irrigation control."""
         return False
 
-    @callback
-    def async_update_callback(self, device):
+    def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
@@ -322,11 +322,15 @@ class GardenaSmartIrrigationControl(SwitchEntity):
             ATTR_LAST_ERRORS: self._error_message,
         }
 
+    @property
+    def option_smart_irrigation_duration(self) -> int:
+        return self._options.get(
+            CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION
+        )
+
     def turn_on(self, **kwargs):
         """Start watering."""
-        duration = 3600
-        if self._config[CONF_SMART_IRRIGATION_DURATION]:
-            duration = str(int(self._config[CONF_SMART_IRRIGATION_DURATION]) * 60)
+        duration = self.option_smart_irrigation_duration * 60
         self._device.start_seconds_to_override(duration, self._device["id"])
 
     def turn_off(self, **kwargs):

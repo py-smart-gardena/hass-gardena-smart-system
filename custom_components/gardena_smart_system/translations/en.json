@@ -20,5 +20,17 @@
         "title": "Gardena Smart System"
       }
     }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "mower_duration": "Mower Duration (minutes)",
+          "smart_irrigation_control_duration": "Smart Irrigation Control Duration (minutes)",
+          "smart_watering_duration": "Smart Watering Duration (minutes)"
+        },
+        "title": "Gardena Smart System - Options"
+      }
+    }
   }
 }

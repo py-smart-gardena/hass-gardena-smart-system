@@ -7,6 +7,7 @@ from gardena.smart_system import SmartSystem
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_EMAIL,
@@ -19,10 +20,20 @@ from .const import (
     CONF_MOWER_DURATION,
     CONF_SMART_IRRIGATION_DURATION,
     CONF_SMART_WATERING_DURATION,
+    DEFAULT_MOWER_DURATION,
+    DEFAULT_SMART_IRRIGATION_DURATION,
+    DEFAULT_SMART_WATERING_DURATION,
 )
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+DEFAULT_OPTIONS = {
+    CONF_MOWER_DURATION: DEFAULT_MOWER_DURATION,
+    CONF_SMART_IRRIGATION_DURATION: DEFAULT_SMART_IRRIGATION_DURATION,
+    CONF_SMART_WATERING_DURATION: DEFAULT_SMART_WATERING_DURATION,
+}
 
 
 class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -67,19 +78,51 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
         self._abort_if_unique_id_configured()
 
         return self.async_create_entry(
-            title=unique_id,
+            title="",
             data={
                 CONF_ID: unique_id,
                 CONF_EMAIL: user_input[CONF_EMAIL],
                 CONF_PASSWORD: user_input[CONF_PASSWORD],
                 CONF_CLIENT_ID: user_input[CONF_CLIENT_ID],
+            })
 
-                # TODO: config options for these
-                CONF_MOWER_DURATION: 60,
-                CONF_SMART_IRRIGATION_DURATION: 60,
-                CONF_SMART_WATERING_DURATION: 60,
-            },
-        )
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return GardenaSmartSystemOptionsFlowHandler(config_entry)
+
+
+class GardenaSmartSystemOptionsFlowHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        """Initialize Gardena Smart Sytem options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        return await self.async_step_user()
+
+    async def async_step_user(self, user_input=None):
+        """Handle a flow initialized by the user."""
+        errors = {}
+        if user_input is not None:
+            # TODO: Validate options (min, max values)
+            return self.async_create_entry(title="", data=user_input)
+
+        fields = OrderedDict()
+        fields[vol.Optional(
+            CONF_MOWER_DURATION,
+            default=self.config_entry.options.get(
+                CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION))] = int
+        fields[vol.Optional(
+            CONF_SMART_IRRIGATION_DURATION,
+            default=self.config_entry.options.get(
+                CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION))] = int
+        fields[vol.Optional(
+            CONF_SMART_WATERING_DURATION,
+            default=self.config_entry.options.get(
+                CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION))] = int
+
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(fields), errors=errors)
 
 
 def try_connection(email, password, client_id):

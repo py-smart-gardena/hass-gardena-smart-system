@@ -20,16 +20,16 @@ from homeassistant.components.vacuum import (
 )
 
 from .const import (
-    GARDENA_LOCATION,
-    GARDENA_CONFIG,
-    CONF_MOWER_DURATION,
-    ATTR_NAME,
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
+    ATTR_NAME,
+    ATTR_OPERATING_HOURS,
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
-    ATTR_OPERATING_HOURS,
+    CONF_MOWER_DURATION,
+    DEFAULT_MOWER_DURATION,
+    GARDENA_LOCATION,
 )
 from .sensor import GardenaSensor
 
@@ -45,23 +45,23 @@ SUPPORT_GARDENA = (
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Gardena smart mower system."""
-    dev = []
-
+    entities = []
     for mower in hass.data[GARDENA_LOCATION].find_device_by_type("MOWER"):
-        dev.append(GardenaSmartMower(hass, mower, hass.data[GARDENA_CONFIG]))
+        entities.append(GardenaSmartMower(hass, mower, config_entry.options))
         # Add battery sensor for mower
-        dev.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
-    _LOGGER.debug("Adding mower as vacuums %s", dev)
-    async_add_entities(dev, True)
+        entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
+
+    _LOGGER.debug("Adding mower as vacuums: %s", entities)
+    async_add_entities(entities, True)
 
 
 class GardenaSmartMower(StateVacuumEntity):
     """Representation of a Gardena Connected Mower."""
 
-    def __init__(self, hass, mower, config):
+    def __init__(self, hass, mower, options):
         """Initialize the Gardena Connected Mower."""
         self._device = mower
-        self._config = config
+        self._options = options
         self._name = "{}".format(self._device.name)
         self._unique_id = f"{self._device.serial}-mower"
         self._state = None
@@ -69,15 +69,14 @@ class GardenaSmartMower(StateVacuumEntity):
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
-        self._device.add_callback(self.async_update_callback)
+        self._device.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
         """No polling needed for a vacuum."""
         return False
 
-    @callback
-    def async_update_callback(self, device):
+    def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
@@ -165,9 +164,13 @@ class GardenaSmartMower(StateVacuumEntity):
         """Start the mower."""
         self.turn_on()
 
+    @property
+    def option_mower_duration(self) -> int:
+        return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
+
     def turn_on(self):
         """Start cleaning or resume mowing."""
-        duration = str(int(self._config[CONF_MOWER_DURATION]) * 60)
+        duration = self.option_mower_duration * 60
         self._device.start_seconds_to_override(duration)
 
     def turn_off(self):

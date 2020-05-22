@@ -1,10 +1,14 @@
 DOMAIN = "gardena_smart_system"
 GARDENA_SYSTEM = "gardena_system"
 GARDENA_LOCATION = "gardena_location"
-GARDENA_CONFIG = "gardena_config"
+
 CONF_MOWER_DURATION = "mower_duration"
 CONF_SMART_IRRIGATION_DURATION = "smart_irrigation_control_duration"
 CONF_SMART_WATERING_DURATION = "smart_watering_duration"
+
+DEFAULT_MOWER_DURATION = 60
+DEFAULT_SMART_IRRIGATION_DURATION = 30
+DEFAULT_SMART_WATERING_DURATION = 30
 
 ATTR_NAME = "name"
 ATTR_ACTIVITY = "activity"

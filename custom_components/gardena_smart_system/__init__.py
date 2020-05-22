@@ -29,7 +29,6 @@ from .const import(
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
     DOMAIN,
-    GARDENA_CONFIG,
     GARDENA_LOCATION,
     GARDENA_SYSTEM,
 )
@@ -38,6 +37,7 @@ from .const import(
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ("vacuum", "sensor", "switch")
+
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Gardena Smart System integration."""
@@ -50,8 +50,13 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    hass.data[GARDENA_CONFIG] = entry.data
-    gardena_system = GardenaSmartSystem(hass, entry.data)
+    _LOGGER.debug("Gardena Smart System: Setup entry")
+
+    gardena_system = GardenaSmartSystem(
+        hass,
+        email=entry.data[CONF_EMAIL],
+        password=entry.data[CONF_PASSWORD],
+        client_id=entry.data[CONF_CLIENT_ID])
 
     try:
         await hass.async_add_executor_job(gardena_system.start)
@@ -60,7 +65,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         _LOGGER.error("Gardena Smart System component could not be initialised")
         print(exception)
         return False
-
 
     for component in PLATFORMS:
         hass.async_create_task(
@@ -73,14 +77,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 class GardenaSmartSystem:
     """A Gardena Smart System wrapper class."""
 
-    def __init__(self, hass, config, smart_system=SmartSystem):
+    def __init__(self, hass, *, email, password, client_id, smart_system=SmartSystem):
         """Initialize the Gardena Smart System."""
-        self.config = config
         self._hass = hass
         self.smart_system = smart_system(
-            email=self.config[CONF_EMAIL],
-            password=self.config[CONF_PASSWORD],
-            client_id=self.config[CONF_CLIENT_ID],
+            email=email,
+            password=password,
+            client_id=client_id,
         )
 
 
