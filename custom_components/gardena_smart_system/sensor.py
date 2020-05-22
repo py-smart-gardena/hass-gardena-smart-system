@@ -84,18 +84,18 @@ class GardenaSensor(Entity):
     @property
     def icon(self):
         """Return the icon to use in the frontend."""
-        return SENSOR_TYPES.get(self._sensor_type)[1]
+        return SENSOR_TYPES[self._sensor_type][1]
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement of this entity, if any."""
-        return SENSOR_TYPES.get(self._sensor_type)[0]
+        return SENSOR_TYPES[self._sensor_type][0]
 
     @property
     def device_class(self):
         """Return the device class of this entity."""
         if self._sensor_type in SENSOR_TYPES:
-            return SENSOR_TYPES.get(self._sensor_type)[2]
+            return SENSOR_TYPES[self._sensor_type][2]
         return None
 
     @property
