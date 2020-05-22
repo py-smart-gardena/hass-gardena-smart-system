@@ -11,6 +11,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CONF_CLIENT_ID,
     CONF_EMAIL,
     CONF_PASSWORD,
     EVENT_HOMEASSISTANT_STOP,
@@ -27,7 +28,6 @@ from .const import(
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
-    CONF_APPLICATION_KEY,
     DOMAIN,
     GARDENA_CONFIG,
     GARDENA_LOCATION,
@@ -80,7 +80,7 @@ class GardenaSmartSystem:
         self.smart_system = smart_system(
             email=self.config[CONF_EMAIL],
             password=self.config[CONF_PASSWORD],
-            client_id=self.config[CONF_APPLICATION_KEY],
+            client_id=self.config[CONF_CLIENT_ID],
         )
 
 

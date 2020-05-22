@@ -7,11 +7,15 @@ from gardena.smart_system import SmartSystem
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.const import CONF_ID, CONF_EMAIL, CONF_PASSWORD
+from homeassistant.const import (
+    CONF_CLIENT_ID,
+    CONF_EMAIL,
+    CONF_ID,
+    CONF_PASSWORD,
+)
 
 from .const import (
     DOMAIN,
-    CONF_APPLICATION_KEY,
     CONF_MOWER_DURATION,
     CONF_SMART_IRRIGATION_DURATION,
     CONF_SMART_WATERING_DURATION,
@@ -34,7 +38,7 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
         fields = OrderedDict()
         fields[vol.Required(CONF_EMAIL)] = str
         fields[vol.Required(CONF_PASSWORD)] = str
-        fields[vol.Required(CONF_APPLICATION_KEY)] = str
+        fields[vol.Required(CONF_CLIENT_ID)] = str
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(fields), errors=errors
@@ -51,13 +55,13 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
                 try_connection,
                 user_input[CONF_EMAIL],
                 user_input[CONF_PASSWORD],
-                user_input[CONF_APPLICATION_KEY])
+                user_input[CONF_CLIENT_ID])
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
             return await self._show_setup_form(errors)
 
-        unique_id = user_input[CONF_APPLICATION_KEY]
+        unique_id = user_input[CONF_CLIENT_ID]
 
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
@@ -68,7 +72,7 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
                 CONF_ID: unique_id,
                 CONF_EMAIL: user_input[CONF_EMAIL],
                 CONF_PASSWORD: user_input[CONF_PASSWORD],
-                CONF_APPLICATION_KEY: user_input[CONF_APPLICATION_KEY],
+                CONF_CLIENT_ID: user_input[CONF_CLIENT_ID],
 
                 # TODO: config options for these
                 CONF_MOWER_DURATION: 60,
@@ -78,9 +82,9 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
         )
 
 
-def try_connection(email, password, application_key):
+def try_connection(email, password, client_id):
     _LOGGER.debug("Trying to connect to Gardena during setup")
-    smart_system = SmartSystem(email=email, password=password, client_id=application_key)
+    smart_system = SmartSystem(email=email, password=password, client_id=client_id)
     smart_system.authenticate()
     smart_system.update_locations()
     _LOGGER.debug("Successfully connected to Gardena during setup")

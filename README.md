@@ -29,6 +29,14 @@ TODO: HACS
 Setup under Integrations in Home Assistant, search for "Gardena Smart
 System".
 
+You first need to get a client id (also called application key in the
+API documentation) for your personal installation of gardena.  To do
+so, create an account here : https://developer.1689.cloud/apis
+
+Then you need to create an application, add APIs (Authentication API
+and GARDENA smart system API), and copy the application key as
+explained here: https://developer.1689.cloud/docs/getting-started
+
 
 ## TODO
 

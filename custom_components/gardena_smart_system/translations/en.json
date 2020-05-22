@@ -15,7 +15,7 @@
         "data": {
           "email": "E-mail",
           "password": "Password",
-          "application_key": "Application Key"
+          "client_id": "Application Key / Client ID"
         },
         "title": "Gardena Smart System"
       }
