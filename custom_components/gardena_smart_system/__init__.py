@@ -20,13 +20,6 @@ from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import discovery
 from .const import(
-    ATTR_ACTIVITY,
-    ATTR_BATTERY_STATE,
-    ATTR_NAME,
-    ATTR_OPERATING_HOURS,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    ATTR_SERIAL,
     DOMAIN,
     GARDENA_LOCATION,
     GARDENA_SYSTEM,
@@ -40,16 +33,14 @@ PLATFORMS = ("vacuum", "sensor", "switch")
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Gardena Smart System integration."""
-    _LOGGER.debug("Initialising Gardena Smart System")
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
-
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    _LOGGER.debug("Gardena Smart System: Setup entry")
+    _LOGGER.debug("Setting up Gardena Smart System component")
 
     gardena_system = GardenaSmartSystem(
         hass,
@@ -59,17 +50,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     try:
         await hass.async_add_executor_job(gardena_system.start)
-        _LOGGER.debug("Gardena Smart System component initialised")
-    except (AccessDeniedError, InvalidClientError, MissingTokenError) as exception:
-        _LOGGER.error("Gardena Smart System component could not be initialised")
-        print(exception)
+    except AccessDeniedError as ex:
+        _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
         return False
+    except InvalidClientError as ex:
+        _LOGGER.error("Got Invalid Client Error when setting up Gardena Smart System: %s", ex)
+        return False
+    except MissingTokenError as ex:
+        _LOGGER.error("Got Missing Token Error when setting up Gardena Smart System: %s", ex)
+        return False
+
+    hass.data[DOMAIN][GARDENA_SYSTEM] = gardena_system
 
     for component in PLATFORMS:
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+            hass.config_entries.async_forward_entry_setup(entry, component))
 
+    _LOGGER.debug("Gardena Smart System component setup finished")
     return True
 
 
@@ -82,9 +79,7 @@ class GardenaSmartSystem:
         self.smart_system = smart_system(
             email=email,
             password=password,
-            client_id=client_id,
-        )
-
+            client_id=client_id)
 
     def start(self):
         _LOGGER.debug("Starting GardenaSmartSystem")
