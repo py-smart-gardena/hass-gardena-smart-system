@@ -150,13 +150,11 @@ class GardenaSmartMower(StateVacuumEntity):
     def device_state_attributes(self):
         """Return the state attributes of the lawn mower."""
         return {
-            ATTR_NAME: self._name,
             ATTR_ACTIVITY: self._device.activity,
             ATTR_BATTERY_LEVEL: self._device.battery_level,
             ATTR_BATTERY_STATE: self._device.battery_state,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_SERIAL: self._device.serial,
             ATTR_OPERATING_HOURS: self._device.operating_hours,
         }
 

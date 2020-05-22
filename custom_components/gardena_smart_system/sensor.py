@@ -110,7 +110,6 @@ class GardenaSensor(Entity):
             ATTR_BATTERY_STATE: self._device.battery_state,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_SERIAL: self._device.serial,
         }
 
     @property

@@ -129,7 +129,6 @@ class GardenaSmartWaterControl(SwitchEntity):
             ATTR_BATTERY_STATE: self._device.battery_state,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_SERIAL: self._device.serial,
             ATTR_LAST_ERRORS: self._error_message,
         }
 
@@ -232,7 +231,6 @@ class GardenaPowerSocket(SwitchEntity):
             ATTR_ACTIVITY: self._device.activity,
             ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_SERIAL: self._device.serial,
             ATTR_LAST_ERRORS: self._error_message,
         }
 
@@ -318,7 +316,6 @@ class GardenaSmartIrrigationControl(SwitchEntity):
             ATTR_ACTIVITY: self._device["activity"],
             ATTR_RF_LINK_LEVEL: self._sic.rf_link_level,
             ATTR_RF_LINK_STATE: self._sic.rf_link_state,
-            ATTR_SERIAL: self._sic.serial,
             ATTR_LAST_ERRORS: self._error_message,
         }
 
