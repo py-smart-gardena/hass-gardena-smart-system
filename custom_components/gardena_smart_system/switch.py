@@ -269,7 +269,7 @@ class GardenaSmartIrrigationControl(SwitchEntity):
         self._device = sic
         self._valve = valve
         self._options = options
-        self._name = f"{self._device.name]} - {self._valve['name']}"
+        self._name = f"{self._device.name} - {self._valve['name']}"
         self._unique_id = f"{self._device.serial}-{self._valve['id']}"
         self._state = None
         self._error_message = ""
