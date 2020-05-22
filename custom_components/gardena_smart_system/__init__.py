@@ -100,10 +100,9 @@ class GardenaSmartSystem:
         location = list(self.smart_system.locations.values())[0]
         _LOGGER.debug(f"Using location: {location.name} ({location.id})")
         self.smart_system.update_devices(location)
-        self._hass.data[GARDENA_LOCATION] = location
+        self._hass.data[DOMAIN][GARDENA_LOCATION] = location
         _LOGGER.debug("Starting GardenaSmartSystem websocket")
-        self.smart_system.start_ws(self._hass.data[GARDENA_LOCATION])
-
+        self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
 
     def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")

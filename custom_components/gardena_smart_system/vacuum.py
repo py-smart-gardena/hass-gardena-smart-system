@@ -29,6 +29,7 @@ from .const import (
     ATTR_SERIAL,
     CONF_MOWER_DURATION,
     DEFAULT_MOWER_DURATION,
+    DOMAIN,
     GARDENA_LOCATION,
 )
 from .sensor import GardenaSensor
@@ -46,7 +47,7 @@ SUPPORT_GARDENA = (
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Gardena smart mower system."""
     entities = []
-    for mower in hass.data[GARDENA_LOCATION].find_device_by_type("MOWER"):
+    for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
         entities.append(GardenaSmartMower(hass, mower, config_entry.options))
         # Add battery sensor for mower
         entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))

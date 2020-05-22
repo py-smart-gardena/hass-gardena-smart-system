@@ -40,7 +40,7 @@ SENSOR_TYPES = {
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Perform the setup for Gardena sensor devices."""
     entities = []
-    for sensor in hass.data[GARDENA_LOCATION].find_device_by_type("SENSOR"):
+    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SENSOR"):
         for sensor_type in SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
     _LOGGER.debug("Adding sensor as sensor %s", entities)

@@ -30,15 +30,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the switches platform."""
 
     entities = []
-    for water_control in hass.data[GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
+    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
         entities.append(GardenaSmartWaterControl(water_control, config_entry.options))
         # Add battery sensor for water control
         entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
 
-    for power_switch in hass.data[GARDENA_LOCATION].find_device_by_type("POWER_SOCKET"):
+    for power_switch in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("POWER_SOCKET"):
         entities.append(GardenaPowerSocket(power_switch))
 
-    for smart_irrigation in hass.data[GARDENA_LOCATION].find_device_by_type("SMART_IRRIGATION_CONTROL"):
+    for smart_irrigation in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SMART_IRRIGATION_CONTROL"):
         for valve in smart_irrigation.valves.values():
             entities.append(GardenaSmartIrrigationControl(
                 smart_irrigation, valve, config_entry.options))
