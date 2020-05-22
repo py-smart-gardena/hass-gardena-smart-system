@@ -59,15 +59,14 @@ class GardenaSensor(Entity):
 
     async def async_added_to_hass(self):
         """Subscribe to sensor events."""
-        self._device.add_callback(self.async_update_callback)
+        self._device.add_callback(self.update_callback)
 
     @property
     def should_poll(self) -> bool:
         """No polling needed for a sensor."""
         return False
 
-    @callback
-    def async_update_callback(self, device):
+    def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
