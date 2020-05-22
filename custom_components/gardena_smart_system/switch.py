@@ -167,6 +167,7 @@ class GardenaPowerSocket(SwitchEntity):
         """Initialize the Gardena Power Socket."""
         self._device = ps
         self._name = f"{self._device.name}"
+        self._unique_id = f"{self._device.serial}"
         self._state = None
         self._error_message = ""
 
@@ -211,6 +212,11 @@ class GardenaPowerSocket(SwitchEntity):
         return self._name
 
     @property
+    def unique_id(self) -> str:
+        """Return a unique ID."""
+        return self._unique_id
+
+    @property
     def is_on(self):
         """Return true if it is on."""
         return self._state
@@ -242,6 +248,18 @@ class GardenaPowerSocket(SwitchEntity):
         """Stop watering."""
         self._device.stop_until_next_task()
 
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self._device.serial)
+            },
+            "name": self._device.name,
+            "manufacturer": "Gardena",
+            "model": self._device.model_type,
+        }
+
 
 class GardenaSmartIrrigationControl(SwitchEntity):
     """Representation of a Gardena Smart Irrigation Control."""
@@ -252,6 +270,7 @@ class GardenaSmartIrrigationControl(SwitchEntity):
         self._valve = valve
         self._options = options
         self._name = f"{self._device.name]} - {self._valve['name']}"
+        self._unique_id = f"{self._device.serial}-{self._valve['id']}"
         self._state = None
         self._error_message = ""
 
@@ -296,6 +315,11 @@ class GardenaSmartIrrigationControl(SwitchEntity):
         return self._name
 
     @property
+    def unique_id(self) -> str:
+        """Return a unique ID."""
+        return self._unique_id
+
+    @property
     def is_on(self):
         """Return true if it is on."""
         return self._state
@@ -333,3 +357,15 @@ class GardenaSmartIrrigationControl(SwitchEntity):
     def turn_off(self, **kwargs):
         """Stop watering."""
         self._device.stop_until_next_task(self._valve["id"])
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {
+                # Serial numbers are unique identifiers within a specific domain
+                (DOMAIN, self._device.serial)
+            },
+            "name": self._device.name,
+            "manufacturer": "Gardena",
+            "model": self._device.model_type,
+        }
