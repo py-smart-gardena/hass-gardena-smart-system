@@ -14,6 +14,7 @@ from homeassistant.const import (
     CONF_ID,
     CONF_PASSWORD,
 )
+import homeassistant.helpers.config_validation as cv
 
 from .const import (
     DOMAIN,
@@ -112,15 +113,15 @@ class GardenaSmartSystemOptionsFlowHandler(config_entries.OptionsFlow):
         fields[vol.Optional(
             CONF_MOWER_DURATION,
             default=self.config_entry.options.get(
-                CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION))] = int
+                CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION))] = cv.positive_int
         fields[vol.Optional(
             CONF_SMART_IRRIGATION_DURATION,
             default=self.config_entry.options.get(
-                CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION))] = int
+                CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION))] = cv.positive_int
         fields[vol.Optional(
             CONF_SMART_WATERING_DURATION,
             default=self.config_entry.options.get(
-                CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION))] = int
+                CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION))] = cv.positive_int
 
         return self.async_show_form(step_id="user", data_schema=vol.Schema(fields), errors=errors)
 
