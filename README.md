@@ -25,7 +25,12 @@ has been added.
 
 https://hacs.xyz/
 
-Use "https://github.com/osks/hass-gardena-smart-system" as URL for custom repository.
+Use "https://github.com/osks/hass-gardena-smart-system" as URL for
+custom repository.
+
+Even though this integration can be installed and configured via the
+Home Assistant GUI (uses config flow), you might have to restart Home
+Assistant to get it working.
 
 
 #### Manual custom component
@@ -83,13 +88,34 @@ The following devices are supported but not all of them have been tested.
 * Gardena Smart Power Socket (as switch) (not tested)
 
 
-## TODO
+## Development
+
+### Debugging
+
+To enable debug logging for this integration and related libraries you
+can control this in your Home Assistant `configuration.yaml`
+file. Example:
+
+```
+logger:
+  default: info
+  logs:
+    custom_components.gardena_smart_system: debug
+    custom_components.gardena_smart_system.mower : debug
+    custom_components.gardena_smart_system.sensor : debug
+    custom_components.gardena_smart_system.switch : debug
+    custom_components.gardena_smart_system.config_flow : debug
+
+    gardena: debug
+    gardena.smart_system: debug
+    websocket: debug
+```
+
+
+### TODO
 
 * Only tested with Smart Sensor and Water Control. Need to test with
   Mower, Irrigation Control and Power Socket.
-
-* Make it possible to configure mower duration, smart irrigation
-  duration and smart watering duration again.
 
 * Do we need support for more than one location? Should we make it
   possible to configure it?
