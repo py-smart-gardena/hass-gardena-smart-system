@@ -1,5 +1,6 @@
 {
   "name": "Gardena Smart System",
   "domains": ["sensor", "switch", "vacuum"],
-  "render_readme": true
+  "render_readme": true,
+  "homeassistant": "0.110.0"
 }
