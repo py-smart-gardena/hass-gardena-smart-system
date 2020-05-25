@@ -21,6 +21,8 @@ has been added.
 
 ### Installation
 
+Requires Home Assistant 0.110 or newer.
+
 #### HACS
 
 https://hacs.xyz/
