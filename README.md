@@ -37,9 +37,10 @@ Assistant to get it working.
 
 ```
 cd <path>/<to>/<your>/<config>
+git clone https://github.com/osks/hass-gardena-smart-system.git
 mkdir custom_components (if not exist)
 cd custom_components
-git clone https://github.com/osks/hass-gardena-smart-system.git gardena_smart_system
+ln -s ../hass-gardena-smart-system/custom_components/gardena_smart_system
 ```
 
 ### Configuration
