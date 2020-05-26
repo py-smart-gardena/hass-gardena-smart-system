@@ -43,6 +43,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SENSOR"):
         for sensor_type in SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
+
+    for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
+        # Add battery sensor for mower
+        entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
+
+    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
+        # Add battery sensor for water control
+        entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
     _LOGGER.debug("Adding sensor as sensor %s", entities)
     async_add_entities(entities, True)
 

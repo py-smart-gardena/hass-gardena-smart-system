@@ -49,8 +49,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     entities = []
     for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
         entities.append(GardenaSmartMower(hass, mower, config_entry.options))
-        # Add battery sensor for mower
-        entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
 
     _LOGGER.debug("Adding mower as vacuums: %s", entities)
     async_add_entities(entities, True)
