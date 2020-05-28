@@ -117,8 +117,5 @@ logger:
 
 ### TODO
 
-* Only tested with Smart Sensor and Water Control. Need to test with
-  Mower, Irrigation Control and Power Socket.
-
 * Do we need support for more than one location? Should we make it
   possible to configure it?
