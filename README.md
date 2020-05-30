@@ -19,11 +19,11 @@ https://github.com/osks/py-smart-gardena2 and modelType / model_type
 has been added.
 
 
-### Installation
+## Installation
 
 Requires Home Assistant 0.110 or newer.
 
-#### HACS
+### Installation through HACS
 
 https://hacs.xyz/
 
@@ -35,7 +35,7 @@ Home Assistant GUI (uses config flow), you might have to restart Home
 Assistant to get it working.
 
 
-#### Manual custom component
+### Manual installation
 
 ```
 cd <path>/<to>/<your>/<config>
@@ -45,50 +45,82 @@ cd custom_components
 ln -s ../hass-gardena-smart-system/custom_components/gardena_smart_system
 ```
 
-### Configuration
+## Configuration
 
 
-#### Home Assistant
+### Home Assistant
 
 Setup under Integrations in Home Assistant, search for "Gardena Smart
-System". You need to enter e-mail, password and client ID (also called
-application key). See below for how to get your Gardena client ID.
+System". You need to enter e-mail, password and your application key / client ID. See below for how to get your Gardena application key.
 
 After setting up the integration, you can adjust some options on the
 integration panel for it.
 
 
-#### Gardena Client ID / Application Key
+### Gardena Application Key / Client ID
 
 In order to use this integration you must get a client ID /
-Application Key from Gardena.
+Application Key from Gardena/Husqvarna.
 
-1. Go to https://developer.1689.cloud/
+1. Go to https://developer.husqvarnagroup.cloud/
 
 2. Create an account if needed, otherwise sign in with your Gardena
    account.
 
-3. After singing in you will be automatically redirected to "Your
-   applications". (Otherwise go to https://developer.1689.cloud/apps)
+3. After signing in you will be automatically redirected to "Your
+   applications". (Otherwise go to: https://developer.husqvarnagroup.cloud/apps)
 
 4. Create an new application, name it for example "My Home Assistant"
    (doesn't matter), leave the other fields empty.
 
-5. Click on "Connect new API" and connect the Authentication API and
+5. Click on "+Connect new API" and connect the Authentication API and
    the GARDENA smart system API.
 
-6. Copy your Application Key, this is your Client ID.
+6. Copy your Application Key, this is what you need when you add the integration in Home Assistant.
 
 
 ## Supported devices
 
 The following devices are supported but not all of them have been tested.
 
-* Gardena Smart Mower (as vacuum) (not tested)
-* Gardena Smart Sensor (as sensor) (tested)
-* Gardena Smart Water Control (as switch) (tested)
-* Gardena Smart Irrigation Control (as switch) (not tested)
-* Gardena Smart Power Socket (as switch) (not tested)
+* Gardena Smart Irrigation Control (as switch)
+* Gardena Smart Mower (as vacuum)
+* Gardena Smart Sensor (as sensor)
+* Gardena Smart Water Control (as switch)
+* Gardena Smart Power Socket (as switch)
+
+## Services
+
+### Smart Irrigation Control
+
+> [TODO: document services]
+
+### Smart Mower services
+
+`vacuum.start`  
+Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.  
+The mower switches to manual operation for a defined duration of time.   The duration is taken from the integration option "*Mower Duration (minutes)*" (see *Configuration -> Integrations* in HA).
+
+`vacuum.stop`  
+Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.  
+The mower cancels the current operation, returns to charging station and ignores schedule.
+
+`vacuum.return_to_base`  
+Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
+The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
+
+### Smart Power Socket services
+
+> [TODO: document services]
+
+### Smart Sensor services
+
+> [TODO: document services]
+
+### Smart Water Control services
+
+> [TODO: document services]
+
 
 
 ## Development
@@ -114,6 +146,7 @@ logger:
     websocket: debug
 ```
 
+After a restart detailed log entries will appear in `/config/home-assistant.log`.
 
 ### TODO
 

@@ -164,28 +164,28 @@ class GardenaSmartMower(StateVacuumEntity):
         return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
 
     def start(self):
-        """Start the mower using command START_SECONDS_TO_OVERRIDE."""
+        """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE. Duration is read from integration options."""
         duration = self.option_mower_duration * 60
         _LOGGER.debug("Mower command:  vacuum.start => START_SECONDS_TO_OVERRIDE, %s", duration)
         self._device.start_seconds_to_override(duration)
 
     def stop(self, **kwargs):
-        """Stop the mower using command PARK_UNTIL_FURTHER_NOTICE."""
+        """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
         _LOGGER.debug("Mower command:  vacuum.stop => PARK_UNTIL_FURTHER_NOTICE")
         self._device.park_until_further_notice()
 
     def turn_on(self, **kwargs):
-        """Start the mower using command START_DONT_OVERRIDE."""
+        """Start the mower using Gardena API command START_DONT_OVERRIDE."""
         _LOGGER.debug("Mower command:  vacuum.turn_on => START_DONT_OVERRIDE")
         self._device.start_dont_override()
 
     def turn_off(self, **kwargs):
-        """Stop the mower using command PARK_UNTIL_FURTHER_NOTICE."""
+        """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
         _LOGGER.debug("Mower command:  vacuum.turn_off => PARK_UNTIL_FURTHER_NOTICE")
         self._device.park_until_further_notice()
 
     def return_to_base(self, **kwargs):
-        """Stop the mower using command PARK_UNTIL_NEXT_TASK."""
+        """Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK."""
         _LOGGER.debug("Mower command:  vacuum.return_to_base => PARK_UNTIL_NEXT_TASK")
         self._device.park_until_next_task()
 
