@@ -27,7 +27,7 @@ Requires Home Assistant 0.110 or newer.
 
 https://hacs.xyz/
 
-Use "https://github.com/osks/hass-gardena-smart-system" as URL for
+Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
 custom repository.
 
 Even though this integration can be installed and configured via the
