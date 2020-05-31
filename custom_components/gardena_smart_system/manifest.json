@@ -2,8 +2,8 @@
   "domain": "gardena_smart_system",
   "name": "Gardena Smart System",
   "config_flow": true,
-  "documentation": "https://github.com/osks/hass-gardena-smart-system",
+  "documentation": "https://github.com/py-smart-gardena/hass-gardena-smart-system",
   "dependencies": [],
   "codeowners": ["@grm", "@osks"],
-  "requirements": ["py-smart-gardena2==0.7.4"]
+  "requirements": ["py-smart-gardena==0.7.0"]
 }
