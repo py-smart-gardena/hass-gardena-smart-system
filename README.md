@@ -25,21 +25,16 @@ Requires Home Assistant 0.110 or newer.
 
 ### Installation through HACS
 
-If you have not yet installed HACS, goi get it here and walk through the installation and configuration:  
-https://hacs.xyz/
+If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk through the installation and configuration.
 
 Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
-a new custom repository.
+a new HACS custom repository.
 
 Then find the Gardena Smart System integration in HACS and install it. 
 
-Restart HA.
+Restart Home Assistant!
 
-Install the new integration through *Configuration -> Integrations* in HA.
-
-Even though this integration can be installed and configured via the
-Home Assistant GUI (uses config flow), you might have to restart Home
-Assistant to get it working.
+Install the new integration through *Configuration -> Integrations* in HA (see below).
 
 
 ### Manual installation
@@ -47,7 +42,7 @@ Assistant to get it working.
 Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation. 
 
 Alternatively use the following commands within an SSH shell into your HA system.   
-**Important:** Do NOT try to execute these commands on your PC on a mounted HA file system. The resulting symlink would not be broken for the HA file system.
+Do NOT try to execute these commands directly your PC on a mounted HA file system. The resulting symlink would be broken for the HA file system.
 ```
 cd /config
 git clone https://github.com/py-smart-gardena/hass-gardena-smart-system.git
@@ -69,6 +64,10 @@ System". You need to enter e-mail, password and your application key / client ID
 
 After setting up the integration, you can adjust some options on the
 integration panel for it.
+
+Even though this integration can be installed and configured via the
+Home Assistant GUI (uses config flow), you might have to restart Home
+Assistant to get it working.
 
 
 ### Gardena Application Key / Client ID
