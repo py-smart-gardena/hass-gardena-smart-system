@@ -25,10 +25,17 @@ Requires Home Assistant 0.110 or newer.
 
 ### Installation through HACS
 
+If you have not yet installed HACS, goi get it here and walk through the installation and configuration:  
 https://hacs.xyz/
 
 Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
-custom repository.
+a new custom repository.
+
+Then find the Gardena Smart System integration in HACS and install it. 
+
+Restart HA.
+
+Install the new integration through *Configuration -> Integrations* in HA.
 
 Even though this integration can be installed and configured via the
 Home Assistant GUI (uses config flow), you might have to restart Home
@@ -37,10 +44,17 @@ Assistant to get it working.
 
 ### Manual installation
 
+Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation. 
+
+Alternatively use the following commands within an SSH shell into your HA system.   
+**Important:** Do NOT try to execute these commands on your PC on a mounted HA file system. The resulting symlink would not be broken for the HA file system.
 ```
-cd <path>/<to>/<your>/<config>
+cd /config
 git clone https://github.com/py-smart-gardena/hass-gardena-smart-system.git
-mkdir custom_components (if not exist)
+
+# if folder custom_components does not yet exist:
+mkdir custom_components
+
 cd custom_components
 ln -s ../hass-gardena-smart-system/custom_components/gardena_smart_system
 ```
@@ -91,7 +105,7 @@ The following devices are supported but not all of them have been tested.
 
 ## Services
 
-### Smart Irrigation Control
+### Smart Irrigation Control services
 
 > [TODO: document services]
 
