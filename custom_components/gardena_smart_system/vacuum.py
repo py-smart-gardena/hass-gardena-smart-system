@@ -28,6 +28,8 @@ from .const import (
     ATTR_RF_LINK_STATE,
     ATTR_SERIAL,
     ATTR_LAST_ERROR_CODE,
+    ATTR_ERROR_CODE,
+    ATTR_STATUS_CODE,
     CONF_MOWER_DURATION,
     DEFAULT_MOWER_DURATION,
     DOMAIN,
@@ -157,6 +159,8 @@ class GardenaSmartMower(StateVacuumEntity):
             ATTR_RF_LINK_STATE: self._device.rf_link_state,
             ATTR_OPERATING_HOURS: self._device.operating_hours,
             ATTR_LAST_ERROR_CODE: self._device.last_error_code,
+            ATTR_ERROR_CODE: "NONE" if self._device.activity != "NONE" else self._device.last_error_code,
+            ATTR_STATUS_CODE: self._device.activity if self._device.activity != "NONE" else self._device.last_error_code
         }
 
     @property
