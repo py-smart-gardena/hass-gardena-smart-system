@@ -1,3 +1,7 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
+![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
+
 # Home Assistant integration for Gardena Smart System
 
 Custom component to support Gardena Smart System devices.
