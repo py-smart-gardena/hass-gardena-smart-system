@@ -5,5 +5,5 @@
   "documentation": "https://github.com/py-smart-gardena/hass-gardena-smart-system",
   "dependencies": [],
   "codeowners": ["@grm", "@osks"],
-  "requirements": ["py-smart-gardena2==0.7.4"]
+  "requirements": ["py-smart-gardena==0.7.3"]
 }
