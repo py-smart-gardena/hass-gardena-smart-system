@@ -1,6 +1,6 @@
 {
   "domain": "gardena_smart_system",
-  "name": "Gardena Smart System",
+  "name": "Gardena Smart System integration",
   "config_flow": true,
   "documentation": "https://github.com/py-smart-gardena/hass-gardena-smart-system",
   "dependencies": [],
