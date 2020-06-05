@@ -3,12 +3,13 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 
+from custom_components.gardena_smart_system import GARDENA_SYSTEM
 from .const import DOMAIN
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Perform the setup for Gardena websocket connection status."""
-    async_add_entities(SmartSystemWebsocketStatus(hass.data[DOMAIN]), True)
+    async_add_entities([SmartSystemWebsocketStatus(hass.data[DOMAIN][GARDENA_SYSTEM])], True)
 
 
 class SmartSystemWebsocketStatus(BinarySensorEntity):
