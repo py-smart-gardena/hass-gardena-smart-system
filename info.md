@@ -2,6 +2,10 @@
 [![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
 ![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
 
+{% if prerelease %}
+### NB!: This is a Beta version!
+{% endif %}
+
 # Home Assistant integration for Gardena Smart System
 
 Custom component to support Gardena Smart System devices.
@@ -34,7 +38,7 @@ If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk thro
 Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
 a new HACS custom repository.
 
-Then find the Gardena Smart System integration in HACS and install it. 
+Then find the Gardena Smart System integration in HACS and install it.
 
 Restart Home Assistant!
 
@@ -43,9 +47,9 @@ Install the new integration through *Configuration -> Integrations* in HA (see b
 
 ### Manual installation
 
-Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation. 
+Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation.
 
-Alternatively use the following commands within an SSH shell into your HA system.   
+Alternatively use the following commands within an SSH shell into your HA system.
 Do NOT try to execute these commands directly your PC on a mounted HA file system. The resulting symlink would be broken for the HA file system.
 ```
 cd /config
@@ -114,16 +118,16 @@ The following devices are supported but not all of them have been tested.
 
 ### Smart Mower services
 
-`vacuum.start`  
-Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.  
+`vacuum.start`
+Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.
 The mower switches to manual operation for a defined duration of time.   The duration is taken from the integration option "*Mower Duration (minutes)*" (see *Configuration -> Integrations* in HA).
 
-`vacuum.stop`  
-Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.  
+`vacuum.stop`
+Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.
 The mower cancels the current operation, returns to charging station and ignores schedule.
 
-`vacuum.return_to_base`  
-Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
+`vacuum.return_to_base`
+Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 
 ### Smart Power Socket services
