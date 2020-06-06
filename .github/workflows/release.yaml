@@ -24,4 +24,4 @@ jobs:
           body: |
             Release ${{ github.ref }}
           draft: false
-          prerelease: false
+          prerelease: true
