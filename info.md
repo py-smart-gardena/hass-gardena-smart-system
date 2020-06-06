@@ -142,7 +142,13 @@ The mower cancels the current operation and returns to charging station. It will
 
 > [TODO: document services]
 
+## Changelog
 
+0.1.0 :
+- First release with a version number
+- Bump to py-smart-gardena 0.7.4
+- Connection stability has been improved from updating py-smart-gardena
+- A binary_sensor has been added which holds the websocket connection status (its status goes offline a few seconds from time to time when the access token expires while the access token is refreshed)
 
 ## Development
 
