@@ -10,8 +10,31 @@
 
 Custom component to support Gardena Smart System devices.
 
-<!-- START doctoc -->
-<!-- END doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [About](#about)
+- [Installation](#installation)
+  - [Installation through HACS](#installation-through-hacs)
+  - [Manual installation](#manual-installation)
+- [Configuration](#configuration)
+  - [Home Assistant](#home-assistant)
+  - [Gardena Application Key / Client ID](#gardena-application-key--client-id)
+- [Supported devices](#supported-devices)
+- [Services](#services)
+  - [Smart Irrigation Control services](#smart-irrigation-control-services)
+  - [Smart Mower services](#smart-mower-services)
+  - [Smart Power Socket services](#smart-power-socket-services)
+  - [Smart Sensor services](#smart-sensor-services)
+  - [Smart Water Control services](#smart-water-control-services)
+- [Changelog](#changelog)
+  - [0.1.0](#010)
+- [Development](#development)
+  - [Debugging](#debugging)
+  - [TODO](#todo)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## About
 
