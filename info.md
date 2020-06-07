@@ -10,6 +10,9 @@
 
 Custom component to support Gardena Smart System devices.
 
+<!-- START doctoc -->
+<!-- END doctoc -->
+
 ## About
 
 This component is originally based on
