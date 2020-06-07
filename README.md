@@ -1,4 +1,4 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 [![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
 ![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
 
@@ -55,10 +55,7 @@ Requires Home Assistant 0.110 or newer.
 
 If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk through the installation and configuration.
 
-Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
-a new HACS custom repository.
-
-Then find the Gardena Smart System integration in HACS and install it. 
+Search for the Gardena Smart System Integration in HACS and install it. 
 
 Restart Home Assistant!
 
