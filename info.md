@@ -170,6 +170,16 @@ The mower cancels the current operation and returns to charging station. It will
 
 ## Changelog
 
+### 0.2.0
+- Integration to default repositories of HACS
+- Rename vaccum attributes for mower as described :
+  Two attributes added. Both are compiled from existing attributes:
+  * `error code` contains NONE if there is no error and the code from `last error code` if an error is active.
+  * `status code` contains a copy of `activity` as long as there is no error and a copy of `error code` if an error
+    is active. This corresponds to the state in the old integration of Wijnand.
+  * Attribute names changed: last_error_code -> last_error, error_code -> error, status_code -> state
+  * Const ATTR_LAST_ERROR_CODE removed, not used any more.
+
 ### 0.1.0
 - First release with a version number
 - Bump py-smart-gardena to 0.7.4
