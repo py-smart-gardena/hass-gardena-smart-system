@@ -1,4 +1,4 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 [![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
 ![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
 
@@ -42,11 +42,6 @@ also been cleaned up and some bugs have been fixed. Gardena devices
 are now represented as Home Assistant devices, which have battery
 level sensors where applicable.
 
-The py-smart-gardena has been forked and is now
-https://github.com/osks/py-smart-gardena2 and modelType / model_type
-has been added.
-
-
 ## Installation
 
 Requires Home Assistant 0.110 or newer.
@@ -54,9 +49,6 @@ Requires Home Assistant 0.110 or newer.
 ### Installation through HACS
 
 If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk through the installation and configuration.
-
-Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
-a new HACS custom repository.
 
 Then find the Gardena Smart System integration in HACS and install it. 
 
@@ -122,7 +114,7 @@ Application Key from Gardena/Husqvarna.
 
 ## Supported devices
 
-The following devices are supported but not all of them have been tested.
+The following devices are supported :
 
 * Gardena Smart Irrigation Control (as switch)
 * Gardena Smart Mower (as vacuum)
@@ -161,8 +153,6 @@ The mower cancels the current operation and returns to charging station. It will
 ### Smart Water Control services
 
 > [TODO: document services]
-
-
 
 ## Development
 
