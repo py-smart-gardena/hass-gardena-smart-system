@@ -47,7 +47,7 @@ class SmartSystemWebsocketStatus(BinarySensorEntity):
         """No polling needed for a sensor."""
         return False
 
-    def update_callback(self):
+    def update_callback(self, status):
         """Call update for Home Assistant when the device is updated."""
         self.schedule_update_ha_state(True)
 
