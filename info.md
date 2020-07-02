@@ -171,6 +171,10 @@ The mower cancels the current operation and returns to charging station. It will
 
 ## Changelog
 
+### 0.2.1
+- Correct a bug with some mowers where the wrong id was chosen
+- Correct a bug with the water pump where the wrong id was chosen
+
 ### 0.2.0
 - Integration to default repositories of HACS
 - Rename vaccum attributes for mower as described :
