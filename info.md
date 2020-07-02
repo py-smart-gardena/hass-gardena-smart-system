@@ -29,6 +29,7 @@ Custom component to support Gardena Smart System devices.
   - [Smart Sensor services](#smart-sensor-services)
   - [Smart Water Control services](#smart-water-control-services)
 - [Changelog](#changelog)
+  - [0.2.1](#021)
   - [0.2.0](#020)
   - [0.1.0](#010)
 - [Development](#development)
