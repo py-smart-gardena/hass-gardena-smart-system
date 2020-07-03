@@ -6,5 +6,5 @@
   "issue_tracker": "https://github.com/py-smart-gardena/hass-gardena-smart-system/issues",
   "dependencies": [],
   "codeowners": ["@py-smart-gardena"],
-  "requirements": ["py-smart-gardena==0.7.8"]
+  "requirements": ["py-smart-gardena==0.7.9"]
 }
