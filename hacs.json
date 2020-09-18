@@ -2,5 +2,5 @@
   "name": "Gardena Smart System",
   "domains": ["sensor", "switch", "vacuum", "binary_sensor"],
   "render_readme": true,
-  "homeassistant": "0.110.0"
+  "homeassistant": "0.115.0"
 }
