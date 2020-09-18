@@ -12,7 +12,7 @@ from homeassistant.core import callback
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_BATTERY,
-    UNIT_PERCENTAGE,
+    PERCENTAGE,
 )
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
@@ -33,7 +33,7 @@ SENSOR_TYPES = {
     "soil_temperature": [TEMP_CELSIUS, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE],
     "soil_humidity": ["%", "mdi:water-percent", DEVICE_CLASS_HUMIDITY],
     "light_intensity": ["lx", None, DEVICE_CLASS_ILLUMINANCE],
-    ATTR_BATTERY_LEVEL: [UNIT_PERCENTAGE, "mdi:battery", DEVICE_CLASS_BATTERY],
+    ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", DEVICE_CLASS_BATTERY],
 }
 
 
