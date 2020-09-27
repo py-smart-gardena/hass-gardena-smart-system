@@ -1,7 +1,11 @@
-**Target:** 
-Watering the lawn based on the current soil moisture and time of day. With the aim that the lawn is watered sufficiently but is not too wet.
+## TOC
 
-**Why not with the Gardena App:** 
+- [Watering the lawn based on the current soil moisture and time of day. With the aim that the lawn is watered sufficiently but is not too wet.](##watering-the-lawn-based-on-the-current-soil-moisture-and-time-of-day-with-the-aim-that-the-lawn-is-watered-sufficiently-but-is-not-too-wet)
+- [Notification over HomeAssistant Companion App or as Telegram Messenger message or over Amazon Alexa with the help of Alexa Media Player Integration](#notification-over-homeassistant-companion-app-or-as-telegram-messenger-message-or-over-amazon-alexa-with-the-help-of-alexa-media-player-integration)
+
+## Watering the lawn based on the current soil moisture and time of day. With the aim that the lawn is watered sufficiently but is not too wet.
+
+### Why not with the Gardena App:
 The problem of Gardena automation for lawn irrigation is that this ...
 
 1. not flexible enough for soil moisture
@@ -9,7 +13,7 @@ The problem of Gardena automation for lawn irrigation is that this ...
 3. Lawn gets too wet
 4. Water consumption is too high
 
-** Requirements **
+### Requirements
 - Installed [hass-gardena-smart-system](https://github.com/py-smart-gardena/hass-gardena-smart-system/) integration
 - Timer with the need of long-time availability (with HA restart in the between)
    ->https://community.home-assistant.io/t/how-to-make-active-timers-survive-a-restart/146248
@@ -17,9 +21,10 @@ The problem of Gardena automation for lawn irrigation is that this ...
 - [Gardena Smart Sensor](https://www.gardena.com/de/produkte/bewasserung/bewasserungssteuerung/smart-sensor/967044801/) or other sensors for depending values
 - [Gardena Pipeline System](https://www.gardena.com/de/produkte/bewasserung/pipelines/)
 
-**Automation example:**
+### Automation example:
 
-```- id: lawn_irrigation_garden
+```yaml
+- id: lawn_irrigation_garden
   alias: lawn irrigation garden
   trigger:
     platform: time_pattern
@@ -64,15 +69,14 @@ The problem of Gardena automation for lawn irrigation is that this ...
     - service: switch.turn_off 
 ```
 
-**Target:**
-Notification over [HomeAssistant Companion App](https://companion.home-assistant.io/) or as [Telegram Messenger](https://www.home-assistant.io/integrations/telegram/) message or over [Amazon Alexa with the help of Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player)
+## Notification over [HomeAssistant Companion App](https://companion.home-assistant.io/) or as [Telegram Messenger](https://www.home-assistant.io/integrations/telegram/) message or over [Amazon Alexa with the help of Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player)
 
-**Why not with the Gardena App:**
+### Why not with the Gardena App:
 It is not possible to get Messages from the status of the [smart water](https://www.gardena.com/de/produkte/bewasserung/bewasserungssteuerung/smart-water-control/967045101/) or the [sensor](https://www.gardena.com/de/produkte/bewasserung/bewasserungssteuerung/smart-sensor/967044801/) devices.
 
 It is not possible to get this notifications over Amazon Alexa from the App
 
-** Requirements **
+### Requirements
 
 1. Installed hass-gardena-smart-system integration
 2. [Home Assistant Compagnion iOS or Android App](https://companion.home-assistant.io/)
@@ -82,11 +86,10 @@ It is not possible to get this notifications over Amazon Alexa from the App
 6. (optional) [Telegram Messenger Integration](https://www.home-assistant.io/integrations/telegram/)
 7. (optional) [Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player) you can find and install this Integration over HACS 
 
-**Configuration:**
+### Configuration:
 only needed for Telegram
-```
-**Automation example:**
-```- alias: "Notify lawn irrigation garden on"
+```yaml
+- alias: "Notify lawn irrigation garden on"
   trigger:
     platform: state
     entity_id: switch.garden_water_control
