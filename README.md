@@ -154,6 +154,11 @@ The mower cancels the current operation and returns to charging station. It will
 
 > [TODO: document services]
 
+## Recipes
+
+Some recips were made by the community.
+You can find them [here](RECIPES.md).
+
 ## Development
 
 ### Debugging
