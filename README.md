@@ -24,6 +24,7 @@ Custom component to support Gardena Smart System devices.
   - [Smart Power Socket services](#smart-power-socket-services)
   - [Smart Sensor services](#smart-sensor-services)
   - [Smart Water Control services](#smart-water-control-services)
+- [Recipes](#recipes)
 - [Development](#development)
   - [Debugging](#debugging)
   - [TODO](#todo)
