@@ -2,6 +2,8 @@
 [![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
 ![Maintenance](https://img.shields.io/maintenance/yes/2021.svg)
 
+Feel free to join the discord server : [![Support Server](https://img.shields.io/discord/853252789522268180.svg?color=7289da&label=Discord&logo=discord&style=flat-square)](https://discord.gg/59sFjykS)
+
 # Home Assistant integration for Gardena Smart System
 
 Custom component to support Gardena Smart System devices.
