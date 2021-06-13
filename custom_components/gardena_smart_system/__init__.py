@@ -82,7 +82,7 @@ class GardenaSmartSystem:
             password=password,
             client_id=client_id)
 
-    async def start(self):
+    def start(self):
         _LOGGER.debug("Starting GardenaSmartSystem")
         self.smart_system.authenticate()
         self.smart_system.update_locations()
@@ -97,7 +97,7 @@ class GardenaSmartSystem:
         self.smart_system.update_devices(location)
         self._hass.data[DOMAIN][GARDENA_LOCATION] = location
         _LOGGER.debug("Starting GardenaSmartSystem websocket")
-        await self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+        self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
 
     def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")
