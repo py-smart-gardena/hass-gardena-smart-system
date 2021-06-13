@@ -1,4 +1,5 @@
 """Support for Gardena Smart System devices."""
+import asyncio
 import logging
 
 from gardena.smart_system import SmartSystem
@@ -48,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         client_id=entry.data[CONF_CLIENT_ID])
 
     try:
-        await hass.async_add_executor_job(gardena_system.start)
+       asyncio.run_coroutine_threadsafe(gardena_system.start())
     except AccessDeniedError as ex:
         _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
         return False
@@ -82,7 +83,7 @@ class GardenaSmartSystem:
             password=password,
             client_id=client_id)
 
-    def start(self):
+    async def start(self):
         _LOGGER.debug("Starting GardenaSmartSystem")
         self.smart_system.authenticate()
         self.smart_system.update_locations()
@@ -97,7 +98,7 @@ class GardenaSmartSystem:
         self.smart_system.update_devices(location)
         self._hass.data[DOMAIN][GARDENA_LOCATION] = location
         _LOGGER.debug("Starting GardenaSmartSystem websocket")
-        self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
+        self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
 
     def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")
