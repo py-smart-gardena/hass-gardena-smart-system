@@ -97,7 +97,7 @@ class GardenaSmartSystem:
         self.smart_system.update_devices(location)
         self._hass.data[DOMAIN][GARDENA_LOCATION] = location
         _LOGGER.debug("Starting GardenaSmartSystem websocket")
-        self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+        asyncio.run(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
 
     def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")
