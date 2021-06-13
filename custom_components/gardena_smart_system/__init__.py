@@ -49,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         client_id=entry.data[CONF_CLIENT_ID])
 
     try:
-       asyncio.run_coroutine_threadsafe(gardena_system.start(), hass.loop)
+       asyncio.run_coroutine_threadsafe(gardena_system.start(), hass.loop).result()
     except AccessDeniedError as ex:
         _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
         return False
