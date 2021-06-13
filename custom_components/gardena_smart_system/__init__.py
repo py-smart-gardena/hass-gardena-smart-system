@@ -83,7 +83,7 @@ class GardenaSmartSystem:
             password=password,
             client_id=client_id)
 
-    async def start(self):
+    def start(self):
         _LOGGER.debug("Starting GardenaSmartSystem")
         self.smart_system.authenticate()
         self.smart_system.update_locations()
