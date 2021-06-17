@@ -50,6 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     try:
         await hass.async_add_executor_job(gardena_system.start)
+        await gardena_system.async_create_ws()
     except AccessDeniedError as ex:
         _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
         return False
@@ -98,10 +99,13 @@ class GardenaSmartSystem:
         self.smart_system.update_devices(location)
         self._hass.data[DOMAIN][GARDENA_LOCATION] = location
         _LOGGER.debug("Starting GardenaSmartSystem websocket")
-        self.async_create_ws()
+        #self.async_create_ws()
 
     async def async_create_ws(self):
-        self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+        #self._hass.async_add_executor_job(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
+        #self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+        await self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+#        self._hass.loop.create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
         #self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
 
     def stop(self):
