@@ -45,6 +45,21 @@ also been cleaned up and some bugs have been fixed. Gardena devices
 are now represented as Home Assistant devices, which have battery
 level sensors where applicable.
 
+**This project needs your support.**  
+Gardena equipments are expensive, and I need to buy them in order to add support.
+If you find this library useful and want to help me support more devices (or if you
+just want to reward me for my spent time), you are very welcome !   
+Your help is very much appreciated.
+
+Here are the links if you want to show your support :  
+<span class="badge-paypal"><a href="https://paypal.me/grmklein" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
+
+You can also send me crypto using one of the following addresses :
+
+Bitcoin (BTC) : bc1qyr4f9f8xuq4uvk5c8qdq9zxanz99xpl5asja8m
+
+Ethereum (ETH) : 0xE363E94F6a42881580A9Df9E52Ab86c987dCFDc7
+
 ## Installation
 
 Requires Home Assistant 0.110 or newer.
