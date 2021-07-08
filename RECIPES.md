@@ -2,6 +2,7 @@
 
 - [Watering the lawn based on the current soil moisture and time of day. With the aim that the lawn is watered sufficiently but is not too wet.](##watering-the-lawn-based-on-the-current-soil-moisture-and-time-of-day-with-the-aim-that-the-lawn-is-watered-sufficiently-but-is-not-too-wet)
 - [Notification over HomeAssistant Companion App or as Telegram Messenger message or over Amazon Alexa with the help of Alexa Media Player Integration](#notification-over-homeassistant-companion-app-or-as-telegram-messenger-message-or-over-amazon-alexa-with-the-help-of-alexa-media-player-integration)
+- [Use a NFC tag to start and stop mowing](#use-a-nfc-tag-to-start-and-stop-mowing)
 
 ## Watering the lawn based on the current soil moisture and time of day. With the aim that the lawn is watered sufficiently but is not too wet.
 
@@ -209,3 +210,78 @@ only needed for Telegram
         title: '*Watering in the garden has ended!*'
         message: "Watering in the garden has ended. The humidity is now {{ states.sensor.garden_sensor_humidity.state }}% -> https://[public HA URL]/lovelace/terrasse"
 ```
+## Use a NFC tag to start and stop mowing
+
+Normaly my Gardena Irrigation Control works per automations, but in a part of situations i have to start/stop it manualy (i.e. I will fill a pot with water) in this cases i have before use my Smartphone open the App search for the Watercontroll entity and start/stop this. 
+
+Now with the [NFC tag integration](https://companion.home-assistant.io/docs/integrations/universal-links/) from HomeAssistant thats is more easy than befor, now i’m scan with my Smartphone an tag on my Hose trolley and give the okay that the tag starts the HA App and the water control starts if it's off and stopps if it's on.
+
+Steps for this.
+
+1. Buy an NFC tag like this one [https://www.amazon.de/dp/B06Y1BLLD4?ref=ppx_pop_mob_ap_share](https://www.amazon.de/dp/B06Y1BLLD4?ref=ppx_pop_mob_ap_share)
+
+2. Install the [HA Companion App](https://companion.home-assistant.io/) on your Smartphone (if you have't do this before)
+
+3. [Write the NFC tag with the HA App](https://companion.home-assistant.io/docs/integrations/universal-links/)
+![28CB9BFE-3F41-4D96-91EA-34D6EEA1A0CF](https://user-images.githubusercontent.com/36472486/93881822-b272dc80-fcdf-11ea-9d6a-8d615b4b58d2.jpeg)
+
+![1F0AF2E9-4E1B-4634-BB39-9C9A173125BD](https://user-images.githubusercontent.com/36472486/93881365-19dc5c80-fcdf-11ea-9f7c-51e51d0533c1.jpeg)
+![6BA84B75-05BE-4730-8C35-BF274F7E2A82](https://user-images.githubusercontent.com/36472486/93881368-19dc5c80-fcdf-11ea-8264-645fa00ebccc.jpeg)
+![217C9CD3-4F58-48DD-A7FB-EB1211C11F29](https://user-images.githubusercontent.com/36472486/93881369-1a74f300-fcdf-11ea-901c-d9f61b576185.png)
+![F53B6C62-1910-4871-A54F-FDA875E09B78](https://user-images.githubusercontent.com/36472486/93881370-1a74f300-fcdf-11ea-86e7-fa65dfaadbd0.png)
+![0E495C12-8DF9-4B79-8681-D9842C73815C](https://user-images.githubusercontent.com/36472486/93881371-1b0d8980-fcdf-11ea-8418-28134a1e9850.jpeg)
+
+4. Go to the [NFC tag configuration in HA](https://www.home-assistant.io/blog/2020/09/15/home-assistant-tags/) and give your NFC tag an readable name and create an Automation like this on
+
+![1B9A0B40-1FF8-4B37-8D69-1BA737A097EA](https://user-images.githubusercontent.com/36472486/93882213-2dd48e00-fce0-11ea-8c3a-d1a85f7e5800.jpeg)
+![CEFDA1D6-094A-4C3F-AB9F-06465707CAFF](https://user-images.githubusercontent.com/36472486/93879140-7e95b800-fcdb-11ea-8076-61d9b694cb3f.jpeg)
+![2C4047E5-7F17-4CF5-8D06-83361184C914](https://user-images.githubusercontent.com/36472486/93879146-7fc6e500-fcdb-11ea-828c-fd3bb97c6e8a.jpeg)
+![7F8A4DEA-49BA-4557-865D-7582D5E67C26](https://user-images.githubusercontent.com/36472486/93879150-80f81200-fcdb-11ea-8c0b-d32e133c27de.jpeg)
+![F2278990-D81C-4A01-86A9-8D85F9C95032](https://user-images.githubusercontent.com/36472486/93879153-8190a880-fcdb-11ea-9145-dcb31f433766.jpeg)
+![6CF720DC-4F9B-4B20-B1EF-DF169F405CE9](https://user-images.githubusercontent.com/36472486/93879154-82293f00-fcdb-11ea-807f-c030c79cb4db.png)
+![70A2AC60-AFFC-467C-B294-A0A93D253DBE](https://user-images.githubusercontent.com/36472486/93879155-835a6c00-fcdb-11ea-9188-ddc51f44dbf5.png)
+
+```
+##########################################################################
+# Control Watercontrol with NFC tag
+##########################################################################
+
+- id: '1600768999472'
+  alias: 'NFC Tag Garden watering on/off is scanned if water is off'
+  description: If the irrigation in the garden is off start watering
+  trigger:
+  - platform: tag
+    tag_id: 9dc6d5b1-651d-4880-839c-19cdd798a5f8
+  condition:
+  - condition: device
+    type: is_off
+    device_id: eecdf62964f3494d877413f7bd7b2a45
+    entity_id: switch.garten_water_control
+    domain: switch
+  action:
+  - type: turn_on
+    device_id: eecdf62964f3494d877413f7bd7b2a45
+    entity_id: switch.garten_water_control
+    domain: switch
+  mode: single
+
+- id: '1600769207834'
+  alias: 'NFC Tag Garden watering on/off is scanned if water is on'
+  description: If the irrigation in the garden is on stop watering
+  trigger:
+  - platform: tag
+    tag_id: 9dc6d5b1-651d-4880-839c-19cdd798a5f8
+  condition:
+  - condition: device
+    type: is_on
+    device_id: eecdf62964f3494d877413f7bd7b2a45
+    entity_id: switch.garten_water_control
+    domain: switch
+  action:
+  - type: turn_off
+    device_id: eecdf62964f3494d877413f7bd7b2a45
+    entity_id: switch.garten_water_control
+    domain: switch
+  mode: single```
+
+
