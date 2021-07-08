@@ -56,7 +56,7 @@ Here are the links if you want to show your support :
 
 You can also send me crypto using one of the following addresses :
 
-Bitcoin (BTC) : bc1qyr4f9f8xuq4uvk5c8qdq9zxanz99xpl5asja8m
+Bitcoin (BTC) : 39TrJWZ1fV5UBwbRxK8yTJUK68gAhpJHzZ
 
 Ethereum (ETH) : 0xE363E94F6a42881580A9Df9E52Ab86c987dCFDc7
 
