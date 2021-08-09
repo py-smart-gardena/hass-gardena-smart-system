@@ -1,0 +1,29 @@
+{
+    "device_automation": {
+        "action_type": {
+            "clean": "Lad {entity_name} klippe",
+            "dock": "Lad {entity_name} vende tilbage til oplader"
+        },
+        "condition_type": {
+            "is_cleaning": "{entity_name} klipper",
+            "is_docked": "{entity_name} er i oplader"
+        },
+        "trigger_type": {
+            "cleaning": "{entity_name} begyndte at klippe",
+            "docked": "{entity_name} er i dock"
+        }
+    },
+    "state": {
+        "_": {
+            "cleaning": "Klipper",
+            "docked": "I oplader",
+            "error": "Fejl",
+            "idle": "[%key:common::state::idle%]",
+            "off": "[%key:common::state::off%]",
+            "on": "[%key:common::state::on%]",
+            "paused": "Sat p\u00e5 pause",
+             "returning": "Vender tilbage til oplader"
+        }
+    },
+    "title": "Pl\u00e6neklipper"
+}
