@@ -116,7 +116,7 @@ class GardenaSensor(Entity):
         return getattr(self._device, self._sensor_type)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
         return {
             ATTR_BATTERY_LEVEL: self._device.battery_level,

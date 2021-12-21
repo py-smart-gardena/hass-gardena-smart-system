@@ -119,7 +119,7 @@ class GardenaSmartWaterControl(SwitchEntity):
         return self._error_message
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes of the water valve."""
         return {
             ATTR_ACTIVITY: self._device.valve_activity,
@@ -229,7 +229,7 @@ class GardenaPowerSocket(SwitchEntity):
         return self._error_message
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes of the power switch."""
         return {
             ATTR_ACTIVITY: self._device.activity,
@@ -332,7 +332,7 @@ class GardenaSmartIrrigationControl(SwitchEntity):
         return self._error_message
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the state attributes of the smart irrigation control."""
         return {
             ATTR_ACTIVITY: self._device.valves[self._valve_id]["activity"],
