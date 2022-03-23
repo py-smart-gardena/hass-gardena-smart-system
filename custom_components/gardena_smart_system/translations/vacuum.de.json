@@ -1,0 +1,29 @@
+{
+    "title": "Mäher",
+    "device_automation": {
+      "condition_type": {
+        "is_docked": "{entity_name} ist angedockt",
+        "is_cleaning": "{entity_name} mäht"
+      },
+      "trigger_type": {
+        "cleaning": "{entity_name} hat begonnen zu mähen",
+        "docked": "{entity_name} hat angedockt"
+      },
+      "action_type": {
+        "clean": "Lasse {entity_name} mähen",
+        "dock": "Lasse {entity_name} zum Dock zurückkehren"
+      }
+    },
+    "state": {
+      "_": {
+        "cleaning": "Mäht",
+        "docked": "Angedockt",
+        "error": "Fehler",
+        "idle": "[%key:common::state::idle%]",
+        "off": "[%key:common::state::off%]",
+        "on": "[%key:common::state::on%]",
+        "paused": "[%key:common::state::paused%]",
+        "returning": "Zurück zum Dock"
+      }
+    }
+  }
