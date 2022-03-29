@@ -1,0 +1,36 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Locatie is reeds geconfigureerd."
+    },
+    "error": {
+      "cannot_connect": "Probleem tijdens connecteren, probeer het later opnieuw.",
+      "invalid_auth": "Foutieve inloggegevens.",
+      "too_many_requests": "Te veel aanvragen, probeer het later opnieuw.",
+      "unknown": "Onverwachte fout."
+    },
+    "step": {
+      "user": {
+        "description": "Gelieve aan te melden.",
+        "data": {
+          "email": "E-mail",
+          "password": "Wachtwoord",
+          "client_id": "Application Key / Client ID"
+        },
+        "title": "Gardena Smart System"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "mower_duration": "Maaitijd (minuten)",
+          "smart_irrigation_control_duration": "Smart Irrigation Control tijd (minuten)",
+          "smart_watering_duration": "Smart Watering tijd (minuten)"
+        },
+        "title": "Gardena Smart System - Opties"
+      }
+    }
+  }
+}
