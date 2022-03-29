@@ -1,0 +1,29 @@
+{
+    "title": "Maaier",
+    "device_automation": {
+      "condition_type": {
+        "is_docked": "{entity_name} is geparkeerd",
+        "is_cleaning": "{entity_name} is aan het maaien"
+      },
+      "trigger_type": {
+        "cleaning": "{entity_name} is gestart met maaien",
+        "docked": "{entity_name} parkeert"
+      },
+      "action_type": {
+        "clean": "Laat {entity_name} maaien",
+        "dock": "Laat {entity_name} parkeren"
+      }
+    },
+    "state": {
+      "_": {
+        "cleaning": "Maaien",
+        "docked": "Geparkeerd",
+        "error": "Fout",
+        "idle": "[%key:common::state::idle%]",
+        "off": "[%key:common::state::off%]",
+        "on": "[%key:common::state::on%]",
+        "paused": "[%key:common::state::paused%]",
+        "returning": "Terug naar laadstation aan het gaan"
+      }
+    }
+  }
