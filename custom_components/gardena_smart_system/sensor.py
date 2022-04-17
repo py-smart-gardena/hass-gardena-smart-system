@@ -12,6 +12,7 @@ from homeassistant.core import callback
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_BATTERY,
+    DEVICE_CLASS_SIGNAL_STRENGTH,
     PERCENTAGE,
 )
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
@@ -33,10 +34,28 @@ SOIL_SENSOR_TYPES = {
     ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", DEVICE_CLASS_BATTERY],
 }
 
-SENSOR_TYPES = {**{
-    "ambient_temperature": [TEMP_CELSIUS, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE],
-    "light_intensity": ["lx", None, DEVICE_CLASS_ILLUMINANCE],
-}, **SOIL_SENSOR_TYPES}
+MOWER_SENSOR_TYPES = {
+    "battery_state": [None, "mdi:state-machine", None],
+    "activity": [None, "mdi:view-list", None],
+    "last_error_code": [None, "mdi:alert-circle", None],
+    "operating_hours": ["h", "mdi:clock", None],
+    "rf_link_level": [None, "mdi:wifi", DEVICE_CLASS_SIGNAL_STRENGTH],
+    "rf_link_state": [None, "mdi:state-machine", None],
+}
+
+SENSOR_TYPES = {
+    **{
+        "ambient_temperature": [
+            TEMP_CELSIUS,
+            "mdi:thermometer",
+            DEVICE_CLASS_TEMPERATURE,
+        ],
+        "light_intensity": ["lx", None, DEVICE_CLASS_ILLUMINANCE],
+    },
+    **SOIL_SENSOR_TYPES,
+    **MOWER_SENSOR_TYPES,
+}
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Perform the setup for Gardena sensor devices."""
@@ -45,15 +64,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         for sensor_type in SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
 
-    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SOIL_SENSOR"):
+    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
+        "SOIL_SENSOR"
+    ):
         for sensor_type in SOIL_SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
 
     for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
         # Add battery sensor for mower
         entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
+        for sensor_type in MOWER_SENSOR_TYPES:
+            entities.append(GardenaSensor(mower, sensor_type))
 
-    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
+    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
+        "WATER_CONTROL"
+    ):
         # Add battery sensor for water control
         entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
     _LOGGER.debug("Adding sensor as sensor %s", entities)
