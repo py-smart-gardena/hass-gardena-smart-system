@@ -1,7 +1,7 @@
 {
   "config": {
     "abort": {
-      "already_configured": "La location est deja configurée"
+      "already_configured": "La localisation est déjà configurée"
     },
     "error": {
       "cannot_connect": "Impossible de se connecter, veuillez ré-essayer.",
