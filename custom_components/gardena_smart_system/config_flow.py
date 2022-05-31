@@ -89,7 +89,7 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    async def get_options_flow(config_entry):
         return GardenaSmartSystemOptionsFlowHandler(config_entry)
 
 

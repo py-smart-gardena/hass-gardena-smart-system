@@ -54,12 +54,6 @@ Your help is very much appreciated.
 Here are the links if you want to show your support :  
 <span class="badge-paypal"><a href="https://paypal.me/grmklein" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
 
-You can also send me crypto using one of the following addresses :
-
-Bitcoin (BTC) : 39TrJWZ1fV5UBwbRxK8yTJUK68gAhpJHzZ
-
-Ethereum (ETH) : 0xE363E94F6a42881580A9Df9E52Ab86c987dCFDc7
-
 ## Installation
 
 Requires Home Assistant 0.115.0 or newer.
