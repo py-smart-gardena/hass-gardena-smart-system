@@ -136,14 +136,14 @@ class GardenaSmartWaterControl(SwitchEntity):
             CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION
         )
 
-    def turn_on(self, **kwargs):
+    async def turn_on(self, **kwargs):
         """Start watering."""
         duration = self.option_smart_watering_duration * 60
-        self._device.start_seconds_to_override(duration)
+        await self._device.start_seconds_to_override(duration)
 
-    def turn_off(self, **kwargs):
+    async def turn_off(self, **kwargs):
         """Stop watering."""
-        self._device.stop_until_next_task()
+        await self._device.stop_until_next_task()
 
     @property
     def device_info(self):
@@ -238,13 +238,13 @@ class GardenaPowerSocket(SwitchEntity):
             ATTR_LAST_ERROR: self._error_message,
         }
 
-    def turn_on(self, **kwargs):
+    async def turn_on(self, **kwargs):
         """Start watering."""
-        self._device.start_override()
+        await self._device.start_override()
 
-    def turn_off(self, **kwargs):
+    async def turn_off(self, **kwargs):
         """Stop watering."""
-        self._device.stop_until_next_task()
+        await self._device.stop_until_next_task()
 
     @property
     def device_info(self):
@@ -347,14 +347,14 @@ class GardenaSmartIrrigationControl(SwitchEntity):
             CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION
         )
 
-    def turn_on(self, **kwargs):
+    async def turn_on(self, **kwargs):
         """Start watering."""
         duration = self.option_smart_irrigation_duration * 60
-        self._device.start_seconds_to_override(duration, self._valve_id)
+        await self._device.start_seconds_to_override(duration, self._valve_id)
 
-    def turn_off(self, **kwargs):
+    async def turn_off(self, **kwargs):
         """Stop watering."""
-        self._device.stop_until_next_task(self._valve_id)
+        await self._device.stop_until_next_task(self._valve_id)
 
     @property
     def device_info(self):

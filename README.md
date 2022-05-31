@@ -62,7 +62,7 @@ Ethereum (ETH) : 0xE363E94F6a42881580A9Df9E52Ab86c987dCFDc7
 
 ## Installation
 
-Requires Home Assistant 0.110 or newer.
+Requires Home Assistant 0.115.0 or newer.
 
 ### Installation through HACS
 

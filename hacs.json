@@ -1,5 +1,6 @@
 {
   "name": "Gardena Smart System",
+  "version": "1.0",
   "domains": ["sensor", "switch", "vacuum", "binary_sensor"],
   "render_readme": true,
   "homeassistant": "2021.7.0"

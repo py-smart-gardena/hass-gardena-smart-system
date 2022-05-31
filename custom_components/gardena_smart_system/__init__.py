@@ -1,9 +1,8 @@
 """Support for Gardena Smart System devices."""
 import logging
-
-from gardena.smart_system import SmartSystem
 from gardena.exceptions.authentication_exception import AuthenticationException
 
+from gardena.smart_system import SmartSystem
 from oauthlib.oauth2.rfc6749.errors import (
     AccessDeniedError,
     InvalidClientError,
@@ -50,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         client_id=entry.data[CONF_CLIENT_ID])
 
     try:
-        await hass.async_add_executor_job(gardena_system.start)
+        await gardena_system.start()
     except AccessDeniedError as ex:
         _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
         return False
@@ -63,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     hass.data[DOMAIN][GARDENA_SYSTEM] = gardena_system
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda event: gardena_system.stop())
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda event: await gardena_system.stop())
 
     for component in PLATFORMS:
         hass.async_create_task(
@@ -84,11 +83,11 @@ class GardenaSmartSystem:
             password=password,
             client_id=client_id)
 
-    def start(self):
-        _LOGGER.debug("Starting GardenaSmartSystem")
+    async def start(self):
         try:
-            self.smart_system.authenticate()
-            self.smart_system.update_locations()
+            _LOGGER.debug("Starting GardenaSmartSystem")
+            await self.smart_system.authenticate()
+            await self.smart_system.update_locations()
 
             if len(self.smart_system.locations) < 1:
                 _LOGGER.error("No locations found")
@@ -97,13 +96,13 @@ class GardenaSmartSystem:
             # currently gardena supports only one location and gateway, so we can take the first
             location = list(self.smart_system.locations.values())[0]
             _LOGGER.debug(f"Using location: {location.name} ({location.id})")
-            self.smart_system.update_devices(location)
+            await self.smart_system.update_devices(location)
             self._hass.data[DOMAIN][GARDENA_LOCATION] = location
             _LOGGER.debug("Starting GardenaSmartSystem websocket")
-            self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+            await self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
         except AuthenticationException as ex:
             _LOGGER.error(f"Authentication failed : {ex.message}. You may need to dcheck your token or create a new app in the gardena api and use the new token.")
 
-    def stop(self):
+    async def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")
-        self.smart_system.quit()
+        await self.smart_system.quit()
