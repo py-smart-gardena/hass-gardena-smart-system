@@ -62,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     hass.data[DOMAIN][GARDENA_SYSTEM] = gardena_system
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda event: await gardena_system.stop())
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, lambda event: hass.async_create_task(gardena_system.stop()))
 
     for component in PLATFORMS:
         hass.async_create_task(
