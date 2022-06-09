@@ -63,8 +63,7 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
 
         errors = {}
         try:
-            await self.hass.async_add_executor_job(
-                try_connection,
+            await try_connection(
                 user_input[CONF_EMAIL],
                 user_input[CONF_PASSWORD],
                 user_input[CONF_CLIENT_ID])
@@ -126,9 +125,9 @@ class GardenaSmartSystemOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(step_id="user", data_schema=vol.Schema(fields), errors=errors)
 
 
-def try_connection(email, password, client_id):
+async def try_connection(email, password, client_id):
     _LOGGER.debug("Trying to connect to Gardena during setup")
     smart_system = SmartSystem(email=email, password=password, client_id=client_id)
-    smart_system.authenticate()
-    smart_system.update_locations()
+    await smart_system.authenticate()
+    await smart_system.update_locations()
     _LOGGER.debug("Successfully connected to Gardena during setup")

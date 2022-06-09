@@ -28,7 +28,7 @@ from .const import(
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ("vacuum", "sensor", "switch", "binary_sensor")
+PLATFORMS = ["vacuum", "sensor", "switch", "binary_sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -39,7 +39,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up Gardena Smart System component")
 
     gardena_system = GardenaSmartSystem(
@@ -51,13 +51,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     try:
         await gardena_system.start()
     except AccessDeniedError as ex:
-        _LOGGER.error("Got Access Denied Error when setting up Gardena Smart System: %s", ex)
+        _LOGGER.error('Got Access Denied Error when setting up Gardena Smart System: %s', ex)
         return False
     except InvalidClientError as ex:
-        _LOGGER.error("Got Invalid Client Error when setting up Gardena Smart System: %s", ex)
+        _LOGGER.error('Got Invalid Client Error when setting up Gardena Smart System: %s', ex)
         return False
     except MissingTokenError as ex:
-        _LOGGER.error("Got Missing Token Error when setting up Gardena Smart System: %s", ex)
+        _LOGGER.error('Got Missing Token Error when setting up Gardena Smart System: %s', ex)
         return False
 
     hass.data[DOMAIN][GARDENA_SYSTEM] = gardena_system
@@ -68,6 +68,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, component))
 
+    _LOGGER.debug("Gardena Smart System component setup finished")
     _LOGGER.debug("Gardena Smart System component setup finished")
     return True
 
@@ -99,9 +100,9 @@ class GardenaSmartSystem:
             await self.smart_system.update_devices(location)
             self._hass.data[DOMAIN][GARDENA_LOCATION] = location
             _LOGGER.debug("Starting GardenaSmartSystem websocket")
-            await self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION])
+            self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
         except AuthenticationException as ex:
-            _LOGGER.error(f"Authentication failed : {ex.message}. You may need to dcheck your token or create a new app in the gardena api and use the new token.")
+            _LOGGER.error(f"Authentication failed : {ex.message}. You may need to check your token or create a new app in the gardena api and use the new token.")
 
     async def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")

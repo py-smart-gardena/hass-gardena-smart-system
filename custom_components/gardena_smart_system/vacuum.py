@@ -1,5 +1,5 @@
 """Support for Gardena mower."""
-
+import asyncio
 import logging
 from datetime import timedelta
 
@@ -62,6 +62,7 @@ class GardenaSmartMower(StateVacuumEntity):
 
     def __init__(self, hass, mower, options):
         """Initialize the Gardena Connected Mower."""
+        self.hass = hass
         self._device = mower
         self._options = options
         self._name = "{}".format(self._device.name)
@@ -167,31 +168,41 @@ class GardenaSmartMower(StateVacuumEntity):
     def option_mower_duration(self) -> int:
         return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
 
-    async def start(self):
+    def start(self):
         """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE. Duration is read from integration options."""
         duration = self.option_mower_duration * 60
         _LOGGER.debug("Mower command:  vacuum.start => START_SECONDS_TO_OVERRIDE, %s", duration)
-        await self._device.start_seconds_to_override(duration)
+        return asyncio.run_coroutine_threadsafe(
+            self._device.start_seconds_to_override(duration), self.hass.loop
+        ).result()
 
-    async def stop(self, **kwargs):
+    def stop(self, **kwargs):
         """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
         _LOGGER.debug("Mower command:  vacuum.stop => PARK_UNTIL_FURTHER_NOTICE")
-        await self._device.park_until_further_notice()
+        asyncio.run_coroutine_threadsafe(
+            self._device.park_until_further_notice(), self.hass.loop
+        ).result()
 
-    async def turn_on(self, **kwargs):
+    def turn_on(self, **kwargs):
         """Start the mower using Gardena API command START_DONT_OVERRIDE."""
         _LOGGER.debug("Mower command:  vacuum.turn_on => START_DONT_OVERRIDE")
-        await self._device.start_dont_override()
+        asyncio.run_coroutine_threadsafe(
+            self._device.start_dont_override(), self.hass.loop
+        ).result()
 
-    async def turn_off(self, **kwargs):
+    def turn_off(self, **kwargs):
         """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
         _LOGGER.debug("Mower command:  vacuum.turn_off => PARK_UNTIL_FURTHER_NOTICE")
-        await self._device.park_until_further_notice()
+        asyncio.run_coroutine_threadsafe(
+            self._device.park_until_further_notice(), self.hass.loop
+        ).result()
 
-    async def return_to_base(self, **kwargs):
+    def return_to_base(self, **kwargs):
         """Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK."""
         _LOGGER.debug("Mower command:  vacuum.return_to_base => PARK_UNTIL_NEXT_TASK")
-        await self._device.park_until_next_task()
+        asyncio.run_coroutine_threadsafe(
+            self._device.park_until_next_task(), self.hass.loop
+        ).result()
 
     @property
     def unique_id(self) -> str:
