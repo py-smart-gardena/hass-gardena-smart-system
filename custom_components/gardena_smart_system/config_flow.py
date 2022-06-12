@@ -122,4 +122,5 @@ async def try_connection(client_id, client_secret):
     smart_system = SmartSystem(client_id=client_id, client_secret=client_secret)
     await smart_system.authenticate()
     await smart_system.update_locations()
+    await smart_system.quit()
     _LOGGER.debug("Successfully connected to Gardena during setup")
