@@ -117,9 +117,9 @@ class GardenaSmartSystemOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(step_id="user", data_schema=vol.Schema(fields), errors=errors)
 
 
-async def try_connection(email, password, client_id):
+async def try_connection(client_id, client_secret):
     _LOGGER.debug("Trying to connect to Gardena during setup")
-    smart_system = SmartSystem(email=email, password=password, client_id=client_id)
+    smart_system = SmartSystem(client_id=client_id, client_secret=client_secret)
     await smart_system.authenticate()
     await smart_system.update_locations()
     _LOGGER.debug("Successfully connected to Gardena during setup")

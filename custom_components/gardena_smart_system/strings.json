@@ -13,9 +13,8 @@
       "user": {
         "description": "Please enter your credentials.",
         "data": {
-          "email": "[%key:common::config_flow::data::email%]",
-          "password": "[%key:common::config_flow::data::password%]",
-          "client_id": "Application Key / Client ID"
+          "client_id": "Application Key / Client ID",
+          "client_secret": "Application secret / Client secret"
         },
         "title": "Gardena Smart System"
       }

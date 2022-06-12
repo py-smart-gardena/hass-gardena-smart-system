@@ -6,6 +6,7 @@ from gardena.smart_system import SmartSystem
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
     EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import HomeAssistant
@@ -40,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     gardena_system = GardenaSmartSystem(
         hass,
         client_id=entry.data[CONF_CLIENT_ID],
-        client_secret=entry.data[CONF_CLIENT_ID],
+        client_secret=entry.data[CONF_CLIENT_SECRET],
     )
 
     try:
@@ -70,13 +71,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class GardenaSmartSystem:
     """A Gardena Smart System wrapper class."""
 
-    def __init__(self, hass, *, email, password, client_id, smart_system=SmartSystem):
+    def __init__(self, hass, *, client_id, client_secret, smart_system=SmartSystem):
         """Initialize the Gardena Smart System."""
         self._hass = hass
         self.smart_system = smart_system(
-            email=email,
-            password=password,
-            client_id=client_id)
+            client_id=client_id,
+            client_secret=client_secret)
 
     async def start(self):
         try:
