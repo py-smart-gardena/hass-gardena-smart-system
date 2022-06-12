@@ -17,7 +17,7 @@ Custom component to support Gardena Smart System devices.
   - [Manual installation](#manual-installation)
 - [Configuration](#configuration)
   - [Home Assistant](#home-assistant)
-  - [Gardena Application Key / Client ID](#gardena-application-key--client-id)
+  - [Gardena Application Key / Client ID and Application secret / client secret](#gardena-application-key--client-id-and-application-secret--client-secret)
 - [Supported devices](#supported-devices)
 - [Services](#services)
   - [Smart Irrigation Control services](#smart-irrigation-control-services)
