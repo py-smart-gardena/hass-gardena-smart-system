@@ -1,30 +1,25 @@
 """Support for Gardena Smart System devices."""
 import logging
-from gardena.exceptions.authentication_exception import AuthenticationException
 
+from gardena.exceptions.authentication_exception import AuthenticationException
 from gardena.smart_system import SmartSystem
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    CONF_CLIENT_ID,
+    EVENT_HOMEASSISTANT_STOP,
+)
+from homeassistant.core import HomeAssistant
 from oauthlib.oauth2.rfc6749.errors import (
     AccessDeniedError,
     InvalidClientError,
     MissingTokenError,
 )
-import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_CLIENT_ID,
-    CONF_EMAIL,
-    CONF_PASSWORD,
-    EVENT_HOMEASSISTANT_STOP,
-)
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import discovery
-from .const import(
+from .const import (
     DOMAIN,
     GARDENA_LOCATION,
     GARDENA_SYSTEM,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,9 +39,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     gardena_system = GardenaSmartSystem(
         hass,
-        email=entry.data[CONF_EMAIL],
-        password=entry.data[CONF_PASSWORD],
-        client_id=entry.data[CONF_CLIENT_ID])
+        client_id=entry.data[CONF_CLIENT_ID],
+        client_secret=entry.data[CONF_CLIENT_ID],
+    )
 
     try:
         await gardena_system.start()
@@ -68,7 +63,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, component))
 
-    _LOGGER.debug("Gardena Smart System component setup finished")
     _LOGGER.debug("Gardena Smart System component setup finished")
     return True
 
@@ -101,8 +95,10 @@ class GardenaSmartSystem:
             self._hass.data[DOMAIN][GARDENA_LOCATION] = location
             _LOGGER.debug("Starting GardenaSmartSystem websocket")
             self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
+            _LOGGER.debug("Websockete connected !")
         except AuthenticationException as ex:
-            _LOGGER.error(f"Authentication failed : {ex.message}. You may need to check your token or create a new app in the gardena api and use the new token.")
+            _LOGGER.error(
+                f"Authentication failed : {ex.message}. You may need to check your token or create a new app in the gardena api and use the new token.")
 
     async def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")

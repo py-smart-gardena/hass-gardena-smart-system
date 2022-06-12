@@ -1,20 +1,17 @@
 """Config flow for Gardena integration."""
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
 
-from gardena.smart_system import SmartSystem
-
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
+from gardena.smart_system import SmartSystem
 from homeassistant import config_entries
-from homeassistant.core import callback
 from homeassistant.const import (
     CONF_CLIENT_ID,
-    CONF_EMAIL,
+    CONF_CLIENT_SECRET,
     CONF_ID,
-    CONF_PASSWORD,
 )
-import homeassistant.helpers.config_validation as cv
+from homeassistant.core import callback
 
 from .const import (
     DOMAIN,
@@ -26,9 +23,7 @@ from .const import (
     DEFAULT_SMART_WATERING_DURATION,
 )
 
-
 _LOGGER = logging.getLogger(__name__)
-
 
 DEFAULT_OPTIONS = {
     CONF_MOWER_DURATION: DEFAULT_MOWER_DURATION,
@@ -48,9 +43,8 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
         errors = {}
 
         fields = OrderedDict()
-        fields[vol.Required(CONF_EMAIL)] = str
-        fields[vol.Required(CONF_PASSWORD)] = str
         fields[vol.Required(CONF_CLIENT_ID)] = str
+        fields[vol.Required(CONF_CLIENT_SECRET)] = str
 
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(fields), errors=errors
@@ -64,10 +58,9 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
         errors = {}
         try:
             await try_connection(
-                user_input[CONF_EMAIL],
-                user_input[CONF_PASSWORD],
-                user_input[CONF_CLIENT_ID])
-        except Exception:  # pylint: disable=broad-except
+                user_input[CONF_CLIENT_ID],
+                user_input[CONF_CLIENT_SECRET])
+            except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
             return await self._show_setup_form(errors)
@@ -81,9 +74,8 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
             title="",
             data={
                 CONF_ID: unique_id,
-                CONF_EMAIL: user_input[CONF_EMAIL],
-                CONF_PASSWORD: user_input[CONF_PASSWORD],
                 CONF_CLIENT_ID: user_input[CONF_CLIENT_ID],
+                CONF_CLIENT_SECRET: user_input[CONF_CLIENT_SECRET]
             })
 
     @staticmethod

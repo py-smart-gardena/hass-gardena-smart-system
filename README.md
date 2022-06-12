@@ -32,6 +32,9 @@ Custom component to support Gardena Smart System devices.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+> :warning: **Starting from version 1.0.0b5**: You might probably have to uninstall and reinstall the integration as credentials requirements and method has changed.
+
+
 ## About
 
 This component is originally based on
@@ -91,7 +94,7 @@ ln -s ../hass-gardena-smart-system/custom_components/gardena_smart_system
 ### Home Assistant
 
 Setup under Integrations in Home Assistant, search for "Gardena Smart
-System". You need to enter e-mail, password and your application key / client ID. See below for how to get your Gardena application key.
+System". You need to enter your application key / client ID and your applications secret / client secret. See below for how to get your Gardena application key and secret.
 
 After setting up the integration, you can adjust some options on the
 integration panel for it.
@@ -101,7 +104,7 @@ Home Assistant GUI (uses config flow), you might have to restart Home
 Assistant to get it working.
 
 
-### Gardena Application Key / Client ID
+### Gardena Application Key / Client ID and Application secret / client secret
 
 In order to use this integration you must get a client ID /
 Application Key from Gardena/Husqvarna.
@@ -120,7 +123,7 @@ Application Key from Gardena/Husqvarna.
 5. Click on "+Connect new API" and connect the Authentication API and
    the GARDENA smart system API.
 
-6. Copy your Application Key, this is what you need when you add the integration in Home Assistant.
+6. Copy your Application Key and Application secret, this is what you need when you add the integration in Home Assistant.
 
 
 ## Supported devices
