@@ -60,7 +60,7 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
             await try_connection(
                 user_input[CONF_CLIENT_ID],
                 user_input[CONF_CLIENT_SECRET])
-            except Exception:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
             return await self._show_setup_form(errors)
