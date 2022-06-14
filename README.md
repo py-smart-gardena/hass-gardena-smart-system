@@ -32,7 +32,7 @@ Custom component to support Gardena Smart System devices.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-> :warning: **Starting from version 1.0.0b5**: You might probably have to uninstall and reinstall the integration as credentials requirements and method has changed.
+> :warning: **Starting from version 1.0.0b5: You might probably have to uninstall and reinstall the integration as credentials requirements and method has changed. THERE IS A BREAKING CHANGE IN THE CONFIGURATION DUE TO AN UPDATE ON THE GARDENA API**
 
 
 ## About
