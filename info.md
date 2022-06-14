@@ -36,6 +36,13 @@ Custom component to support Gardena Smart System devices.
 - [Recipes](#recipes)
 - [Development](#development)
   - [Debugging](#debugging)
+- [Changelog](#changelog)
+  - [1.0.0b5](#100b5)
+  - [0.2.1](#021)
+  - [0.2.0](#020)
+  - [0.1.0](#010)
+- [Development](#development-1)
+  - [Debugging](#debugging-1)
   - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
