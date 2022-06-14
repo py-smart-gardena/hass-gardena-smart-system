@@ -6,6 +6,11 @@
 ### NB!: This is a Beta version!
 {% endif %}
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
+
+Feel free to join the discord server : [![Support Server](https://img.shields.io/discord/853252789522268180.svg?color=7289da&label=Discord&logo=discord&style=flat-square)](https://discord.gg/59sFjykS)
+
 # Home Assistant integration for Gardena Smart System
 
 Custom component to support Gardena Smart System devices.
@@ -20,7 +25,7 @@ Custom component to support Gardena Smart System devices.
   - [Manual installation](#manual-installation)
 - [Configuration](#configuration)
   - [Home Assistant](#home-assistant)
-  - [Gardena Application Key / Client ID](#gardena-application-key--client-id)
+  - [Gardena Application Key / Client ID and Application secret / client secret](#gardena-application-key--client-id-and-application-secret--client-secret)
 - [Supported devices](#supported-devices)
 - [Services](#services)
   - [Smart Irrigation Control services](#smart-irrigation-control-services)
@@ -28,16 +33,15 @@ Custom component to support Gardena Smart System devices.
   - [Smart Power Socket services](#smart-power-socket-services)
   - [Smart Sensor services](#smart-sensor-services)
   - [Smart Water Control services](#smart-water-control-services)
-- [Changelog](#changelog)
-  - [1.0.0b5](#100b5)
-  - [0.2.1](#021)
-  - [0.2.0](#020)
-  - [0.1.0](#010)
+- [Recipes](#recipes)
 - [Development](#development)
   - [Debugging](#debugging)
   - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+> :warning: **Starting from version 1.0.0b5: You might probably have to uninstall and reinstall the integration as credentials requirements and method has changed. THERE IS A BREAKING CHANGE IN THE CONFIGURATION DUE TO AN UPDATE ON THE GARDENA API**
+
 
 ## About
 
@@ -51,23 +55,24 @@ also been cleaned up and some bugs have been fixed. Gardena devices
 are now represented as Home Assistant devices, which have battery
 level sensors where applicable.
 
-The py-smart-gardena has been forked and is now
-https://github.com/osks/py-smart-gardena2 and modelType / model_type
-has been added.
+**This project needs your support.**  
+Gardena equipments are expensive, and I need to buy them in order to add support.
+If you find this library useful and want to help me support more devices (or if you
+just want to reward me for my spent time), you are very welcome !   
+Your help is very much appreciated.
 
+Here are the links if you want to show your support :  
+<span class="badge-paypal"><a href="https://paypal.me/grmklein" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
 
 ## Installation
 
-Requires Home Assistant 0.110 or newer.
+Requires Home Assistant 0.115.0 or newer.
 
 ### Installation through HACS
 
 If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk through the installation and configuration.
 
-Use "https://github.com/py-smart-gardena/hass-gardena-smart-system" as URL for
-a new HACS custom repository.
-
-Then find the Gardena Smart System integration in HACS and install it.
+Then find the Gardena Smart System integration in HACS and install it. 
 
 Restart Home Assistant!
 
@@ -76,9 +81,9 @@ Install the new integration through *Configuration -> Integrations* in HA (see b
 
 ### Manual installation
 
-Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation.
+Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation. 
 
-Alternatively use the following commands within an SSH shell into your HA system.
+Alternatively use the following commands within an SSH shell into your HA system.   
 Do NOT try to execute these commands directly your PC on a mounted HA file system. The resulting symlink would be broken for the HA file system.
 ```
 cd /config
@@ -97,7 +102,7 @@ ln -s ../hass-gardena-smart-system/custom_components/gardena_smart_system
 ### Home Assistant
 
 Setup under Integrations in Home Assistant, search for "Gardena Smart
-System". You need to enter e-mail, password and your application key / client ID. See below for how to get your Gardena application key.
+System". You need to enter your application key / client ID and your applications secret / client secret. See below for how to get your Gardena application key and secret.
 
 After setting up the integration, you can adjust some options on the
 integration panel for it.
@@ -107,7 +112,7 @@ Home Assistant GUI (uses config flow), you might have to restart Home
 Assistant to get it working.
 
 
-### Gardena Application Key / Client ID
+### Gardena Application Key / Client ID and Application secret / client secret
 
 In order to use this integration you must get a client ID /
 Application Key from Gardena/Husqvarna.
@@ -126,12 +131,12 @@ Application Key from Gardena/Husqvarna.
 5. Click on "+Connect new API" and connect the Authentication API and
    the GARDENA smart system API.
 
-6. Copy your Application Key, this is what you need when you add the integration in Home Assistant.
+6. Copy your Application Key and Application secret, this is what you need when you add the integration in Home Assistant.
 
 
 ## Supported devices
 
-The following devices are supported but not all of them have been tested.
+The following devices are supported :
 
 * Gardena Smart Irrigation Control (as switch)
 * Gardena Smart Mower (as vacuum)
@@ -147,16 +152,16 @@ The following devices are supported but not all of them have been tested.
 
 ### Smart Mower services
 
-`vacuum.start`
-Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.
+`vacuum.start`  
+Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.  
 The mower switches to manual operation for a defined duration of time.   The duration is taken from the integration option "*Mower Duration (minutes)*" (see *Configuration -> Integrations* in HA).
 
-`vacuum.stop`
-Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.
+`vacuum.stop`  
+Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.  
 The mower cancels the current operation, returns to charging station and ignores schedule.
 
-`vacuum.return_to_base`
-Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.
+`vacuum.return_to_base`  
+Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 
 ### Smart Power Socket services
@@ -170,6 +175,36 @@ The mower cancels the current operation and returns to charging station. It will
 ### Smart Water Control services
 
 > [TODO: document services]
+
+## Recipes
+
+Some recipes were made by the community.
+You can find them [here](RECIPES.md).
+
+## Development
+
+### Debugging
+
+To enable debug logging for this integration and related libraries you
+can control this in your Home Assistant `configuration.yaml`
+file. Example:
+
+```
+logger:
+  default: info
+  logs:
+    custom_components.gardena_smart_system: debug
+    custom_components.gardena_smart_system.mower : debug
+    custom_components.gardena_smart_system.sensor : debug
+    custom_components.gardena_smart_system.switch : debug
+    custom_components.gardena_smart_system.config_flow : debug
+
+    gardena: debug
+    gardena.smart_system: debug
+    websocket: debug
+```
+
+After a restart detailed log entries will appear in `/config/home-assistant.log`.
 
 ## Changelog
 
