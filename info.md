@@ -172,6 +172,9 @@ The mower cancels the current operation and returns to charging station. It will
 
 ## Changelog
 
+### 1.0.0b5
+- Update credentials requirements : the integration need to be completely removed from home assistant and resintalled
+
 ### 0.2.1
 - Correct a bug with some mowers where the wrong id was chosen
 - Correct a bug with the water pump where the wrong id was chosen
