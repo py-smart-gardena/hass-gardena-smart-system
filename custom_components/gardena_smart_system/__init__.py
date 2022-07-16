@@ -1,4 +1,5 @@
 """Support for Gardena Smart System devices."""
+import asyncio
 import logging
 
 from gardena.exceptions.authentication_exception import AuthenticationException
@@ -71,10 +72,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class GardenaSmartSystem:
     """A Gardena Smart System wrapper class."""
 
-    def __init__(self, hass, *, client_id, client_secret, smart_system=SmartSystem):
+    def __init__(self, hass, client_id, client_secret):
         """Initialize the Gardena Smart System."""
         self._hass = hass
-        self.smart_system = smart_system(
+        self.smart_system = SmartSystem(
             client_id=client_id,
             client_secret=client_secret)
 
@@ -94,8 +95,8 @@ class GardenaSmartSystem:
             await self.smart_system.update_devices(location)
             self._hass.data[DOMAIN][GARDENA_LOCATION] = location
             _LOGGER.debug("Starting GardenaSmartSystem websocket")
-            self._hass.async_create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
-            _LOGGER.debug("Websockete connected !")
+            asyncio.create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
+            _LOGGER.debug("Websocket thread launched !")
         except AuthenticationException as ex:
             _LOGGER.error(
                 f"Authentication failed : {ex.message}. You may need to check your token or create a new app in the gardena api and use the new token.")
