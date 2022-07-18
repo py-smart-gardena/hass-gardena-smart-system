@@ -115,7 +115,7 @@ Application Key from Gardena/Husqvarna.
    account.
 
 3. After signing in you will be automatically redirected to "Your
-   applications". (Otherwise go to: https://developer.husqvarnagroup.cloud/apps)
+   applications". (Otherwise go to: https://developer.husqvarnagroup.cloud/applications)
 
 4. Create an new application, name it for example "My Home Assistant"
    (doesn't matter), leave the other fields empty.
