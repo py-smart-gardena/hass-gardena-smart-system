@@ -1,42 +1,40 @@
 """Support for Gardena Smart System sensors."""
 import logging
 
-from homeassistant.const import (
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_TEMPERATURE,
-    TEMP_CELSIUS,
-)
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import (SensorDeviceClass,
+                                             UnitOfTemperature)
+from homeassistant.const import ATTR_BATTERY_LEVEL, PERCENTAGE
 from homeassistant.core import callback
-from homeassistant.const import (
-    ATTR_BATTERY_LEVEL,
-    DEVICE_CLASS_BATTERY,
-    PERCENTAGE,
-)
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
-from .const import (
-    DOMAIN,
-    ATTR_BATTERY_STATE,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    ATTR_SERIAL,
-    GARDENA_LOCATION,
-)
+from .const import (ATTR_BATTERY_STATE, ATTR_RF_LINK_LEVEL, ATTR_RF_LINK_STATE,
+                    DOMAIN, GARDENA_LOCATION)
 
 _LOGGER = logging.getLogger(__name__)
 
 SOIL_SENSOR_TYPES = {
-    "soil_temperature": [TEMP_CELSIUS, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE],
-    "soil_humidity": ["%", "mdi:water-percent", DEVICE_CLASS_HUMIDITY],
-    ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", DEVICE_CLASS_BATTERY],
+    "soil_temperature": [
+        UnitOfTemperature.CELSIUS,
+        "mdi:thermometer",
+        SensorDeviceClass.TEMPERATURE,
+    ],
+    "soil_humidity": ["%", "mdi:water-percent", SensorDeviceClass.HUMIDITY],
+    ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", SensorDeviceClass.BATTERY],
 }
 
-SENSOR_TYPES = {**{
-    "ambient_temperature": [TEMP_CELSIUS, "mdi:thermometer", DEVICE_CLASS_TEMPERATURE],
-    "light_intensity": ["lx", None, DEVICE_CLASS_ILLUMINANCE],
-}, **SOIL_SENSOR_TYPES}
+SENSOR_TYPES = {
+    **{
+        "ambient_temperature": [
+            UnitOfTemperature.CELSIUS,
+            "mdi:thermometer",
+            SensorDeviceClass.TEMPERATURE,
+        ],
+        "light_intensity": ["lx", None, SensorDeviceClass.ILLUMINANCE],
+    },
+    **SOIL_SENSOR_TYPES,
+}
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Perform the setup for Gardena sensor devices."""
@@ -45,7 +43,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         for sensor_type in SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
 
-    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SOIL_SENSOR"):
+    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
+        "SOIL_SENSOR"
+    ):
         for sensor_type in SOIL_SENSOR_TYPES:
             entities.append(GardenaSensor(sensor, sensor_type))
 
@@ -53,7 +53,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         # Add battery sensor for mower
         entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
 
-    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
+    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
+        "WATER_CONTROL"
+    ):
         # Add battery sensor for water control
         entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
     _LOGGER.debug("Adding sensor as sensor %s", entities)
