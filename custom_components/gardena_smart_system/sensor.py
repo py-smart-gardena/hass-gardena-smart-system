@@ -4,12 +4,10 @@ import logging
 from homeassistant.components.sensor import SensorDeviceClass, UnitOfTemperature
 
 from homeassistant.helpers.entity import Entity
-from homeassistant.core import callback
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     PERCENTAGE,
 )
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from .const import (
     DOMAIN,
