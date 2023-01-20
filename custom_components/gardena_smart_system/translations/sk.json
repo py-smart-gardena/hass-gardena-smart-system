@@ -1,0 +1,36 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Poloha je už nakonfigurovaná"
+    },
+    "error": {
+      "cannot_connect": "Nepodarilo sa pripojiť, skúste to znova.",
+      "invalid_auth": "Neplatné overenie.",
+      "too_many_requests": "Príliš veľa žiadostí, skúste to neskôr.",
+      "unknown": "Neočakávaná chyba."
+    },
+    "step": {
+      "user": {
+        "description": "Zadajte svoje poverenia.",
+        "data": {
+          "email": "E-mail",
+          "password": "Heslo",
+          "client_id": "Aplikačný kľúč / ID klienta"
+        },
+        "title": "Gardena Smart System"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "mower_duration": "Trvanie mower (minúty)",
+          "smart_irrigation_control_duration": "Trvanie inteligentného riadenia zavlažovania (minúty)",
+          "smart_watering_duration": "Trvanie inteligentného zavlažovania (minúty)"
+        },
+        "title": "Gardena Smart System - Možnosti"
+      }
+    }
+  }
+}
