@@ -1,7 +1,7 @@
 """Support for Gardena mower."""
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from homeassistant.core import callback
 from homeassistant.components.vacuum import (
@@ -30,6 +30,8 @@ from .const import (
     ATTR_LAST_ERROR,
     ATTR_ERROR,
     ATTR_STATE,
+    ATTR_STINT_START,
+    ATTR_STINT_END,
     CONF_MOWER_DURATION,
     DEFAULT_MOWER_DURATION,
     DOMAIN,
@@ -69,6 +71,8 @@ class GardenaSmartMower(StateVacuumEntity):
         self._unique_id = f"{self._device.serial}-mower"
         self._state = None
         self._error_message = ""
+        self._stint_start = None
+        self._stint_end = None
 
     async def async_added_to_hass(self):
         """Subscribe to events."""
@@ -104,8 +108,13 @@ class GardenaSmartMower(StateVacuumEntity):
                 "OK_CUTTING_TIMER_OVERRIDDEN",
                 "OK_LEAVING",
             ]:
+                if self._state != STATE_CLEANING:
+                    self._stint_start = datetime.now()
+                    self._stint_end = None
                 self._state = STATE_CLEANING
             elif activity == "OK_SEARCHING":
+                if self._state == STATE_CLEANING:
+                    self._stint_end = datetime.now()
                 self._state = STATE_RETURNING
             elif activity in [
                 "OK_CHARGING",
@@ -161,7 +170,9 @@ class GardenaSmartMower(StateVacuumEntity):
             ATTR_OPERATING_HOURS: self._device.operating_hours,
             ATTR_LAST_ERROR: self._device.last_error_code,
             ATTR_ERROR: "NONE" if self._device.activity != "NONE" else self._device.last_error_code,
-            ATTR_STATE: self._device.activity if self._device.activity != "NONE" else self._device.last_error_code
+            ATTR_STATE: self._device.activity if self._device.activity != "NONE" else self._device.last_error_code,
+            ATTR_STINT_START: self._stint_start,
+            ATTR_STINT_END: self._stint_end
         }
 
     @property
