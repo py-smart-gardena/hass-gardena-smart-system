@@ -19,10 +19,10 @@
         "cleaning": "Mäht",
         "docked": "Angedockt",
         "error": "Fehler",
-        "idle": "[%key:common::state::idle%]",
-        "off": "[%key:common::state::off%]",
-        "on": "[%key:common::state::on%]",
-        "paused": "[%key:common::state::paused%]",
+        "idle": "Inaktiv",
+        "off": "Aus",
+        "on": "An",
+        "paused": "Pausiert",
         "returning": "Zurück zum Dock"
       }
     }
