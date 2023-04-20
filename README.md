@@ -156,17 +156,42 @@ The mower cancels the current operation, returns to charging station and ignores
 Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 
+### Smart System general
+
+`binary_sensor.gardena_smart_system_connection`
+Checks if service is connected or disconnected
+
 ### Smart Power Socket services
 
 > [TODO: document services]
 
 ### Smart Sensor services
 
-> [TODO: document services]
+`sensor.sensor_light_intensity`
+Read the light intensity of a smart sensor. Only V1 of the Smart Sensor supports this.
+
+`sensor.sensor_soil_humidity`
+Read the soil humidity of a smart sensor. This can help automate your Water control / Irrigation Controller.
+
+`sensor.sensor_soil_temperature`
+Read the soil tempature.
+
+`sensor.sensor_ambient_temperature`
+Read the ambient tempature of a smart sensor.
+
+`sensor.sensor_battery_level`
+Read the battery level of a smart sensor.
 
 ### Smart Water Control services
 
 > [TODO: document services]
+
+### Smart Irigation Control services
+
+`switch.irrigation_control_valve_X`
+Open or close a valve to start watering . Irrigation control can have up to 6 valves and inherits the original name of each valve from the Gardena app. If a valve is not connected, the service for the specific valve is unavailable. 
+
+
 
 ## Recipes
 
