@@ -7,7 +7,7 @@
       "cannot_connect": "Det gick inte att ansluta, försök igen.",
       "invalid_auth": "Ogiltig autentisering.",
       "too_many_requests": "För många förfrågningar, försök igen senare.",
-      "unknown": "Unexpected error."
+      "unknown": "Oväntat fel."
     },
     "step": {
       "user": {
