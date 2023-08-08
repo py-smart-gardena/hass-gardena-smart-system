@@ -16,6 +16,7 @@ from homeassistant.components.vacuum import (
     STATE_DOCKED,
     STATE_RETURNING,
     STATE_ERROR,
+    STATE_IDLE,
     ATTR_BATTERY_LEVEL,
 )
 
@@ -94,9 +95,12 @@ class GardenaSmartMower(StateVacuumEntity):
         state = self._device.state
         _LOGGER.debug("Mower has state %s", state)
         if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
-            _LOGGER.debug("Mower has an error")
-            self._state = STATE_ERROR
             self._error_message = self._device.last_error_code
+            if self._device.last_error_code == "PARKED_DAILY_LIMIT_REACHED":
+                self._state = STATE_IDLE
+            else:
+                _LOGGER.debug("Mower has an error")
+                self._state = STATE_ERROR
         else:
             _LOGGER.debug("Getting mower state")
             activity = self._device.activity
