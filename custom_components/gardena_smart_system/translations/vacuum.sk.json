@@ -3,20 +3,20 @@
     "device_automation": {
       "condition_type": {
         "is_docked": "{entity_name} je dokovaný",
-        "is_cleaning": "{entity_name} is cutting"
+        "is_cleaning": "{entity_name} kosí"
       },
       "trigger_type": {
-        "cleaning": "{entity_name} started cutting",
-        "docked": "{entity_name} docked"
+        "cleaning": "{entity_name} začalo kosenie",
+        "docked": "{entity_name} dokovaný"
       },
       "action_type": {
-        "clean": "Let {entity_name} cut",
+        "clean": "Let {entity_name} kosenie",
         "dock": "Let {entity_name} návrat do doku"
       }
     },
     "state": {
       "_": {
-        "cleaning": "Cutting",
+        "cleaning": "Kosenie",
         "docked": "Dokovaný",
         "error": "Chyba",
         "idle": "[%key:common::state::idle%]",
