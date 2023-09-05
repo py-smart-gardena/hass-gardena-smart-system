@@ -1,0 +1,36 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Platsen är redan konfigurerad"
+    },
+    "error": {
+      "cannot_connect": "Det gick inte att ansluta, försök igen.",
+      "invalid_auth": "Ogiltig autentisering.",
+      "too_many_requests": "För många förfrågningar, försök igen senare.",
+      "unknown": "Oväntat fel."
+    },
+    "step": {
+      "user": {
+        "description": "Ange dina uppgifter",
+        "data": {
+          "email": "Epost",
+          "password": "Lösenord",
+          "client_id": "Application Key / Client ID"
+        },
+        "title": "Gardena Smart System"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "mower_duration": "Gräsklipparens varaktighet (minuter)",
+          "smart_irrigation_control_duration": "Smart Irrigation Control varaktighet (minuter)",
+          "smart_watering_duration": "Smart Watering varaktighet (minuter)"
+        },
+        "title": "Gardena Smart System - valmöjligheter"
+      }
+    }
+  }
+}
