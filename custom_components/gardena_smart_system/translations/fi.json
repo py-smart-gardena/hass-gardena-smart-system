@@ -1,0 +1,36 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Sijainti on jo määritelty"
+    },
+    "error": {
+      "cannot_connect": "Yhteys epäonnistui, yritä uudelleen.",
+      "invalid_auth": "Tunnistautuminen epäonnistui.",
+      "too_many_requests": "Liian monta yritystä, yritä myöhemmin uudestaan.",
+      "unknown": "Odottamaton virhe."
+    },
+    "step": {
+      "user": {
+        "description": "Syötä tunnistautumistiedot.",
+        "data": {
+          "email": "Sähköposti",
+          "password": "Salasana",
+          "client_id": "Application Key / Client ID"
+        },
+        "title": "Gardena Smart System"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "mower_duration": "Ruohonleikkuun kesto (minuuttia)",
+          "smart_irrigation_control_duration": "Smart Irrigation Control kesto (minuuttia)",
+          "smart_watering_duration": "Smart Watering Control kesto (minuuttia)"
+        },
+        "title": "Gardena Smart System - valinnat"
+      }
+    }
+  }
+}
