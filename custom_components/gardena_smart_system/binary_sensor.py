@@ -1,16 +1,20 @@
 """Support for Gardena Smart System websocket connection status."""
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_CONNECTIVITY,
+    BinarySensorDeviceClass,
     BinarySensorEntity,
 )
 
 from custom_components.gardena_smart_system import GARDENA_SYSTEM
+
 from .const import DOMAIN
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Perform the setup for Gardena websocket connection status."""
-    async_add_entities([SmartSystemWebsocketStatus(hass.data[DOMAIN][GARDENA_SYSTEM].smart_system)], True)
+    async_add_entities(
+        [SmartSystemWebsocketStatus(hass.data[DOMAIN][GARDENA_SYSTEM].smart_system)],
+        True,
+    )
 
 
 class SmartSystemWebsocketStatus(BinarySensorEntity):
@@ -54,4 +58,4 @@ class SmartSystemWebsocketStatus(BinarySensorEntity):
     @property
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_CONNECTIVITY
+        return BinarySensorDeviceClass.CONNECTIVITY
