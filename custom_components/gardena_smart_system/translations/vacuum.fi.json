@@ -1,0 +1,29 @@
+{
+    "title": "Ruohonleikkuri",
+    "device_automation": {
+      "condition_type": {
+        "is_docked": "{entity_name} on latausasemassa",
+        "is_cleaning": "{entity_name} leikkaa ruohoa"
+      },
+      "trigger_type": {
+        "cleaning": "{entity_name} alkoi leikkaamaan ruohoa",
+        "docked": "{entity_name} palasi latausasemaan"
+      },
+      "action_type": {
+        "clean": "Laita {entity_name} leikkaamaan ruohoa",
+        "dock": "Palauta {entity_name} latausasemaan"
+      }
+    },
+    "state": {
+      "_": {
+        "cleaning": "Leikkaa ruohoa",
+        "docked": "Latausasemassa",
+        "error": "Virhe",
+        "idle": "[%key:common::state::idle%]",
+        "off": "[%key:common::state::off%]",
+        "on": "[%key:common::state::on%]",
+        "paused": "[%key:common::state::paused%]",
+        "returning": "Palaamassa latausasemaan"
+      }
+    }
+  }
