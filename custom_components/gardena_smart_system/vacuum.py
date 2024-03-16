@@ -3,21 +3,17 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from homeassistant.core import callback
+from homeassistant.const import (
+    ATTR_BATTERY_LEVEL,
+    STATE_IDLE,
+)
 from homeassistant.components.vacuum import (
     StateVacuumEntity,
-    SUPPORT_BATTERY,
-    SUPPORT_RETURN_HOME,
-    SUPPORT_STATE,
-    SUPPORT_STOP,
-    SUPPORT_START,
-    STATE_PAUSED,
     STATE_CLEANING,
     STATE_DOCKED,
     STATE_RETURNING,
     STATE_ERROR,
-    STATE_IDLE,
-    ATTR_BATTERY_LEVEL,
+    VacuumEntityFeature,
 )
 
 from .const import (
@@ -38,7 +34,6 @@ from .const import (
     DOMAIN,
     GARDENA_LOCATION,
 )
-from .sensor import GardenaSensor
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,7 +41,13 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(minutes=1)
 
 SUPPORT_GARDENA = (
-    SUPPORT_BATTERY | SUPPORT_RETURN_HOME | SUPPORT_STOP | SUPPORT_START | SUPPORT_STATE
+    VacuumEntityFeature.BATTERY |
+    VacuumEntityFeature.PAUSE |
+    VacuumEntityFeature.RETURN_HOME |
+    VacuumEntityFeature.SEND_COMMAND |
+    VacuumEntityFeature.START |
+    VacuumEntityFeature.STATE |
+    VacuumEntityFeature.STOP
 )
 
 
@@ -106,7 +107,7 @@ class GardenaSmartMower(StateVacuumEntity):
             activity = self._device.activity
             _LOGGER.debug("Mower has activity %s", activity)
             if activity == "PAUSED":
-                self._state = STATE_PAUSED
+                self._state = PAUSE
             elif activity in [
                 "OK_CUTTING",
                 "OK_CUTTING_TIMER_OVERRIDDEN",
