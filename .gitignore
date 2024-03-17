@@ -12,3 +12,5 @@ eggs
 *#
 *.orig
 .idea
+.venv/
+.venv-test/
