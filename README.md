@@ -47,13 +47,13 @@ also been cleaned up and some bugs have been fixed. Gardena devices
 are now represented as Home Assistant devices, which have battery
 level sensors where applicable.
 
-**This project needs your support.**  
+**This project needs your support.**
 Gardena equipments are expensive, and I need to buy them in order to add support.
 If you find this library useful and want to help me support more devices (or if you
-just want to reward me for my spent time), you are very welcome !   
+just want to reward me for my spent time), you are very welcome !
 Your help is very much appreciated.
 
-Here are the links if you want to show your support :  
+Here are the links if you want to show your support :
 <span class="badge-paypal"><a href="https://paypal.me/grmklein" title="Donate to this project using Paypal"><img src="https://img.shields.io/badge/paypal-donate-yellow.svg" alt="PayPal donate button" /></a></span>
 
 ## Installation
@@ -64,7 +64,7 @@ Requires Home Assistant 0.115.0 or newer.
 
 If you have not yet installed HACS, go get it at https://hacs.xyz/ and walk through the installation and configuration.
 
-Then find the Gardena Smart System integration in HACS and install it. 
+Then find the Gardena Smart System integration in HACS and install it.
 
 Restart Home Assistant!
 
@@ -73,9 +73,9 @@ Install the new integration through *Configuration -> Integrations* in HA (see b
 
 ### Manual installation
 
-Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation. 
+Copy the sub-path `/hass-gardena-smart-system/custom_components/gardena_smart_system` of this repo into the path `/config/custom_components/gardena_smart_system` of your HA installation.
 
-Alternatively use the following commands within an SSH shell into your HA system.   
+Alternatively use the following commands within an SSH shell into your HA system.
 Do NOT try to execute these commands directly your PC on a mounted HA file system. The resulting symlink would be broken for the HA file system.
 ```
 cd /config
@@ -144,16 +144,16 @@ The following devices are supported :
 
 ### Smart Mower services
 
-`vacuum.start`  
-Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.  
+`vacuum.start`
+Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.
 The mower switches to manual operation for a defined duration of time.   The duration is taken from the integration option "*Mower Duration (minutes)*" (see *Configuration -> Integrations* in HA).
 
-`vacuum.stop`  
-Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.  
+`vacuum.stop`
+Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.
 The mower cancels the current operation, returns to charging station and ignores schedule.
 
-`vacuum.return_to_base`  
-Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
+`vacuum.return_to_base`
+Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 
 ### Smart System general
@@ -170,8 +170,8 @@ Checks if service is connected or disconnected
 `sensor.sensor_light_intensity`
 Read the light intensity of a smart sensor. Only V1 of the Smart Sensor supports this.
 
-`sensor.sensor_soil_humidity`
-Read the soil humidity of a smart sensor. This can help automate your Water control / Irrigation Controller.
+`sensor.sensor_soil_moisture`
+Read the soil moisture of a smart sensor. This can help automate your Water control / Irrigation Controller.
 
 `sensor.sensor_soil_temperature`
 Read the soil tempature.
@@ -189,7 +189,7 @@ Read the battery level of a smart sensor.
 ### Smart Irigation Control services
 
 `switch.irrigation_control_valve_X`
-Open or close a valve to start watering . Irrigation control can have up to 6 valves and inherits the original name of each valve from the Gardena app. If a valve is not connected, the service for the specific valve is unavailable. 
+Open or close a valve to start watering . Irrigation control can have up to 6 valves and inherits the original name of each valve from the Gardena app. If a valve is not connected, the service for the specific valve is unavailable.
 
 
 

@@ -47,17 +47,17 @@ The problem of Gardena automation for lawn irrigation is that this ...
        entity_id: sensor.garden_sensor_ambient_temperature
        above: 5
      - condition: numeric_state
-       entity_id: sensor.garden_sensor_soil_humidity
+       entity_id: sensor.garden_sensor_soil_moisture
        below: 10
   action:
     - service: timer.start
       entity_id: timer.timer.lawn_irrigation_garden
     - service: switch.turn_on
       entity_id: switch.garden_water_control
-    - delay: 0:12:00 
+    - delay: 0:12:00
     - service: switch.turn_off
       entity_id: switch.garden_water_control
-    - delay: 0:60:00 
+    - delay: 0:60:00
     - service: switch.turn_on
       entity_id: switch.garden_water_control
     - delay: 0:24:00
@@ -67,7 +67,7 @@ The problem of Gardena automation for lawn irrigation is that this ...
     - service: switch.turn_on
       entity_id: switch.garden_water_control
     - delay: 0:24:00
-    - service: switch.turn_off 
+    - service: switch.turn_off
 ```
 
 ## Notification over [HomeAssistant Companion App](https://companion.home-assistant.io/) or as [Telegram Messenger](https://www.home-assistant.io/integrations/telegram/) message or over [Amazon Alexa with the help of Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player)
@@ -85,7 +85,7 @@ It is not possible to get this notifications over Amazon Alexa from the App
 4. [Gardena Smart Sensor](https://www.gardena.com/de/produkte/bewasserung/bewasserungssteuerung/smart-sensor/967044801/) or other sensors for depending values
 5. [Gardena Pipeline System](https://www.gardena.com/de/produkte/bewasserung/pipelines/)
 6. (optional) [Telegram Messenger Integration](https://www.home-assistant.io/integrations/telegram/)
-7. (optional) [Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player) you can find and install this Integration over HACS 
+7. (optional) [Alexa Media Player Integration](https://github.com/custom-components/alexa_media_player) you can find and install this Integration over HACS
 
 ### Configuration:
 only needed for Telegram
@@ -104,21 +104,21 @@ only needed for Telegram
       data:
         data:
           type: announce
-        target: 
+        target:
           - media_player.radio_livingroom
-        message: "Watering in the garden has started. The humidity is currently {{ states.sensor.garden_sensor_humidity.state }}% the temperature is now {{ states.sensor.garden_sensor_temperature.state }}°C"
+        message: "Watering in the garden has started. The moisture is currently {{ states.sensor.garden_sensor_moisture.state }}% the temperature is now {{ states.sensor.garden_sensor_temperature.state }}°C"
     - service: notify.telegram_[you Telegram channel]
       data_template:
         title: '*Watering in the garden has started!*'
-        message: "Watering in the garden has started. The humidity is currently {{ states.sensor.garden_sensor_humidity.state }}% the temperature is now {{ states.sensor.garden_sensor_temperature.state }}°C -> https://[public HA URL]/lovelace/terrasse"
+        message: "Watering in the garden has started. The moisture is currently {{ states.sensor.garden_sensor_moisture.state }}% the temperature is now {{ states.sensor.garden_sensor_temperature.state }}°C -> https://[public HA URL]/lovelace/terrasse"
         data:
             inline_keyboard:
             - 'Stop watering:/stopwateringgarden'
             - ' Stop for 3 hours:/stopwateringgarden3h, Stop for 24 hours:/stopwateringgarden24h'
-          
+
 - id: 'telegram_stop_watering_garden'
   alias: 'Telegram Stop watering garden'
-  
+
   trigger:
     platform: event
     event_type: telegram_callback
@@ -197,22 +197,22 @@ only needed for Telegram
     - service: notify.notify
       data:
         title: "Watering Garden"
-        message: "Watering in the garden has ended"      
+        message: "Watering in the garden has ended"
    - service: notify.alexa_media
       data:
         data:
           type: announce
-        target: 
+        target:
           - media_player.radio_wohnzimmer
-        message: "Watering in the garden has ended. The humidity is now {{ states.sensor.garden_sensor_humidity.state }}%"
+        message: "Watering in the garden has ended. The moisture is now {{ states.sensor.garden_sensor_moisture.state }}%"
     - service: notify.telegram_[you Telegram channel]
       data_template:
         title: '*Watering in the garden has ended!*'
-        message: "Watering in the garden has ended. The humidity is now {{ states.sensor.garden_sensor_humidity.state }}% -> https://[public HA URL]/lovelace/terrasse"
+        message: "Watering in the garden has ended. The moisture is now {{ states.sensor.garden_sensor_moisture.state }}% -> https://[public HA URL]/lovelace/terrasse"
 ```
 ## Use a NFC tag to start and stop mowing
 
-Normaly my Gardena Irrigation Control works per automations, but in a part of situations i have to start/stop it manualy (i.e. I will fill a pot with water) in this cases i have before use my Smartphone open the App search for the Watercontroll entity and start/stop this. 
+Normaly my Gardena Irrigation Control works per automations, but in a part of situations i have to start/stop it manualy (i.e. I will fill a pot with water) in this cases i have before use my Smartphone open the App search for the Watercontroll entity and start/stop this.
 
 Now with the [NFC tag integration](https://companion.home-assistant.io/docs/integrations/universal-links/) from HomeAssistant thats is more easy than befor, now i’m scan with my Smartphone an tag on my Hose trolley and give the okay that the tag starts the HA App and the water control starts if it's off and stopps if it's on.
 
