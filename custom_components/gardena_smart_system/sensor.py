@@ -26,7 +26,7 @@ SOIL_SENSOR_TYPES = {
         "mdi:thermometer",
         SensorDeviceClass.TEMPERATURE,
     ],
-    "soil_moisture": ["%", "mdi:water-percent", SensorDeviceClass.MOISTURE],
+    "soil_humidity": ["%", "mdi:water-percent", SensorDeviceClass.HUMIDITY],
     ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", SensorDeviceClass.BATTERY],
 }
 
