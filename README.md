@@ -4,6 +4,8 @@
 # Home Assistant integration for Gardena Smart System
 # Modified by Purtzel
 
+# Changes the behavior of the startup to go to normal schedule instead of override mode. Adds “clean_spot” command to vaccum to start override mode.
+
 Custom component to support Gardena Smart System devices.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
