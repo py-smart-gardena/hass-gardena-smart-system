@@ -184,12 +184,20 @@ class GardenaSmartMower(StateVacuumEntity):
     def option_mower_duration(self) -> int:
         return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
 
-    def start(self):
+    def clean_spot(self):
+        """Purtzel: Clean Spot ruft nun START_SECONDS_TO_OVERRIDE auf """
         """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE. Duration is read from integration options."""
         duration = self.option_mower_duration * 60
         _LOGGER.debug("Mower command:  vacuum.start => START_SECONDS_TO_OVERRIDE, %s", duration)
         return asyncio.run_coroutine_threadsafe(
             self._device.start_seconds_to_override(duration), self.hass.loop
+        ).result()
+    
+    def start(self):
+        """Purtzel: ruft nun START_DONT_OVERRIDE auf """        
+        _LOGGER.debug("Mower command:  vacuum.start => START_DONT_OVERRIDE")
+        return asyncio.run_coroutine_threadsafe(
+            self._device.start_dont_override(), self.hass.loop
         ).result()
 
     def stop(self, **kwargs):
