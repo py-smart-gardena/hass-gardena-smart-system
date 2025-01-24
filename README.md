@@ -2,6 +2,9 @@
 [![hass-gardena-smart-system](https://img.shields.io/github/release/py-smart-gardena/hass-gardena-smart-system.svg?1)](https://github.com/py-smart-gardena/hass-gardena-smart-system)
 
 # Home Assistant integration for Gardena Smart System
+# Modified by Purtzel
+
+# Changes the behavior of the startup to go to normal schedule instead of override mode. Adds “clean_spot” command to vaccum to start override mode.
 
 Custom component to support Gardena Smart System devices.
 
