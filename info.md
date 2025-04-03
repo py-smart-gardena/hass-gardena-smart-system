@@ -146,7 +146,7 @@ Application Key from Gardena/Husqvarna.
 The following devices are supported :
 
 * Gardena Smart Irrigation Control (as switch)
-* Gardena Smart Mower (as vacuum)
+* Gardena Smart Mower (as lawn_mower)
 * Gardena Smart Sensor (as sensor)
 * Gardena Smart Water Control (as switch)
 * Gardena Smart Power Socket (as switch)
@@ -159,15 +159,15 @@ The following devices are supported :
 
 ### Smart Mower services
 
-`vacuum.start`  
-Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.  
-The mower switches to manual operation for a defined duration of time.   The duration is taken from the integration option "*Mower Duration (minutes)*" (see *Configuration -> Integrations* in HA).
+`lawn_mower.start_mowing`  
+Start the mower using the Gardena API command START_DONT_OVERRIDE.  
+The mower resumes the schedule.
 
-`vacuum.stop`  
+`lawn_mower.pause`  
 Stop the mower using the Gardena API command PARK_UNTIL_FURTHER_NOTICE.  
 The mower cancels the current operation, returns to charging station and ignores schedule.
 
-`vacuum.return_to_base`  
+`lawn_mower.dock`  
 Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 

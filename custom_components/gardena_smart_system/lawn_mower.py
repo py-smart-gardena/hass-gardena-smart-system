@@ -49,7 +49,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
         entities.append(GardenaSmartMowerLawnMowerEntity(hass, mower, config_entry.options))
 
-    _LOGGER.debug("Adding mower as vacuums: %s", entities)
+    _LOGGER.debug("Adding mower as lawn_mower: %s", entities)
     async_add_entities(entities, True)
 
 
@@ -74,7 +74,7 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
 
     @property
     def should_poll(self) -> bool:
-        """No polling needed for a vacuum."""
+        """No polling needed for a lawn_mower."""
         return False
 
     @property
