@@ -1,7 +1,7 @@
 {
   "name": "Gardena Smart System",
   "version": "1.1.1",
-  "domains": ["sensor", "switch", "vacuum", "binary_sensor"],
+  "domains": ["sensor", "switch", "lawn_mower", "binary_sensor"],
   "render_readme": true,
   "homeassistant": "2023.1.5"
 }

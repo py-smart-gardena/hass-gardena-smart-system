@@ -3,16 +3,17 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
+import voluptuous as vol
+
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
-    STATE_IDLE,
 )
-from homeassistant.components.vacuum import (
-    StateVacuumEntity,
-    VacuumActivity,
-    VacuumEntityFeature,
+from homeassistant.components.lawn_mower import (
+    LawnMowerEntity,
+    LawnMowerEntityFeature,
+    LawnMowerActivity
 )
-
+from homeassistant.helpers import config_validation as cv, entity_platform
 from .const import (
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
@@ -38,13 +39,9 @@ _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(minutes=1)
 
 SUPPORT_GARDENA = (
-    VacuumEntityFeature.BATTERY |
-    VacuumEntityFeature.PAUSE |
-    VacuumEntityFeature.RETURN_HOME |
-    VacuumEntityFeature.SEND_COMMAND |
-    VacuumEntityFeature.START |
-    VacuumEntityFeature.STATE |
-    VacuumEntityFeature.STOP
+    LawnMowerEntityFeature.START_MOWING |
+    LawnMowerEntityFeature.PAUSE |
+    LawnMowerEntityFeature.DOCK
 )
 
 
@@ -52,13 +49,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Gardena smart mower system."""
     entities = []
     for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
-        entities.append(GardenaSmartMower(hass, mower, config_entry.options))
+        entities.append(GardenaSmartMowerLawnMowerEntity(hass, mower, config_entry.options))
 
-    _LOGGER.debug("Adding mower as vacuums: %s", entities)
+    _LOGGER.debug("Adding mower as lawn_mower: %s", entities)
     async_add_entities(entities, True)
+    
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service(
+        "start_override",
+        {
+            vol.Required("duration"): cv.positive_int 
+        },
+        "async_start_override",
+    )
 
 
-class GardenaSmartMower(StateVacuumEntity):
+class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
     """Representation of a Gardena Connected Mower."""
 
     def __init__(self, hass, mower, options):
@@ -68,7 +74,7 @@ class GardenaSmartMower(StateVacuumEntity):
         self._options = options
         self._name = "{}".format(self._device.name)
         self._unique_id = f"{self._device.serial}-mower"
-        self._state = None
+        self._activity = None
         self._error_message = ""
         self._stint_start = None
         self._stint_end = None
@@ -79,8 +85,13 @@ class GardenaSmartMower(StateVacuumEntity):
 
     @property
     def should_poll(self) -> bool:
-        """No polling needed for a vacuum."""
+        """No polling needed for a lawn_mower."""
         return False
+
+    @property
+    def activity(self) -> LawnMowerActivity:
+        """Return the state of the mower."""
+        return self._activity
 
     def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
@@ -95,38 +106,38 @@ class GardenaSmartMower(StateVacuumEntity):
         if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
             self._error_message = self._device.last_error_code
             if self._device.last_error_code == "PARKED_DAILY_LIMIT_REACHED":
-                self._state = VacuumActivity.IDLE
+                self._activity = None
             else:
                 _LOGGER.debug("Mower has an error")
-                self._state = VacuumActivity.ERROR
+                self._activity = LawnMowerActivity.ERROR
         else:
             _LOGGER.debug("Getting mower state")
             activity = self._device.activity
             _LOGGER.debug("Mower has activity %s", activity)
             if activity == "PAUSED":
-                self._state = VacuumActivity.PAUSED
+                self._activity = LawnMowerActivity.PAUSED
             elif activity in [
                 "OK_CUTTING",
                 "OK_CUTTING_TIMER_OVERRIDDEN",
                 "OK_LEAVING",
             ]:
-                if self._state != VacuumActivity.CLEANING:
+                if self._activity != LawnMowerActivity.MOWING:
                     self._stint_start = datetime.now()
                     self._stint_end = None
-                self._state = VacuumActivity.CLEANING
+                self._activity = LawnMowerActivity.MOWING
             elif activity == "OK_SEARCHING":
-                if self._state == VacuumActivity.CLEANING:
+                if self._activity == LawnMowerActivity.MOWING:
                     self._stint_end = datetime.now()
-                self._state = VacuumActivity.RETURNING
+                self._activity =  LawnMowerActivity.RETURNING
             elif activity in [
                 "OK_CHARGING",
                 "PARKED_TIMER",
                 "PARKED_PARK_SELECTED",
                 "PARKED_AUTOTIMER",
             ]:
-                self._state = VacuumActivity.DOCKED
+                self._activity = LawnMowerActivity.DOCKED
             elif activity == "NONE":
-                self._state = None
+                self._activity = None
                 _LOGGER.debug("Mower has no activity")
 
     @property
@@ -145,18 +156,13 @@ class GardenaSmartMower(StateVacuumEntity):
         return self._device.battery_level
 
     @property
-    def state(self):
-        """Return the status of the lawn mower."""
-        return self._state
-
-    @property
     def available(self):
         """Return True if the device is available."""
         return self._device.state != "UNAVAILABLE"
 
     def error(self):
         """Return the error message."""
-        if self._state == VacuumActivity.ERROR:
+        if self._activity == LawnMowerActivity.ERROR:
             return self._error_message
         return ""
 
@@ -181,41 +187,23 @@ class GardenaSmartMower(StateVacuumEntity):
     def option_mower_duration(self) -> int:
         return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
 
-    def start(self):
-        """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE. Duration is read from integration options."""
-        duration = self.option_mower_duration * 60
-        _LOGGER.debug("Mower command:  vacuum.start => START_SECONDS_TO_OVERRIDE, %s", duration)
-        return asyncio.run_coroutine_threadsafe(
-            self._device.start_seconds_to_override(duration), self.hass.loop
-        ).result()
+    async def async_start_mowing(self) -> None:
+        """Resume schedule."""
+        await self._device.start_dont_override()
 
-    def stop(self, **kwargs):
-        """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
-        _LOGGER.debug("Mower command:  vacuum.stop => PARK_UNTIL_FURTHER_NOTICE")
-        asyncio.run_coroutine_threadsafe(
-            self._device.park_until_further_notice(), self.hass.loop
-        ).result()
+    async def async_dock(self) -> None:
+        """Parks the mower until next schedule."""
+        await self._device.park_until_next_task()
 
-    def turn_on(self, **kwargs):
-        """Start the mower using Gardena API command START_DONT_OVERRIDE."""
-        _LOGGER.debug("Mower command:  vacuum.turn_on => START_DONT_OVERRIDE")
-        asyncio.run_coroutine_threadsafe(
-            self._device.start_dont_override(), self.hass.loop
-        ).result()
-
-    def turn_off(self, **kwargs):
-        """Stop the mower using Gardena API command PARK_UNTIL_FURTHER_NOTICE."""
-        _LOGGER.debug("Mower command:  vacuum.turn_off => PARK_UNTIL_FURTHER_NOTICE")
-        asyncio.run_coroutine_threadsafe(
-            self._device.park_until_further_notice(), self.hass.loop
-        ).result()
-
-    def return_to_base(self, **kwargs):
-        """Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK."""
-        _LOGGER.debug("Mower command:  vacuum.return_to_base => PARK_UNTIL_NEXT_TASK")
-        asyncio.run_coroutine_threadsafe(
-            self._device.park_until_next_task(), self.hass.loop
-        ).result()
+    async def async_pause(self) -> None:
+        """Parks the mower until further notice."""
+        await self._device.park_until_further_notice()
+        
+    async def async_start_override(
+        self, duration: int
+    ) -> None:
+        """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE."""
+        await self._device.start_seconds_to_override(duration)
 
     @property
     def unique_id(self) -> str:

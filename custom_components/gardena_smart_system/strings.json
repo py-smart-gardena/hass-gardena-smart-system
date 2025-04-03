@@ -31,5 +31,17 @@
         "title": "Gardena Smart System - Options"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Start override",
+      "description": "Start the mower immediately for specific duration and override the schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "The duration in seconds."
+        }
+      }
+    }
   }
 }
