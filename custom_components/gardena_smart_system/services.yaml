@@ -1,0 +1,16 @@
+start_override:
+  target:
+    entity:
+      integration: "gardena_smart_system"
+      domain: "lawn_mower"
+  fields:
+    duration:
+      required: true
+      example: "3600"
+      default: "3600"
+      selector:
+        number:
+          min: 1
+          max: 86400
+          unit_of_measurement: seconds
+          mode: box

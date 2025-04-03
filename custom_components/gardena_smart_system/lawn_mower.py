@@ -3,6 +3,8 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
+import voluptuous as vol
+
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
 )
@@ -11,7 +13,7 @@ from homeassistant.components.lawn_mower import (
     LawnMowerEntityFeature,
     LawnMowerActivity
 )
-
+from homeassistant.helpers import config_validation as cv, entity_platform
 from .const import (
     ATTR_ACTIVITY,
     ATTR_BATTERY_STATE,
@@ -51,6 +53,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     _LOGGER.debug("Adding mower as lawn_mower: %s", entities)
     async_add_entities(entities, True)
+    
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service(
+        "start_override",
+        {
+            vol.Required("duration"): cv.positive_int 
+        },
+        "async_start_override",
+    )
 
 
 class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
@@ -81,7 +92,6 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
     def activity(self) -> LawnMowerActivity:
         """Return the state of the mower."""
         return self._activity
-    
 
     def update_callback(self, device):
         """Call update for Home Assistant when the device is updated."""
@@ -188,6 +198,12 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
     async def async_pause(self) -> None:
         """Parks the mower until further notice."""
         await self._device.park_until_further_notice()
+        
+    async def async_start_override(
+        self, duration: int
+    ) -> None:
+        """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE."""
+        await self._device.start_seconds_to_override(duration)
 
     @property
     def unique_id(self) -> str:

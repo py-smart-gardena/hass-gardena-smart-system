@@ -171,6 +171,10 @@ The mower cancels the current operation, returns to charging station and ignores
 Stop the mower using Gardena API command PARK_UNTIL_NEXT_TASK.  
 The mower cancels the current operation and returns to charging station. It will reactivate with the next schedule.
 
+`gardena_smart_system.start_override`
+Start the mower using the Gardena API command START_SECONDS_TO_OVERRIDE.
+The mower starts immediately for the duration parameter of the action.
+
 ### Smart Power Socket services
 
 > [TODO: document services]
