@@ -3,7 +3,7 @@ import asyncio
 import logging
 
 from gardena.exceptions.authentication_exception import AuthenticationException
-from gardena.smart_system import SmartSystem
+from gardena.smart_system import SmartSystem, get_ssl_context
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_CLIENT_ID,
@@ -27,14 +27,14 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["lawn_mower", "sensor", "switch", "binary_sensor", "button"]
 
+# Create SSL context outside of event loop
+_SSL_CONTEXT = get_ssl_context()
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Gardena Smart System integration."""
-
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
     return True
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up Gardena Smart System component")
@@ -78,7 +78,9 @@ class GardenaSmartSystem:
         self._hass = hass
         self.smart_system = SmartSystem(
             client_id=client_id,
-            client_secret=client_secret)
+            client_secret=client_secret,
+            ssl_context=_SSL_CONTEXT  # Use the pre-created SSL context
+        )
 
     async def start(self):
         try:
