@@ -25,7 +25,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["lawn_mower", "sensor", "switch", "binary_sensor"]
+PLATFORMS = ["lawn_mower", "sensor", "switch", "binary_sensor", "button"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
