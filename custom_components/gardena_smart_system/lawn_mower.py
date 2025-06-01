@@ -114,7 +114,7 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
             _LOGGER.debug("Getting mower state")
             activity = self._device.activity
             _LOGGER.debug("Mower has activity %s", activity)
-            if activity == "PAUSED":
+            if activity in ["PAUSED", "PAUSED_IN_CS"]:
                 self._activity = LawnMowerActivity.PAUSED
             elif activity in [
                 "OK_CUTTING",
@@ -125,7 +125,7 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
                     self._stint_start = datetime.now()
                     self._stint_end = None
                 self._activity = LawnMowerActivity.MOWING
-            elif activity == "OK_SEARCHING":
+            elif activity in ["OK_SEARCHING", "INITIATE_NEXT_ACTION"]:
                 if self._activity == LawnMowerActivity.MOWING:
                     self._stint_end = datetime.now()
                 self._activity =  LawnMowerActivity.RETURNING
@@ -134,6 +134,9 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
                 "PARKED_TIMER",
                 "PARKED_PARK_SELECTED",
                 "PARKED_AUTOTIMER",
+                "PARKED_FROST",
+                "STOPPED_IN_GARDEN",
+                "SEARCHING_FOR_SATELLITES",
             ]:
                 self._activity = LawnMowerActivity.DOCKED
             elif activity == "NONE":
