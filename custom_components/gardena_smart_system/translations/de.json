@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Optionen"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Manuellen Modus starten",
+      "description": "Starte den Mäher sofort für eine bestimmte Dauer und Ignoriere den Zeitplan.",
+      "fields": {
+        "duration": {
+          "name": "Mäherdauer",
+          "description": "Mäherdauer in Sekunden"
+        }
+      }
+    }
   }
 }
