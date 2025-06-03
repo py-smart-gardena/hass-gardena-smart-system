@@ -106,7 +106,7 @@ class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
         if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
             self._error_message = self._device.last_error_code
             if self._device.last_error_code == "PARKED_DAILY_LIMIT_REACHED":
-                self._activity = None
+                self._activity = LawnMowerActivity.DOCKED
             else:
                 _LOGGER.debug("Mower has an error")
                 self._activity = LawnMowerActivity.ERROR
