@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Alternativer"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Start overstyring",
+      "description": "Start klipperen umiddelbart for en bestemt varighet og overstyr timeplanen.",
+      "fields": {
+        "duration": {
+          "name": "Varighet",
+          "description": "Varigheten i sekunder."
+        }
+      }
+    }
   }
 }

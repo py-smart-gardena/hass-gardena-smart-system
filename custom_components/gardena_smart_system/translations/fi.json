@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - valinnat"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Aloita ohitys",
+      "description": "Käynnistä ruohonleikkuri välittömästi tietyksi ajaksi ja ohita aikataulu.",
+      "fields": {
+        "duration": {
+          "name": "Kesto",
+          "description": "Kesto sekunteina."
+        }
+      }
+    }
   }
 }

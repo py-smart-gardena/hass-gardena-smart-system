@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Optionen"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Überschreibung starten",
+      "description": "Starten Sie den Mäher sofort für eine bestimmte Dauer und überschreiben Sie den Zeitplan.",
+      "fields": {
+        "duration": {
+          "name": "Dauer",
+          "description": "Die Dauer in Sekunden."
+        }
+      }
+    }
   }
 }

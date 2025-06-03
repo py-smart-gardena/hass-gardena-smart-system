@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - valmöjligheter"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Starta åsidosättning",
+      "description": "Starta gräsklipparen omedelbart under en specifik tid och åsidosätt schemat.",
+      "fields": {
+        "duration": {
+          "name": "Varaktighet",
+          "description": "Varaktigheten i sekunder."
+        }
+      }
+    }
   }
 }

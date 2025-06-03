@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Opties"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Start overschrijving",
+      "description": "Start de maaier onmiddellijk voor een specifieke duur en overschrijf het schema.",
+      "fields": {
+        "duration": {
+          "name": "Duur",
+          "description": "De duur in seconden."
+        }
+      }
+    }
   }
 }

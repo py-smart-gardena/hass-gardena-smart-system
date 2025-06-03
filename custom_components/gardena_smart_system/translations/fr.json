@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Options"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Démarrer la substitution",
+      "description": "Démarrer la tondeuse immédiatement pour une durée spécifique et remplacer le planning.",
+      "fields": {
+        "duration": {
+          "name": "Durée",
+          "description": "La durée en secondes."
+        }
+      }
+    }
   }
 }
