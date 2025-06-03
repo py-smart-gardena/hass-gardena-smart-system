@@ -25,7 +25,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["lawn_mower", "sensor", "switch", "binary_sensor", "button"]
+PLATFORMS = ["lawn_mower", "sensor", "switch", "valve", "binary_sensor", "button"]
 
 # Create SSL context outside of event loop
 _SSL_CONTEXT = get_ssl_context()
