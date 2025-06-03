@@ -32,5 +32,17 @@
         "title": "Gardena Smart System - Možnosti"
       }
     }
+  },
+  "services": {
+    "start_override": {
+      "name": "Spustiť prepísanie",
+      "description": "Okamžite spustite kosačku na určitý čas a prepíšte harmonogram.",
+      "fields": {
+        "duration": {
+          "name": "Trvanie",
+          "description": "Trvanie v sekundách."
+        }
+      }
+    }
   }
 }
