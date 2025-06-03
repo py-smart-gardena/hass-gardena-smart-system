@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Spustiť prepísanie",
       "description": "Okamžite spustite kosačku na určitý čas a prepíšte harmonogram.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Trvanie",

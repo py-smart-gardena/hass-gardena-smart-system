@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Start overschrijving",
       "description": "Start de maaier onmiddellijk voor een specifieke duur en overschrijf het schema.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Duur",

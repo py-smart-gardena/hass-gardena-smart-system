@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Starta åsidosättning",
       "description": "Starta gräsklipparen omedelbart under en specifik tid och åsidosätt schemat.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Varaktighet",

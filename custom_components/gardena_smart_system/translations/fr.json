@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Démarrer la substitution",
       "description": "Démarrer la tondeuse immédiatement pour une durée spécifique et remplacer le planning.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Durée",

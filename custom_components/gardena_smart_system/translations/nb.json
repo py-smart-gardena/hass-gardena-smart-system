@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Start overstyring",
       "description": "Start klipperen umiddelbart for en bestemt varighet og overstyr timeplanen.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Varighet",

@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Überschreibung starten",
       "description": "Starten Sie den Mäher sofort für eine bestimmte Dauer und überschreiben Sie den Zeitplan.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Dauer",

@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Start override",
       "description": "Start the mower immediately for specific duration and override the schedule.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Duration",

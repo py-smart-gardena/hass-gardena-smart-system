@@ -37,6 +37,7 @@
     "start_override": {
       "name": "Aloita ohitys",
       "description": "Käynnistä ruohonleikkuri välittömästi tietyksi ajaksi ja ohita aikataulu.",
+      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Kesto",
