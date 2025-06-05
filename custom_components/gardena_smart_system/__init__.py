@@ -100,6 +100,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    _LOGGER.debug("Unloading Gardena Smart System component")
+    
+    # Unload all platforms first
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    
+    if unload_ok:
+        # Stop the GardenaSmartSystem and clean up resources
+        gardena_system = hass.data[DOMAIN].get(GARDENA_SYSTEM)
+        if gardena_system:
+            _LOGGER.debug("Stopping Gardena Smart System")
+            try:
+                await gardena_system.stop()
+                # Give a moment for the WebSocket to close properly
+                _LOGGER.debug("Waiting for WebSocket connection to close...")
+                await asyncio.sleep(2)
+            except Exception as ex:
+                _LOGGER.warning(f"Error during GardenaSmartSystem stop: {ex}")
+        
+        # Clean up stored data
+        if DOMAIN in hass.data:
+            hass.data[DOMAIN].pop(GARDENA_SYSTEM, None)
+            hass.data[DOMAIN].pop(GARDENA_LOCATION, None)
+            # If no more entries, remove the domain entirely
+            if not hass.data[DOMAIN]:
+                hass.data.pop(DOMAIN, None)
+        
+        _LOGGER.debug("Gardena Smart System component unloaded successfully")
+    else:
+        _LOGGER.error("Failed to unload Gardena Smart System platforms")
+    
+    return unload_ok
+
+
 class GardenaSmartSystem:
     """A Gardena Smart System wrapper class."""
 
