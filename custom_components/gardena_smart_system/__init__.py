@@ -96,9 +96,57 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up platforms...")
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Register services
+    _LOGGER.debug("Registering Gardena Smart System services...")
+    await _register_services(hass, gardena_system)
+
     _LOGGER.debug("Gardena Smart System component setup finished")
     return True
 
+
+async def _register_services(hass: HomeAssistant, gardena_system):
+    """Register integration services."""
+    
+    async def websocket_diagnostics_service(call):
+        """Handle websocket diagnostics service call."""
+        detailed = call.data.get("detailed", False)
+        
+        diagnostics = {
+            "websocket_connected": gardena_system.is_websocket_connected,
+            "websocket_task_status": gardena_system.websocket_task_status,
+            "smart_system_status": gardena_system.smart_system.is_ws_connected if gardena_system.smart_system else False,
+        }
+        
+        if detailed:
+            diagnostics.update({
+                "location_count": len(gardena_system.smart_system.locations) if gardena_system.smart_system else 0,
+                "device_count": sum(len(loc.devices) for loc in gardena_system.smart_system.locations.values()) if gardena_system.smart_system else 0,
+                "has_active_task": gardena_system._ws_task is not None and not gardena_system._ws_task.done(),
+                "shutdown_event_set": gardena_system._shutdown_event.is_set(),
+            })
+        
+        return diagnostics
+    
+    async def reload_service(call):
+        """Handle reload service call."""
+        _LOGGER.info("Reload service called")
+        # Find the config entry for this integration
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            _LOGGER.info(f"Reloading config entry: {config_entry.title}")
+            await hass.config_entries.async_reload(config_entry.entry_id)
+        
+    hass.services.async_register(
+        DOMAIN, 
+        "websocket_diagnostics", 
+        websocket_diagnostics_service,
+        supports_response=True
+    )
+    
+    hass.services.async_register(
+        DOMAIN,
+        "reload", 
+        reload_service
+    )
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
@@ -119,6 +167,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 await asyncio.sleep(2)
             except Exception as ex:
                 _LOGGER.warning(f"Error during GardenaSmartSystem stop: {ex}")
+        
+        # Unregister services if this is the last config entry
+        remaining_entries = [
+            e for e in hass.config_entries.async_entries(DOMAIN) 
+            if e.entry_id != entry.entry_id
+        ]
+        if not remaining_entries:
+            _LOGGER.debug("Unregistering Gardena Smart System services")
+            hass.services.async_remove(DOMAIN, "websocket_diagnostics")
+            hass.services.async_remove(DOMAIN, "reload")
         
         # Clean up stored data
         if DOMAIN in hass.data:
@@ -141,6 +199,8 @@ class GardenaSmartSystem:
     def __init__(self, hass, client_id, client_secret):
         """Initialize the Gardena Smart System."""
         self._hass = hass
+        self._ws_task = None
+        self._shutdown_event = asyncio.Event()
         _LOGGER.debug("Initializing GardenaSmartSystem wrapper")
         self.smart_system = SmartSystem(
             client_id=client_id,
@@ -172,8 +232,15 @@ class GardenaSmartSystem:
             
             self._hass.data[DOMAIN][GARDENA_LOCATION] = location
             _LOGGER.debug("Starting GardenaSmartSystem websocket connection")
-            asyncio.create_task(self.smart_system.start_ws(self._hass.data[DOMAIN][GARDENA_LOCATION]))
-            _LOGGER.debug("Websocket task created and launched")
+            
+            # Start WebSocket with proper task management
+            self._ws_task = asyncio.create_task(
+                self._managed_websocket_connection(location),
+                name="gardena_websocket"
+            )
+            # Add task exception handling
+            self._ws_task.add_done_callback(self._websocket_task_done_callback)
+            _LOGGER.debug("Websocket task created and launched with management")
             
         except AuthenticationException as ex:
             _LOGGER.error(f"Authentication failed: {ex.message}")
@@ -187,7 +254,90 @@ class GardenaSmartSystem:
             _LOGGER.error("3. There might be an issue with the Gardena API service")
             raise
 
+    async def _managed_websocket_connection(self, location):
+        """Managed WebSocket connection with improved error handling and reconnection."""
+        reconnect_delay = 5  # Initial delay in seconds
+        max_reconnect_delay = 300  # Maximum delay (5 minutes)
+        reconnect_attempts = 0
+        
+        while not self._shutdown_event.is_set():
+            try:
+                _LOGGER.debug(f"WebSocket connection attempt {reconnect_attempts + 1}")
+                await self.smart_system.start_ws(location)
+                # If we get here, the WebSocket loop ended normally
+                if self._shutdown_event.is_set():
+                    _LOGGER.debug("WebSocket connection ended due to shutdown")
+                    break
+                else:
+                    _LOGGER.warning("WebSocket connection ended unexpectedly")
+                    
+            except Exception as ex:
+                _LOGGER.error(f"WebSocket connection error: {type(ex).__name__}: {ex}")
+                reconnect_attempts += 1
+                
+            # Exponential backoff for reconnection
+            if not self._shutdown_event.is_set():
+                current_delay = min(reconnect_delay * (2 ** min(reconnect_attempts - 1, 5)), max_reconnect_delay)
+                _LOGGER.info(f"Reconnecting WebSocket in {current_delay} seconds (attempt {reconnect_attempts})")
+                
+                try:
+                    await asyncio.wait_for(self._shutdown_event.wait(), timeout=current_delay)
+                    break  # Shutdown was requested during wait
+                except asyncio.TimeoutError:
+                    continue  # Continue with reconnection attempt
+                    
+        _LOGGER.debug("WebSocket management task ending")
+
+    def _websocket_task_done_callback(self, task):
+        """Handle WebSocket task completion or failure."""
+        if task.cancelled():
+            _LOGGER.debug("WebSocket task was cancelled")
+        elif task.exception():
+            _LOGGER.error(f"WebSocket task failed with exception: {task.exception()}")
+        else:
+            _LOGGER.debug("WebSocket task completed normally")
+
+    @property
+    def is_websocket_connected(self):
+        """Check if WebSocket is connected."""
+        return (
+            self._ws_task is not None 
+            and not self._ws_task.done() 
+            and self.smart_system.is_ws_connected
+        )
+
+    @property
+    def websocket_task_status(self):
+        """Get WebSocket task status for debugging."""
+        if self._ws_task is None:
+            return "not_started"
+        elif self._ws_task.cancelled():
+            return "cancelled"
+        elif self._ws_task.done():
+            if self._ws_task.exception():
+                return f"failed: {self._ws_task.exception()}"
+            else:
+                return "completed"
+        else:
+            return "running"
+
     async def stop(self):
         _LOGGER.debug("Stopping GardenaSmartSystem")
+        
+        # Signal shutdown to WebSocket management
+        self._shutdown_event.set()
+        
+        # Cancel WebSocket task if running
+        if self._ws_task and not self._ws_task.done():
+            _LOGGER.debug("Cancelling WebSocket task")
+            self._ws_task.cancel()
+            try:
+                await asyncio.wait_for(self._ws_task, timeout=10.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError):
+                _LOGGER.debug("WebSocket task cancelled/timed out")
+            except Exception as ex:
+                _LOGGER.warning(f"Error while cancelling WebSocket task: {ex}")
+        
+        # Stop the underlying smart system
         await self.smart_system.quit()
         _LOGGER.debug("GardenaSmartSystem stopped")

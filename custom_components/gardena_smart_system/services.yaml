@@ -14,3 +14,18 @@ start_override:
           max: 86400
           unit_of_measurement: seconds
           mode: box
+
+reload:
+  description: Reload the Gardena Smart System integration.
+
+websocket_diagnostics:
+  description: Get WebSocket connection diagnostics and status information.
+  response:
+    optional: true
+  fields:
+    detailed:
+      description: Include detailed connection information.
+      example: true
+      default: false
+      selector:
+        boolean:
