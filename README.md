@@ -111,19 +111,16 @@ Application Key from Gardena/Husqvarna.
 
 1. Go to https://developer.husqvarnagroup.cloud/
 
-2. Create an account if needed, otherwise sign in with your Gardena
-   account.
+2. Create an account if needed, otherwise sign in with your Gardena account.
 
 3. After signing in you will be automatically redirected to "Your
    applications". (Otherwise go to: https://developer.husqvarnagroup.cloud/applications)
 
-4. Create an new application, name it for example "My Home Assistant"
-   (doesn't matter), leave the other fields empty.
+4. Create an new application. Name it for example `My Home Assistant` and use the following redirect URL: `https://my.home-assistant.io/redirect/oauth`.
 
-5. Click on "+Connect new API" and connect the Authentication API and
-   the GARDENA smart system API.
+5. Click on "Connect new API" and connect the `Authentication API` and the `GARDENA smart system API`.
 
-6. Copy your Application Key and Application secret, this is what you need when you add the integration in Home Assistant.
+6. Copy your `Application Key` and `Application secret`, this is what you need when you add the integration in Home Assistant.
 
 
 ## Supported devices
