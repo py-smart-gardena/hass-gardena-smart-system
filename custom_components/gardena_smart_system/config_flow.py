@@ -81,11 +81,11 @@ class GardenaSmartSystemConfigFlowHandler(config_entries.ConfigFlow, domain=DOMA
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return GardenaSmartSystemOptionsFlowHandler(config_entry)
+        return GardenaSmartSystemOptionsFlowHandler()
 
 
 class GardenaSmartSystemOptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
+    def __init__(self):
         """Initialize Gardena Smart System options flow."""
         super().__init__()
 
