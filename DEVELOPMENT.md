@@ -1,71 +1,71 @@
-# Guide de développement - Gardena Smart System Integration
+# Development Guide - Gardena Smart System Integration
 
-Ce guide explique comment configurer et utiliser l'environnement de développement pour l'intégration Gardena Smart System.
+This guide explains how to configure and use the development environment for the Gardena Smart System integration.
 
-## 🚀 Configuration rapide
+## 🚀 Quick Setup
 
-### 1. Configuration initiale
+### 1. Initial Configuration
 
 ```bash
-# Configuration complète de l'environnement
+# Complete environment setup
 make setup
 ```
 
-Cette commande va :
-- Créer un environnement virtuel Python 3.11
-- Installer toutes les dépendances de développement
+This command will:
+- Create a Python virtual environment
+- Install all development dependencies
 
-### 2. Vérification de l'installation
+### 2. Installation Verification
 
 ```bash
-# Vérifier que tout fonctionne
+# Verify everything works
 make help
 ```
 
-## 🛠️ Commandes de développement
+## 🛠️ Development Commands
 
-### Commandes principales
+### Main Commands
 
-| Commande | Description |
-|----------|-------------|
-| `make help` | Affiche l'aide complète |
-| `make setup` | Configure l'environnement complet |
-| `make install` | Réinstalle les dépendances |
-| `make test` | Lance tous les tests |
-| `make test-auth` | Lance les tests d'authentification |
-| `make test-real` | Test en conditions réelles |
-| `make clean` | Nettoie tout (fichiers + environnement) |
+| Command | Description |
+|---------|-------------|
+| `make help` | Shows complete help |
+| `make setup` | Sets up complete environment |
+| `make install` | Reinstalls dependencies |
+| `make test` | Runs all tests |
+| `make test-auth` | Runs authentication tests |
+| `make test-real` | Real-world testing |
+| `make clean` | Cleans everything (files + environment) |
 
 ### Tests
 
 ```bash
-# Tests d'authentification uniquement
+# Authentication tests only
 make test-auth
 
-# Test en conditions réelles (nécessite les variables d'environnement)
+# Real-world testing (requires environment variables)
 export GARDENA_CLIENT_ID="your-client-id"
 export GARDENA_CLIENT_SECRET="your-client-secret"
 make test-real
 ```
 
-## 🔧 Configuration des variables d'environnement
+## 🔧 Environment Variables Configuration
 
-### Variables requises
+### Required Variables
 
 ```bash
 export GARDENA_CLIENT_ID="your-client-id"
 export GARDENA_CLIENT_SECRET="your-client-secret"
 ```
 
-### Variables optionnelles
+### Optional Variables
 
 ```bash
 export GARDENA_API_KEY="your-api-key"
 ```
 
-### Fichier .env (recommandé)
+### .env File (Recommended)
 
-Créez un fichier `.env` à la racine du projet :
+Create a `.env` file at the project root:
 
 ```bash
 GARDENA_CLIENT_ID=your-client-id
@@ -73,171 +73,171 @@ GARDENA_CLIENT_SECRET=your-client-secret
 GARDENA_API_KEY=your-api-key
 ```
 
-Puis chargez-le :
+Then load it:
 
 ```bash
 source .env
 ```
 
-## 📁 Structure du projet
+## 📁 Project Structure
 
 ```
 hass-gardena-smart-system/
 ├── custom_components/gardena_smart_system/
-│   ├── __init__.py              # Point d'entrée principal
-│   ├── auth.py                  # Gestionnaire d'authentification
-│   ├── gardena_client.py        # Client API
-│   ├── coordinator.py           # Coordinateur de données
-│   ├── config_flow.py           # Flux de configuration
-│   ├── const.py                 # Constantes
-│   ├── lawn_mower.py           # Entités tondeuses
-│   ├── sensor.py               # Entités capteurs
-│   ├── binary_sensor.py        # Entités capteurs binaires
-│   ├── switch.py               # Entités interrupteurs
-│   ├── valve.py                # Entités vannes
-│   ├── test_auth.py            # Tests d'authentification
-│   ├── manifest.json           # Métadonnées
-│   ├── strings.json            # Traductions
+│   ├── __init__.py              # Main entry point
+│   ├── auth.py                  # Authentication manager
+│   ├── gardena_client.py        # API client
+│   ├── coordinator.py           # Data coordinator
+│   ├── config_flow.py           # Configuration flow
+│   ├── const.py                 # Constants
+│   ├── lawn_mower.py           # Mower entities
+│   ├── sensor.py               # Sensor entities
+│   ├── binary_sensor.py        # Binary sensor entities
+│   ├── switch.py               # Switch entities
+│   ├── valve.py                # Valve entities
+│   ├── test_auth.py            # Authentication tests
+│   ├── manifest.json           # Metadata
+│   ├── strings.json            # Translations
 │   └── services.yaml           # Services
 ├── docs/
-│   └── AUTHENTICATION.md       # Documentation d'authentification
+│   └── AUTHENTICATION.md       # Authentication documentation
 ├── scripts/
-│   └── test_auth.py            # Script de test en conditions réelles
-├── Makefile                    # Commandes de développement
-├── requirements.txt            # Dépendances de production
-├── requirements-dev.txt        # Dépendances de développement
-├── .pre-commit-config.yaml     # Configuration pre-commit
-└── .gitignore                  # Fichiers ignorés
+│   └── test_auth.py            # Real-world test script
+├── Makefile                    # Development commands
+├── requirements.txt            # Production dependencies
+├── requirements-dev.txt        # Development dependencies
+├── .pre-commit-config.yaml     # Pre-commit configuration
+└── .gitignore                  # Ignored files
 ```
 
 ## 🧪 Tests
 
-### Tests unitaires
+### Unit Tests
 
 ```bash
-# Tous les tests
+# All tests
 make test
 
-# Tests d'authentification uniquement
+# Authentication tests only
 make test-auth
 ```
 
-### Tests en conditions réelles
+### Real-world Testing
 
 ```bash
-# Configuration des variables d'environnement
+# Set environment variables
 export GARDENA_CLIENT_ID="your-client-id"
 export GARDENA_CLIENT_SECRET="your-client-secret"
 
-# Test d'authentification
+# Test authentication
 make test-real
 ```
 
-### Exécution manuelle des tests
+### Manual Test Execution
 
 ```bash
-# Activer l'environnement virtuel
+# Activate virtual environment
 source venv/bin/activate
 
-# Exécuter les tests
+# Run tests
 pytest custom_components/gardena_smart_system/test_auth.py -v
 ```
 
-## 🚀 Workflow de développement
+## 🚀 Development Workflow
 
-### 1. Démarrage quotidien
+### 1. Daily Startup
 
 ```bash
-# Vérifier l'environnement
+# Check environment
 make help
 ```
 
-### 2. Développement
+### 2. Development
 
 ```bash
-# Éditer le code...
+# Edit code...
 
-# Lancer les tests
+# Run tests
 make test-auth
 ```
 
-### 3. Tests en conditions réelles
+### 3. Real-world Testing
 
 ```bash
-# Configurer les variables d'environnement
+# Set environment variables
 export GARDENA_CLIENT_ID="your-client-id"
 export GARDENA_CLIENT_SECRET="your-client-secret"
 
-# Tester l'authentification
+# Test authentication
 make test-real
 ```
 
-## 🧹 Nettoyage
+## 🧹 Cleanup
 
-### Remise à zéro complète
+### Complete Reset
 
 ```bash
 make clean
 ```
 
-Cette commande nettoie :
-- Fichiers temporaires Python
-- Cache de tests
-- Environnement virtuel
-- Rapports de couverture
+This cleans:
+- Python temporary files
+- Test cache
+- Virtual environment
+- Coverage reports
 
-## 🔧 Dépannage
+## 🔧 Troubleshooting
 
-### Problèmes courants
+### Common Issues
 
-#### Environnement virtuel non trouvé
+#### Virtual Environment Not Found
 
 ```bash
-# Recréer l'environnement
+# Recreate environment
 make setup
 ```
 
-#### Dépendances manquantes
+#### Missing Dependencies
 
 ```bash
-# Réinstaller les dépendances
+# Reinstall dependencies
 make install
 ```
 
-#### Erreurs de tests
+#### Test Errors
 
 ```bash
-# Nettoyer et relancer
+# Clean and restart
 make clean
 make setup
 make test-auth
 ```
 
-### Logs détaillés
+### Detailed Logs
 
 ```bash
-# Activer les logs de debug
+# Enable debug logs
 export PYTHONPATH=.
 source venv/bin/activate
 python -m pytest custom_components/gardena_smart_system/test_auth.py -v -s
 ```
 
-## 📚 Ressources
+## 📚 Resources
 
-- [Documentation d'authentification](docs/AUTHENTICATION.md)
-- [API Gardena Smart System v2](iapi-v2.yml)
-- [Guide des intégrations Home Assistant](https://developers.home-assistant.io/)
+- [Authentication Documentation](docs/AUTHENTICATION.md)
+- [Gardena Smart System API v2](iapi-v2.yml)
+- [Home Assistant Integration Guide](https://developers.home-assistant.io/)
 
 ## 🤝 Contribution
 
-1. Forkez le projet
-2. Créez une branche pour votre fonctionnalité
-3. Suivez le workflow de développement
-4. Ajoutez des tests pour votre code
-5. Soumettez une pull request
+1. Fork the project
+2. Create a branch for your feature
+3. Follow the development workflow
+4. Add tests for your code
+5. Submit a pull request
 
-### Checklist avant commit
+### Pre-commit Checklist
 
-- [ ] Tests passent (`make test`)
-- [ ] Tests d'authentification passent (`make test-auth`)
-- [ ] Documentation mise à jour si nécessaire 
+- [ ] Tests pass (`make test`)
+- [ ] Authentication tests pass (`make test-auth`)
+- [ ] Documentation updated if necessary 

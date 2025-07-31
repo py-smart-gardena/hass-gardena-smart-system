@@ -1,32 +1,35 @@
-# Dépendances de développement pour Gardena Smart System Integration
+# Development dependencies for Gardena Smart System Integration
+
+# Home Assistant custom component testing
+pytest-homeassistant-custom-component>=0.12.0
 
 # Tests
-pytest>=6.0.0
+pytest>=7.0.0
 pytest-asyncio>=0.18.0
 pytest-cov>=3.0.0
 pytest-mock>=3.6.0
 
-# Qualité du code
+# Code quality
 flake8>=4.0.0
 black>=22.0.0
 isort>=5.10.0
 mypy>=0.991
 
-# Outils de développement
+# Development tools
 pre-commit>=2.20.0
 tox>=3.25.0
 
-# Dépendances de l'intégration (pour les tests)
+# Integration dependencies (for tests)
 aiohttp>=3.7.0
 voluptuous>=0.12.0
 
-# Home Assistant (pour les tests)
-homeassistant>=2023.1.0
+# Home Assistant (for type hints and stubs, not runtime)
+homeassistant-stubs>=2023.1.0
 
-# Outils de documentation
+# Documentation tools
 sphinx>=5.0.0
 sphinx-rtd-theme>=1.0.0
 
-# Outils de sécurité
+# Security tools
 bandit>=1.7.0
 safety>=2.3.0 

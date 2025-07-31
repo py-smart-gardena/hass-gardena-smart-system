@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script de test pour l'authentification Gardena Smart System."""
+"""Test script for Gardena Smart System authentication."""
 
 import asyncio
 import logging
@@ -7,14 +7,14 @@ import os
 import sys
 from pathlib import Path
 
-# Ajouter le répertoire parent au path pour importer les modules
+# Add parent directory to path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from custom_components.gardena_smart_system.auth import GardenaAuthError, GardenaAuthenticationManager
 from custom_components.gardena_smart_system.gardena_client import GardenaAPIError, GardenaSmartSystemClient
 
 
-# Configuration du logging
+# Logging configuration
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -23,18 +23,18 @@ logger = logging.getLogger(__name__)
 
 
 async def test_authentication():
-    """Test complet de l'authentification."""
-    print("🔐 Test d'authentification Gardena Smart System")
+    """Complete authentication test."""
+    print("🔐 Gardena Smart System Authentication Test")
     print("=" * 50)
     
-    # Récupération des identifiants depuis les variables d'environnement
+    # Get credentials from environment variables
     client_id = os.getenv("GARDENA_CLIENT_ID")
     client_secret = os.getenv("GARDENA_CLIENT_SECRET")
     api_key = os.getenv("GARDENA_API_KEY")
     
     if not client_id or not client_secret:
-        print("❌ Erreur: Variables d'environnement manquantes")
-        print("   Définissez GARDENA_CLIENT_ID et GARDENA_CLIENT_SECRET")
+        print("❌ Error: Missing environment variables")
+        print("   Set GARDENA_CLIENT_ID and GARDENA_CLIENT_SECRET")
         return False
     
     print(f"✅ Client ID: {client_id[:8]}...")
@@ -42,143 +42,143 @@ async def test_authentication():
     if api_key:
         print(f"✅ API Key: {api_key[:8]}...")
     else:
-        print("ℹ️  API Key: Non définie (optionnel)")
+        print("ℹ️  API Key: Not defined (optional)")
     
-    print("\n🚀 Test du gestionnaire d'authentification...")
+    print("\n🚀 Testing authentication manager...")
     
     try:
-        # Test du gestionnaire d'authentification
+        # Test authentication manager
         auth_manager = GardenaAuthenticationManager(client_id, client_secret, api_key)
         
-        # Test d'authentification initiale
-        print("   📡 Authentification initiale...")
+        # Test initial authentication
+        print("   📡 Initial authentication...")
         token = await auth_manager.authenticate()
-        print(f"   ✅ Token obtenu: {token[:20]}...")
+        print(f"   ✅ Token obtained: {token[:20]}...")
         
-        # Test de validation du token
-        print("   🔍 Validation du token...")
+        # Test token validation
+        print("   🔍 Token validation...")
         is_valid = auth_manager._is_token_valid()
-        print(f"   ✅ Token valide: {is_valid}")
+        print(f"   ✅ Token valid: {is_valid}")
         
-        # Test des headers d'authentification
-        print("   📋 Headers d'authentification...")
+        # Test authentication headers
+        print("   📋 Authentication headers...")
         headers = auth_manager.get_auth_headers()
-        print(f"   ✅ Headers générés: {list(headers.keys())}")
+        print(f"   ✅ Headers generated: {list(headers.keys())}")
         
-        print("\n🚀 Test du client API...")
+        print("\n🚀 Testing API client...")
         
-        # Test du client API
+        # Test API client
         client = GardenaSmartSystemClient(client_id, client_secret, api_key)
         
-        # Test de récupération des locations
-        print("   📍 Récupération des locations...")
+        # Test location retrieval
+        print("   📍 Retrieving locations...")
         locations = await client.get_locations()
-        print(f"   ✅ {len(locations)} location(s) trouvée(s)")
+        print(f"   ✅ {len(locations)} location(s) found")
         
         if locations:
             location_id = locations[0]["id"]
-            location_name = locations[0].get("attributes", {}).get("name", "Sans nom")
+            location_name = locations[0].get("attributes", {}).get("name", "Unnamed")
             print(f"   📍 Location: {location_name} ({location_id})")
             
-            # Test de récupération des détails de la location
-            print("   🔍 Détails de la location...")
+            # Test location details retrieval
+            print("   🔍 Location details...")
             location_data = await client.get_location(location_id)
             devices = location_data.get("included", [])
-            print(f"   ✅ {len(devices)} appareil(s) trouvé(s)")
+            print(f"   ✅ {len(devices)} device(s) found")
             
-            # Affichage des types d'appareils
+            # Display device types
             device_types = {}
             for device in devices:
                 device_type = device.get("type", "UNKNOWN")
                 device_types[device_type] = device_types.get(device_type, 0) + 1
             
-            print("   📊 Types d'appareils:")
+            print("   📊 Device types:")
             for device_type, count in device_types.items():
                 print(f"      - {device_type}: {count}")
         
-        # Test de création d'URL WebSocket
-        print("   🔌 Test WebSocket...")
+        # Test WebSocket URL creation
+        print("   🔌 WebSocket test...")
         try:
             websocket_data = await client.create_websocket_url(location_id)
-            print("   ✅ URL WebSocket créée avec succès")
+            print("   ✅ WebSocket URL created successfully")
         except Exception as e:
-            print(f"   ⚠️  Erreur WebSocket: {e}")
+            print(f"   ⚠️  WebSocket error: {e}")
         
-        # Nettoyage
+        # Cleanup
         await client.close()
         await auth_manager.close()
         
-        print("\n🎉 Tous les tests d'authentification ont réussi!")
+        print("\n🎉 All authentication tests passed!")
         return True
         
     except GardenaAuthError as e:
-        print(f"\n❌ Erreur d'authentification: {e}")
+        print(f"\n❌ Authentication error: {e}")
         if e.status_code:
-            print(f"   Code d'erreur: {e.status_code}")
+            print(f"   Error code: {e.status_code}")
         if e.response_data:
-            print(f"   Données de réponse: {e.response_data}")
+            print(f"   Response data: {e.response_data}")
         return False
         
     except GardenaAPIError as e:
-        print(f"\n❌ Erreur API: {e}")
+        print(f"\n❌ API error: {e}")
         if e.status_code:
-            print(f"   Code d'erreur: {e.status_code}")
+            print(f"   Error code: {e.status_code}")
         if e.response_data:
-            print(f"   Données de réponse: {e.response_data}")
+            print(f"   Response data: {e.response_data}")
         return False
         
     except Exception as e:
-        print(f"\n❌ Erreur inattendue: {e}")
-        logger.exception("Erreur détaillée:")
+        print(f"\n❌ Unexpected error: {e}")
+        logger.exception("Detailed error:")
         return False
 
 
 async def test_error_scenarios():
-    """Test des scénarios d'erreur."""
-    print("\n🧪 Test des scénarios d'erreur...")
+    """Test error scenarios."""
+    print("\n🧪 Testing error scenarios...")
     print("=" * 50)
     
-    # Test avec des identifiants invalides
-    print("🔍 Test avec identifiants invalides...")
+    # Test with invalid credentials
+    print("🔍 Test with invalid credentials...")
     try:
         auth_manager = GardenaAuthenticationManager("invalid", "invalid")
         await auth_manager.authenticate()
-        print("   ❌ Erreur: L'authentification aurait dû échouer")
+        print("   ❌ Error: Authentication should have failed")
         return False
     except GardenaAuthError as e:
-        print(f"   ✅ Erreur d'authentification attendue: {e}")
+        print(f"   ✅ Expected authentication error: {e}")
     
-    # Test avec des identifiants vides
-    print("🔍 Test avec identifiants vides...")
+    # Test with empty credentials
+    print("🔍 Test with empty credentials...")
     try:
         auth_manager = GardenaAuthenticationManager("", "")
         await auth_manager.authenticate()
-        print("   ❌ Erreur: L'authentification aurait dû échouer")
+        print("   ❌ Error: Authentication should have failed")
         return False
     except Exception as e:
-        print(f"   ✅ Erreur attendue: {e}")
+        print(f"   ✅ Expected error: {e}")
     
-    print("✅ Tous les tests d'erreur ont réussi!")
+    print("✅ All error tests passed!")
     return True
 
 
 async def main():
-    """Fonction principale."""
-    print("🧪 Script de test d'authentification Gardena Smart System")
+    """Main function."""
+    print("🧪 Gardena Smart System Authentication Test Script")
     print("=" * 60)
     
-    # Test principal
+    # Main test
     auth_success = await test_authentication()
     
-    # Test des scénarios d'erreur
+    # Error scenario tests
     error_success = await test_error_scenarios()
     
     print("\n" + "=" * 60)
     if auth_success and error_success:
-        print("🎉 Tous les tests ont réussi!")
+        print("🎉 All tests passed!")
         return 0
     else:
-        print("❌ Certains tests ont échoué.")
+        print("❌ Some tests failed.")
         return 1
 
 
@@ -187,9 +187,9 @@ if __name__ == "__main__":
         exit_code = asyncio.run(main())
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        print("\n⏹️  Test interrompu par l'utilisateur")
+        print("\n⏹️  Test interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Erreur fatale: {e}")
-        logger.exception("Erreur détaillée:")
+        print(f"\n💥 Fatal error: {e}")
+        logger.exception("Detailed error:")
         sys.exit(1) 

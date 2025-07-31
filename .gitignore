@@ -76,3 +76,9 @@ docs/api/
 # Fichiers de configuration locaux
 config.local.yaml
 secrets.yaml
+
+# Home Assistant test environment
+.homeassistant/
+.ha.pid
+home-assistant.log
+*.pid

@@ -139,20 +139,24 @@ class TestGardenaAuthenticationManager:
         auth_manager._refresh_token = "old-refresh-token"
         auth_manager._token_expires_at = datetime.now() - timedelta(minutes=10)
         
-        mock_response = {
-            "access_token": "new-access-token",
-            "refresh_token": "new-refresh-token",
-            "expires_in": 3600
-        }
+        # Mock the refresh to actually update the token
+        async def mock_refresh():
+            auth_manager._access_token = "new-access-token"
+            auth_manager._refresh_token = "new-refresh-token"
+            auth_manager._token_expires_at = datetime.now() + timedelta(hours=1)
         
-        with patch.object(auth_manager, '_refresh_access_token', new_callable=AsyncMock) as mock_refresh:
-            mock_refresh.return_value = None
+        with patch.object(auth_manager, '_refresh_access_token', new_callable=AsyncMock) as mock_refresh_func:
+            mock_refresh_func.side_effect = mock_refresh
             
-            with patch.object(auth_manager, '_is_token_valid', return_value=True):
+            # Mock _is_token_valid to return False initially (expired token), then True after refresh
+            def mock_is_token_valid():
+                return auth_manager._access_token == "new-access-token"
+            
+            with patch.object(auth_manager, '_is_token_valid', side_effect=mock_is_token_valid):
                 token = await auth_manager.authenticate()
                 
                 assert token == "new-access-token"
-                mock_refresh.assert_called_once()
+                mock_refresh_func.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_authenticate_refresh_token_failure(self, auth_manager):
@@ -164,9 +168,18 @@ class TestGardenaAuthenticationManager:
             mock_refresh.side_effect = GardenaAuthError("Refresh failed", status_code=401)
             
             with patch.object(auth_manager, '_perform_initial_auth', new_callable=AsyncMock) as mock_initial:
-                mock_initial.return_value = None
+                # Mock initial auth to set a new token
+                async def mock_initial_auth():
+                    auth_manager._access_token = "new-access-token"
+                    auth_manager._token_expires_at = datetime.now() + timedelta(hours=1)
                 
-                with patch.object(auth_manager, '_is_token_valid', return_value=True):
+                mock_initial.side_effect = mock_initial_auth
+                
+                # Mock _is_token_valid to return False initially (expired token), then True after initial auth
+                def mock_is_token_valid():
+                    return auth_manager._access_token == "new-access-token"
+                
+                with patch.object(auth_manager, '_is_token_valid', side_effect=mock_is_token_valid):
                     await auth_manager.authenticate()
                     
                     # Should clear refresh token and fall back to initial auth
@@ -343,66 +356,96 @@ class TestConfigFlowAuthentication:
     async def test_config_flow_success(self, hass):
         """Test successful config flow authentication."""
         from .config_flow import GardenaSmartSystemConfigFlow
-        
+        from . import config_flow
+    
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
+    
+        # Create a mock client
+        mock_client = MagicMock()
+        mock_client.get_locations = AsyncMock(return_value=[{"id": "loc1", "name": "Test Location"}])
+        mock_client.close = AsyncMock()
         
-        with patch('custom_components.gardena_smart_system.config_flow.GardenaSmartSystemClient') as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
-            mock_client.get_locations.return_value = [{"id": "loc1", "name": "Test Location"}]
-            mock_client.close = AsyncMock()
-            
+        # Replace the class in the module
+        original_client = config_flow.GardenaSmartSystemClient
+        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        
+        try:
             result = await flow.async_step_user({
                 "client_id": "test-client-id",
                 "client_secret": "test-client-secret"
             })
-            
+    
             assert result["type"] == "create_entry"
             assert result["data"]["client_id"] == "test-client-id"
             assert result["data"]["client_secret"] == "test-client-secret"
+            
+            # Verify the client was created with correct parameters
+            config_flow.GardenaSmartSystemClient.assert_called_once_with(
+                client_id="test-client-id",
+                client_secret="test-client-secret"
+            )
+        finally:
+            # Restore the original class
+            config_flow.GardenaSmartSystemClient = original_client
     
     @pytest.mark.asyncio
     async def test_config_flow_invalid_auth(self, hass):
         """Test config flow with invalid authentication."""
         from .config_flow import GardenaSmartSystemConfigFlow
         from .auth import GardenaAuthError
-        
+        from . import config_flow
+    
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
+    
+        # Create a mock client
+        mock_client = MagicMock()
+        mock_client.get_locations = AsyncMock(side_effect=GardenaAuthError("Invalid credentials", status_code=401))
+        mock_client.close = AsyncMock()
         
-        with patch('custom_components.gardena_smart_system.config_flow.GardenaSmartSystemClient') as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
-            mock_client.get_locations.side_effect = GardenaAuthError("Invalid credentials", status_code=401)
-            mock_client.close = AsyncMock()
-            
+        # Replace the class in the module
+        original_client = config_flow.GardenaSmartSystemClient
+        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        
+        try:
             result = await flow.async_step_user({
                 "client_id": "invalid-id",
                 "client_secret": "invalid-secret"
             })
-            
+    
             assert result["type"] == "form"
             assert result["errors"]["base"] == "invalid_auth"
+        finally:
+            # Restore the original class
+            config_flow.GardenaSmartSystemClient = original_client
     
     @pytest.mark.asyncio
     async def test_config_flow_no_locations(self, hass):
         """Test config flow when no locations are found."""
         from .config_flow import GardenaSmartSystemConfigFlow
-        
+        from . import config_flow
+    
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
+    
+        # Create a mock client
+        mock_client = MagicMock()
+        mock_client.get_locations = AsyncMock(return_value=[])
+        mock_client.close = AsyncMock()
         
-        with patch('custom_components.gardena_smart_system.config_flow.GardenaSmartSystemClient') as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
-            mock_client.get_locations.return_value = []
-            mock_client.close = AsyncMock()
-            
+        # Replace the class in the module
+        original_client = config_flow.GardenaSmartSystemClient
+        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        
+        try:
             result = await flow.async_step_user({
                 "client_id": "test-client-id",
                 "client_secret": "test-client-secret"
             })
-            
+    
             assert result["type"] == "form"
-            assert result["errors"]["base"] == "no_locations" 
+            assert result["errors"]["base"] == "no_locations"
+        finally:
+            # Restore the original class
+            config_flow.GardenaSmartSystemClient = original_client 
