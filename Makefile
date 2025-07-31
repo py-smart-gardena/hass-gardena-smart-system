@@ -147,7 +147,7 @@ ha-start: ## Start Home Assistant with the integration
 		echo "$(GREEN)✅ Configuration file created$(NC)"; \
 	fi
 	@echo "$(GREEN)🚀 Starting Home Assistant...$(NC)"
-	@$(PYTHON) -m homeassistant --config $(HA_CONFIG_DIR) > $(HA_LOGS) 2>&1 & \
+	@GARDENA_DEV_MODE=true $(PYTHON) -m homeassistant --config $(HA_CONFIG_DIR) > $(HA_LOGS) 2>&1 & \
 	echo $$! > $(HA_PID_FILE); \
 	sleep 5; \
 	if ps -p $$(cat $(HA_PID_FILE)) > /dev/null 2>&1; then \

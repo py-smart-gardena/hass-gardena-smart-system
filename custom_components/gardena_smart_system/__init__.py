@@ -1,16 +1,16 @@
 """The Gardena Smart System integration."""
-from __future__ import annotations
-
+import asyncio
 import logging
-from typing import Any
+import os
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN
 from .coordinator import GardenaSmartSystemCoordinator
+from .gardena_client import GardenaSmartSystemClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,18 +25,37 @@ PLATFORMS: list[Platform] = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Gardena Smart System from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
+    _LOGGER.info("Setting up Gardena Smart System integration")
 
-    coordinator = GardenaSmartSystemCoordinator(hass, entry)
+    # Get dev mode from environment
+    dev_mode = os.getenv('GARDENA_DEV_MODE', 'false').lower() == 'true'
     
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except Exception as ex:
-        _LOGGER.error("Failed to initialize Gardena Smart System: %s", ex)
-        raise ConfigEntryNotReady from ex
+    # Create client
+    client = GardenaSmartSystemClient(
+        client_id=entry.data[CONF_CLIENT_ID],
+        client_secret=entry.data[CONF_CLIENT_SECRET],
+        dev_mode=dev_mode,
+    )
 
+    # Create coordinator
+    coordinator = GardenaSmartSystemCoordinator(hass, client)
+
+    # Store coordinator in hass data
+    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
+    try:
+        # Test the connection
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        await coordinator.shutdown()
+        raise
+    except Exception as err:
+        _LOGGER.error("Failed to initialize Gardena Smart System: %s", err)
+        await coordinator.shutdown()
+        raise ConfigEntryNotReady(f"Failed to initialize: {err}") from err
+
+    # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -44,8 +63,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        await coordinator.async_shutdown()
+    _LOGGER.info("Unloading Gardena Smart System integration")
+
+    # Unload platforms
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    # Shutdown coordinator
+    if entry.entry_id in hass.data[DOMAIN]:
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        await coordinator.shutdown()
+        del hass.data[DOMAIN][entry.entry_id]
 
     return unload_ok 
