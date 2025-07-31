@@ -4,7 +4,6 @@
 .PHONY: help setup install test test-auth clean
 
 # Variables
-PYTHON_VERSION := 3.11
 VENV_NAME := venv
 VENV_PATH := $(VENV_NAME)/bin
 PYTHON := $(VENV_PATH)/python
@@ -31,7 +30,7 @@ help: ## Affiche l'aide
 setup: ## Configure l'environnement de développement complet
 	@echo "$(GREEN)🔧 Configuration de l'environnement de développement...$(NC)"
 	@if [ ! -d "$(VENV_NAME)" ]; then \
-		python$(PYTHON_VERSION) -m venv $(VENV_NAME); \
+		python3 -m venv $(VENV_NAME) 2>/dev/null || python -m venv $(VENV_NAME) 2>/dev/null || (echo "$(RED)❌ Python non trouvé. Installez Python 3.6+$(NC)" && exit 1); \
 		echo "$(GREEN)✅ Environnement virtuel créé$(NC)"; \
 	else \
 		echo "$(YELLOW)⚠️  L'environnement virtuel existe déjà$(NC)"; \
