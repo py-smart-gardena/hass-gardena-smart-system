@@ -11,7 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, UPDATE_INTERVAL
-from .gardena_client import GardenaSmartSystemClient
+from .gardena_client import GardenaSmartSystemClient, GardenaAPIError
+from .auth import GardenaAuthError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,28 +38,50 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Update data via Gardena Smart System API."""
         try:
+            _LOGGER.debug("Starting data update for Gardena Smart System")
+            
             # Get locations and devices
             locations = await self.client.get_locations()
             
             if not locations:
                 _LOGGER.warning("No locations found for Gardena Smart System")
-                return {}
+                return {
+                    "locations": [],
+                    "devices": [],
+                    "location_id": None,
+                }
             
             # For now, we'll use the first location
             location_id = locations[0]["id"]
+            _LOGGER.debug("Using location: %s", location_id)
+            
             location_data = await self.client.get_location(location_id)
+            devices = location_data.get("included", [])
+            
+            _LOGGER.info("Successfully updated data: %d locations, %d devices", len(locations), len(devices))
             
             return {
                 "locations": locations,
-                "devices": location_data.get("included", []),
+                "devices": devices,
                 "location_id": location_id,
             }
             
+        except GardenaAuthError as err:
+            _LOGGER.error("Authentication error during data update: %s (status: %s)", err, err.status_code)
+            raise UpdateFailed(f"Authentication error: {err}") from err
+            
+        except GardenaAPIError as err:
+            _LOGGER.error("API error during data update: %s (status: %s)", err, err.status_code)
+            raise UpdateFailed(f"API error: {err}") from err
+            
         except Exception as err:
-            _LOGGER.error("Error updating Gardena Smart System data: %s", err)
-            raise UpdateFailed(f"Error updating data: {err}") from err
+            _LOGGER.error("Unexpected error during data update: %s", err, exc_info=True)
+            raise UpdateFailed(f"Unexpected error: {err}") from err
 
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator."""
-        if hasattr(self.client, 'close'):
-            await self.client.close() 
+        _LOGGER.debug("Shutting down Gardena Smart System coordinator")
+        try:
+            await self.client.close()
+        except Exception as e:
+            _LOGGER.error("Error during coordinator shutdown: %s", e) 
