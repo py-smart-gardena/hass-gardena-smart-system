@@ -1,0 +1,7 @@
+# Dépendances de production pour Gardena Smart System Integration
+
+# Client HTTP asynchrone
+aiohttp>=3.8.0
+
+# Validation des données
+voluptuous>=0.13.0 
