@@ -1,0 +1,1618 @@
+openapi: 3.0.0
+info:
+  version: 2.0.0
+  title: GARDENA smart system API
+  description: Public API to query and control GARDENA smart system devices.
+servers:
+  - url: https://api.smart.gardena.dev/v2
+tags:
+  - name: Snapshot
+    description: Fetch current state of devices. Rate limited, so frequent polling not possible.
+  - name: WebSocket
+    description: Fetch current state of devices and then get subsequent updates in realtime.
+  - name: Control
+    description: Control behaviour of devices.
+paths:
+  /locations:
+    get:
+      summary: List locations that belong to user (as identified by provided authorization token).
+      operationId: list_locations
+      tags:
+        - Snapshot
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/LocationsResponse'
+        '401':
+          description: Failure, user could not be authenticated. Authorization-Provider or X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Failure, user has no access to any location. User first needs to setup smart system in GARDENA app.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failure, internal error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Failure, backend error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /locations/{locationId}:
+    get:
+      summary: Get location with its devices and services (a device can have multiple services).
+      operationId: list_location
+      tags:
+        - Snapshot
+      parameters:
+        - name: locationId
+          in: path
+          description: Identity of the location.
+          required: true
+          schema:
+            $ref: '#/components/schemas/LocationId'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '401':
+          description: Failure, user could not be authenticated. Authorization-Provider or X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized for this location. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Failure, location not found.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failure, internal error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Failure, backend error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /command/{serviceId}:
+    put:
+      summary: Send command to device.
+      description: "Control a device by sending a command to one of its services. Note: device will be contacted asynchronously, a successful request only indicates that command was forwarded to smart Gateway."
+      operationId: send_command
+      tags:
+        - Control
+      parameters:
+        - name: serviceId
+          in: path
+          description: Identity of the service.
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Success, smart Gateway received command and will forward it to device.
+        '400':
+          description: Failure, bad request.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Failure, user could not be authenticated. Authorization-Provider or X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Failure, internal error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Failure, backend error.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+            # no clue why a hard coded example is required here - it fails to nicely generate a sample as it did when it was an array
+            example:
+              data:
+                id: request-1
+                type: POWER_SOCKET_CONTROL
+                attributes:
+                  command: START_SECONDS_TO_OVERRIDE
+                  seconds: 300
+  /websocket:
+    post:
+      summary: Announce your desire to receive realtime events.
+      operationId: create_websocket_url
+      tags:
+        - WebSocket
+      description: Create a new WebSocket endpoint.
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/CreateWebSocketRequest'
+      responses:
+        '201':
+          description: The WebSocket endpoint was created.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/WebSocketCreatedResponse'
+        '400':
+          description: "bad request"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Failure, user could not be authenticated. Authorization-Provider or X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "location not found"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "internal error"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: "backend error"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /health:
+    get:
+      security: [ ] # no security for this endpoint
+      summary: Check status of API
+      operationId: get_health
+      tags:
+        - Health Check
+      responses:
+        '200':
+          description: Success.
+        '503':
+          description: Service unavailable.
+  /webhook:
+    post:
+      summary: Register a new webhook url for a specific location
+      operationId: register_webhook
+      tags:
+        - Webhook
+      description: Register a new webhook url for a specific location.
+      requestBody:
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/RegisterWebhookRequest'
+      responses:
+        '201':
+          description: The Webhook was registered succesfully.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/RegisterWebhookResponse'
+        '400':
+          description: "bad request"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Failure, user could not be authenticated. X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "location not found"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "internal error"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /webhook/{locationId}:
+    get:
+      summary: Get info about a webhook connection
+      operationId: get_webhook
+      tags:
+        - Webhook
+      description: Get locationId, url and validUntil information of a webhook connection
+      parameters:
+        - name: locationId
+          in: path
+          description: Identity of the service.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/GetWebhookResponse'
+        '400':
+          description: "bad request"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Failure, user could not be authenticated. X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "webhook not found"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "internal error"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Deregister webhook connection
+      operationId: delete_webhook
+      tags:
+        - Webhook
+      description: Deregisters a webhook connection and removes all info about it completely.
+      parameters:
+        - name: locationId
+          in: path
+          description: Identity of the service.
+          required: true
+          schema:
+            type: string
+        - name: X-HMAC-Secret
+          in: header
+          description: HMAC secret associated with connection to delete.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The Webhook connection was succesfully deregistered.
+        '400':
+          description: "bad request"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Failure, user could not be authenticated. X-Api-Key header or Bearer Token missing or invalid.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Failure, user not authorized. Possibly X-Api-Key header missing.
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: "webhook not found"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "internal error"
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+security: # these things are applied on all operations
+  - ApiKeyAuth: [ ]
+    Authorization: [ ]
+components:
+  securitySchemes: # here we defined what security headers we expect globally
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Application API key obtained through developer portal.
+    Authorization:
+      type: http
+      scheme: bearer
+      description: Access token obtained by Authentication API call POST /oauth2/token.
+  schemas:
+    Identifier:
+      type: string
+      description: Unique identifier.
+      example: "d8a1faef-2ee3-421d-a3f8-f8ed577c2ad3"
+    RandomIdentifier:
+      type: string
+      description: Random value, only used for logging purposes.
+      example: "request-12312"
+    CreateWebSocketRequest:
+      required:
+        - data
+      properties:
+        data: { $ref: '#/components/schemas/CreateWebSocketDataItem' }
+    CreateWebSocketDataItem:
+      type: object
+      required:
+        - attributes
+      properties:
+        id:
+          $ref: '#/components/schemas/RandomIdentifier'
+        type:
+          type: string
+          enum: [ WEBSOCKET ]
+        attributes: { $ref: '#/components/schemas/CreateWebSocket' }
+    CreateWebSocket:
+      type: object
+      required:
+        - locationId
+      properties:
+        locationId:
+          $ref: '#/components/schemas/LocationId'
+    WebSocketCreatedResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data: { $ref: '#/components/schemas/WebSocketDataItem' }
+    WebSocketDataItem:
+      description: "An endpoint for subscribing to live updates to the system."
+      allOf:
+        - $ref: '#/components/schemas/WebSocketLink'
+        - type: object
+          required:
+            - type
+            - attributes
+          properties:
+            attributes: { $ref: '#/components/schemas/WebSocket' }
+    WebSocket:
+      type: object
+      required:
+        - url
+      properties:
+        validity:
+          description: "Time window for connection, starting from issuing this POST request, seconds."
+          type: integer
+          example: 30
+        url:
+          type: string
+          example: wss://api.smart.gardena.dev/v1/websocket/VSQGBJIuwRO6Szk8WldK5isGrax9ObXBa+aKtEdtbGGJEu5haIy+m6601nhVMoA9Pd3+brEWFGDZgM18YvdQmWhy5A2SuCHai7qQ9A0Phn9SueorIstVD5l+rlLsVlCLP3zYNQ==
+    LocationsResponse:
+      description: |
+        The list of locations that belong to this user, without devices or services.
+        Used to find out valid location IDs.
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationDataItem'
+    LocationResponse:
+      description: |
+        "data" contains LOCATION items, "included" contains associated objects of type DEVICE and their associated services.
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/FullLocationDataItem'
+        included:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/DeviceDataItem'
+              - $ref: '#/components/schemas/CommonServiceDataItem'
+              - $ref: '#/components/schemas/MowerServiceDataItem'
+              - $ref: '#/components/schemas/PowerSocketServiceDataItem'
+              - $ref: '#/components/schemas/ValveServiceDataItem'
+              - $ref: '#/components/schemas/ValveSetServiceDataItem'
+              - $ref: '#/components/schemas/SensorServiceDataItem'
+            discriminator:
+              propertyName: type
+              mapping:
+                DEVICE: '#/components/schemas/DeviceDataItem'
+                COMMON: '#/components/schemas/CommonServiceDataItem'
+                MOWER: '#/components/schemas/MowerServiceDataItem'
+                POWER_SOCKET: '#/components/schemas/PowerSocketServiceDataItem'
+                VALVE: '#/components/schemas/ValveServiceDataItem'
+                VALVE_SET: '#/components/schemas/ValveSetServiceDataItem'
+                SENSOR: '#/components/schemas/SensorServiceDataItem'
+    RegisterWebhookRequest:
+      required:
+        - data
+      properties:
+        data: { $ref: '#/components/schemas/RegisterWebhookDataItem' }
+    RegisterWebhookDataItem:
+      type: object
+      required:
+        - attributes
+        - id
+      properties:
+        attributes: { $ref: '#/components/schemas/RegisterWebhookAttributes' }
+        id:
+          $ref: '#/components/schemas/Identifier'
+    RegisterWebhookAttributes:
+      type: object
+      required:
+        - url
+        - locationId
+      properties:
+        url:
+          type: string
+          example: "https://rest.api/webhook/42"
+        locationId:
+          type: string
+          description: A globally unique string. Must not be parsed.
+          example: 8e75cbdd-ca04-4f38-b845-7e9667b4c2dc
+    RegisterWebhookResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RegisterWebhookResponseDataItem'
+    RegisterWebhookResponseDataItem:
+      type: object
+      properties:
+        attributes: { $ref: '#/components/schemas/RegisterWebhookResponseAttributes' }
+        id:
+          $ref: '#/components/schemas/Identifier'
+    RegisterWebhookResponseAttributes:
+      type: object
+      properties:
+        locationId:
+          type: string
+          description: A globally unique string. Must not be parsed.
+          example: 8e75cbdd-ca04-4f38-b845-7e9667b4c2dc
+        hmacSecret:
+          type: string
+          description: Secret for verifying authenticity of events sent to webhook url
+          example: OGU3NWNiZGQtY2EwNC00ZjM4LWI4NDUtN2U5NjY3YjRjMmRjOGU3NWNiZGQtY2EwNC00ZjM4LWI4NDUtN2U5NjY3YjRjMmRj
+        validUntil:
+          type: integer
+          description: Epoch timestamp in seconds denoting when the webhook expires unless updated with new post request
+          example: 1643840542
+    GetWebhookResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetWebhookResponseDataItem'
+    GetWebhookResponseDataItem:
+      type: object
+      required:
+        - type
+        - attributes
+        - id
+      properties:
+        attributes: { $ref: '#/components/schemas/GetWebhookResponseAttributes' }
+        id:
+          $ref: '#/components/schemas/Identifier'
+    GetWebhookResponseAttributes:
+      type: object
+      properties:
+        locationId:
+          type: string
+          description: A globally unique string. Must not be parsed.
+          example: 8e75cbdd-ca04-4f38-b845-7e9667b4c2dc
+        url:
+          type: string
+          description: The webhook url of this locationId
+          example: "https://rest.api/webhook/42"
+        validUntil:
+          type: integer
+          description: Epoch timestamp in seconds denoting when the webhook expires unless updated with new post request
+          example: 1643840542
+    ErrorResponse:
+      description: A {JSON:API} error message.
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonApiErrorObject'
+    JsonApiErrorObject:
+      description: A {JSON:API} error message.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        status:
+          type: string
+          example: 'SOME_REASON_CODE'
+        code:
+          type: string
+          example: 'nnn'
+        title:
+          type: string
+          example: 'Some summary of the problem.'
+        detail:
+          type: string
+          example: 'Some details about the specific problem.'
+    LocationId:
+      type: string
+      description: Identifies user location. A location gets created when smart Gateway is set up.
+      example: '6082e957-891a-480d-9fa2-196faed4b5eb'
+    LocationLink:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        type:
+          type: string
+          enum: [ LOCATION ]
+    DeviceLink:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        type:
+          type: string
+          enum: [ DEVICE ]
+    ServiceLink:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        type:
+          type: string
+          enum: [ COMMON, MOWER, SENSOR, VALVE, VALVE_SET, POWER_SOCKET ]
+    WebSocketLink:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Identifier'
+        type:
+          type: string
+          enum: [ WEBSOCKET ]
+    LocationRelationships:
+      type: object
+      properties:
+        relationships:
+          type: object
+          properties:
+            devices:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DeviceLink'
+    DeviceRelationships:
+      type: object
+      properties:
+        relationships:
+          type: object
+          properties:
+            location:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/LocationLink'
+            services:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ServiceLink'
+    ServiceRelationships:
+      type: object
+      properties:
+        relationships:
+          type: object
+          properties:
+            device:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/DeviceLink'
+    CommandRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/Command'
+    Command:
+      oneOf:
+        - $ref: '#/components/schemas/MowerCommand'
+        - $ref: '#/components/schemas/PowerSocketCommand'
+        - $ref: '#/components/schemas/ValveCommand'
+        - $ref: '#/components/schemas/ValveSetCommand'
+      discriminator:
+        propertyName: type
+        mapping:
+          MOWER_CONTROL: '#/components/schemas/MowerCommand'
+          POWER_SOCKET_CONTROL: '#/components/schemas/PowerSocketCommand'
+          VALVE_CONTROL: '#/components/schemas/ValveCommand'
+          VALVE_SET_CONTROL: '#/components/schemas/ValveSetCommand'
+    MowerCommand:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/RandomIdentifier'
+        type:
+          type: string
+          enum: [ MOWER_CONTROL ]
+        attributes:
+          type: object
+          required:
+            - command
+          properties:
+            command:
+              description: |
+                - `START_SECONDS_TO_OVERRIDE` - Manual operation, use 'seconds' attribute to define duration.
+                - `START_DONT_OVERRIDE` - Automatic operation.
+                - `PARK_UNTIL_NEXT_TASK` - Cancel the current operation and return to charging station.
+                - `PARK_UNTIL_FURTHER_NOTICE` - Cancel the current operation, return to charging station, ignore schedule.
+              type: string
+              enum:
+                - START_SECONDS_TO_OVERRIDE
+                - START_DONT_OVERRIDE
+                - PARK_UNTIL_NEXT_TASK
+                - PARK_UNTIL_FURTHER_NOTICE
+            seconds:
+              description: defines duration of manual mowing. MUST be positive multiple of 60.
+              type: integer
+              default: 1800
+              example: 3600
+    PowerSocketCommand:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ POWER_SOCKET_CONTROL ]
+        attributes:
+          type: object
+          required:
+            - command
+          properties:
+            command:
+              description: |
+                - `START_SECONDS_TO_OVERRIDE` - Manual operation, use 'seconds' attribute to define duration.
+                - `START_OVERRIDE` - Manual 'on'
+                - `STOP_UNTIL_NEXT_TASK` - Immediately switch 'off', continue with the schedule.
+                - `PAUSE` - Skip automatic operation until specified time. The currently active operation will NOT be cancelled.
+                - `UNPAUSE` - Restore automatic operation if it was paused.
+              type: string
+              enum:
+                - START_SECONDS_TO_OVERRIDE
+                - START_OVERRIDE
+                - STOP_UNTIL_NEXT_TASK
+                - PAUSE
+                - UNPAUSE
+            seconds:
+              description: defines duration that power is switched on. MUST be positive multiple of 60.
+              type: integer
+              default: 1800
+              example: 3600
+    ValveCommand:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ VALVE_CONTROL ]
+        attributes:
+          type: object
+          required:
+            - command
+          properties:
+            command:
+              description: |
+                - `START_SECONDS_TO_OVERRIDE` - Manual operation, use 'seconds' attribute to define duration.
+                - `STOP_UNTIL_NEXT_TASK` - Cancel the current watering, continue with the schedule.
+                - `PAUSE` - Skip automatic operation until specified time. The currently active operation might or might not be cancelled (depends on device model).
+                - `UNPAUSE` - Restore automatic operation if it was paused.
+              type: string
+              enum:
+                - START_SECONDS_TO_OVERRIDE
+                - STOP_UNTIL_NEXT_TASK
+                - PAUSE
+                - UNPAUSE
+            seconds:
+              description: defines duration of manual mowing. MUST be positive multiple of 60. Different devices have different allowance for maximum duration.
+              type: integer
+              example: 1800
+              default: 3600
+    ValveSetCommand:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ VALVE_SET_CONTROL ]
+        attributes:
+          type: object
+          required:
+            - command
+          properties:
+            command:
+              description: |
+                - `STOP_UNTIL_NEXT_TASK` - Immediately close all valves.
+              type: string
+              enum:
+                - STOP_UNTIL_NEXT_TASK
+    LocationDataItem:
+      description: "A location description."
+      allOf:
+        - $ref: '#/components/schemas/LocationLink'
+        - type: object
+          properties:
+            attributes: { $ref: '#/components/schemas/Location' }
+    FullLocationDataItem:
+      description: "A location description."
+      allOf:
+        - $ref: '#/components/schemas/LocationLink'
+        - type: object
+          properties:
+            attributes: { $ref: '#/components/schemas/Location' }
+        - $ref: '#/components/schemas/LocationRelationships'
+    Location:
+      type: object
+      description: "Location description."
+      required:
+        - name
+      properties:
+        name:
+          description: The garden name, given by the user.
+          type: string
+          example: "My Garden."
+    DeviceDataItem:
+      description: "A device description."
+      allOf:
+        - $ref: '#/components/schemas/DeviceLink'
+        - $ref: '#/components/schemas/DeviceRelationships'
+    MowerServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ MOWER ]
+            attributes: { $ref: '#/components/schemas/MowerService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    MowerService:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/TimestampedServiceState'
+        activity:
+          $ref: '#/components/schemas/TimestampedMowerActivity'
+        lastErrorCode:
+          $ref: '#/components/schemas/TimestampedMowerError'
+        operatingHours:
+          $ref: '#/components/schemas/HoursWrapper'
+    CommonServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ COMMON ]
+            attributes: { $ref: '#/components/schemas/CommonService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    CommonService:
+      type: object
+      description: "Properties that are common across devices."
+      properties:
+        name:
+          $ref: '#/components/schemas/UserDefinedNameWrapper'
+        batteryLevel:
+          $ref: '#/components/schemas/TimestampedPercent'
+        batteryState:
+          $ref: '#/components/schemas/TimestampedBatteryState'
+        rfLinkLevel:
+          $ref: '#/components/schemas/TimestampedPercent'
+        serial:
+          $ref: '#/components/schemas/SerialNumberWrapper'
+        modelType:
+          $ref: '#/components/schemas/DeviceModelWrapper'
+        rfLinkState:
+          $ref: '#/components/schemas/TimestampedRFLinkState'
+    PowerSocketServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ POWER_SOCKET ]
+            attributes: { $ref: '#/components/schemas/PowerSocketService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    PowerSocketService:
+      type: object
+      properties:
+        activity:
+          $ref: '#/components/schemas/TimestampedPowerSocketActivity'
+        state:
+          $ref: '#/components/schemas/TimestampedServiceState'
+        lastErrorCode:
+          $ref: '#/components/schemas/TimestampedPowerSocketError'
+        duration:
+          $ref: '#/components/schemas/TimestampedSeconds'
+    SensorServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ SENSOR ]
+            attributes: { $ref: '#/components/schemas/SensorService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    SensorService:
+      type: object
+      properties:
+        soilHumidity:
+          $ref: '#/components/schemas/TimestampedPercent'
+        soilTemperature:
+          $ref: '#/components/schemas/TimestampedTemperature'
+        ambientTemperature:
+          $ref: '#/components/schemas/TimestampedTemperature'
+        lightIntensity:
+          $ref: '#/components/schemas/TimestampedLightIntensity'
+    ValveServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ VALVE ]
+            attributes: { $ref: '#/components/schemas/ValveService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    ValveService:
+      type: object
+      description: >-
+        A water valve that can be opened manually or programmed to open automatically on schedule.
+        The timer can only be set to multiplies of 60 - that is 60, 120, 180, ...
+        In irrigation control device a valve might be out of service if it is not physically connected.
+      properties:
+        name:
+          $ref: '#/components/schemas/UserDefinedNameWrapper'
+        activity:
+          $ref: '#/components/schemas/TimestampedValveActivity'
+        state:
+          $ref: '#/components/schemas/TimestampedServiceState'
+        lastErrorCode:
+          $ref: '#/components/schemas/TimestampedValveError'
+        duration:
+          $ref: '#/components/schemas/TimestampedSeconds'
+    ValveSetServiceDataItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              $ref: '#/components/schemas/Identifier'
+            type:
+              type: string
+              enum: [ VALVE_SET ]
+            attributes: { $ref: '#/components/schemas/ValveSetService' }
+        - $ref: '#/components/schemas/ServiceRelationships'
+    ValveSetService:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/TimestampedServiceState'
+        lastErrorCode:
+          $ref: '#/components/schemas/TimestampedValveSetError'
+    TimestampedValveSetError:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/ValveSetError'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    ValveSetError:
+      type: string
+      description: |
+        An explanation code, why the valve can not be operated.
+        - `NO_MESSAGE` - No error.
+        - `VOLTAGE_DROP` - A voltage drop was detected at the power supply (VDD_IN).
+        - `WRONG_POWER_SUPPLY` - The wrong power supply is connected (wrong frequency at zero-crossing).
+        - `NO_MCU_CONNECTION` - Communication error. Unable to communicate with secondary MCU.
+        - `OVERTEMPERATURE` - Watering controller gets too hot
+        - `EEPROM` - Could not read from or write to eeprom.
+        - `UNKNOWN` - The unknown error state.
+      anyOf:
+        - enum:
+            - NO_MESSAGE
+            - VOLTAGE_DROP
+            - WRONG_POWER_SUPPLY
+            - NO_MCU_CONNECTION
+            - OVERTEMPERATURE
+            - EEPROM
+            - UNKNOWN
+        - {}
+    TimestampedLightIntensity:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/LightIntensity'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    LightIntensity:
+      description: 'Light intensity, in Lux'
+      type: integer
+      example: 25560
+      minimum: 0
+    TimestampedTemperature:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/Temperature'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    Temperature:
+      type: integer
+      description: 'The temperature, in degrees Celsius.'
+      minimum: -273
+      example: 21
+    TimestampedPercent:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/Percent'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    TimestampedSeconds:
+      description: >-
+        A length of time starting from timestamp. Some devices support 1 second precision, some - only 1 minute precision.
+        In the latter case the value must be multiply of 60, otherwise a "400 Bad Request" error will be returned.
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/Seconds'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    Percent:
+      description: A percent value.
+      type: integer
+      minimum: 0
+      maximum: 100
+      example: 42
+    Seconds:
+      description: 'An integer, zero or more.'
+      type: integer
+      minimum: 0
+      example: 120
+    HoursWrapper:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/Hours'
+    Hours:
+      description: 'An integer, zero or more.'
+      type: integer
+      minimum: 0
+      example: 123
+    Timestamp:
+      description: ISO 8601 timestamp
+      example: '2018-06-23T04:58:08Z'
+      format: date-time
+      type: string
+    UserDefinedNameWrapper:
+      type: object
+      properties:
+        value:
+          $ref: '#/components/schemas/UserDefinedName'
+    UserDefinedName:
+      description: 'A name, given by user.'
+      type: string
+      example: My precious
+    TimestampedValveActivity:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/ValveActivity'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    ValveActivity:
+      description: |
+        The work currently being done. Only valid if the state is 'in operation'.
+        - `CLOSED` - The valve is closed.
+        - `MANUAL_WATERING` - The watering was initiated by manual action.
+        - `SCHEDULED_WATERING` - The watering is currently active due to a scheduled event.
+      type: string
+      anyOf:
+        - enum:
+            - CLOSED
+            - MANUAL_WATERING
+            - SCHEDULED_WATERING
+        - {}
+    TimestampedValveError:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/ValveError'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    ValveError:
+      type: string
+      description: |
+        An explanation code, why the valve can not be operated.
+        - `NO_MESSAGE` - No explanation.
+        - `CONCURRENT_LIMIT_REACHED` - Can't open valve because at most 2 valves can be open at the same time.
+        - `NOT_CONNECTED` - No valve was connected at the time an action involving this valve has been performed.
+        - `VALVE_CURRENT_MAX_EXCEEDED` - The valve has been closed because the valveId is draining more current than allowed.
+        - `TOTAL_CURRENT_MAX_EXCEEDED` - The valve has been closed because the total current used was more than the allowed maximum.
+        - `WATERING_CANCELED` - Watering was canceled.
+        - `MASTER_VALVE` - Master valve is not connected.
+        - `WATERING_DURATION_TOO_SHORT` - Watering was canceled.
+        - `VALVE_BROKEN` - This means that the electrical connection to the valve is broken, or the inductor is damaged
+        - `FROST_PREVENTS_STARTING` - Because of frost valve stays closed
+        - `LOW_BATTERY_PREVENTS_STARTING` - Because of low battery valve stays closed
+        - `VALVE_POWER_SUPPLY_FAILED` - This means that the Step up Converter can't transform the high voltage to switch the valve. Or it wasn't possible to disable the Step up Converter. Step up Converter or the test circuit for the output voltage, ADC input is damaged
+        - `UNKNOWN` - The unknown error state.
+      anyOf:
+        - enum:
+            - NO_MESSAGE
+            - CONCURRENT_LIMIT_REACHED
+            - NOT_CONNECTED
+            - VALVE_CURRENT_MAX_EXCEEDED
+            - TOTAL_CURRENT_MAX_EXCEEDED
+            - WATERING_CANCELED
+            - MASTER_VALVE
+            - WATERING_DURATION_TOO_SHORT
+            - VALVE_BROKEN
+            - FROST_PREVENTS_STARTING
+            - LOW_BATTERY_PREVENTS_STARTING
+            - VALVE_POWER_SUPPLY_FAILED
+            - UNKNOWN
+        - {}
+    SerialNumberWrapper:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/SerialNumber'
+    DeviceModelWrapper:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/DeviceModel'
+    DeviceModel:
+      description: The device model.
+      type: string
+      example: Device market name.
+    SerialNumber:
+      description: The device serial number.
+      type: string
+      example: '12345'
+    TimestampedPowerSocketActivity:
+      type: object
+      required:
+        - value
+        - timestamp
+      properties:
+        value:
+          $ref: '#/components/schemas/PowerSocketActivity'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    TimestampedPowerSocketError:
+      type: object
+      required:
+        - value
+        - timestamp
+      properties:
+        value:
+          $ref: '#/components/schemas/PowerSocketError'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    PowerSocketActivity:
+      description: |
+        The work currently being done. Only valid if the state is 'in operation'.
+        - `OFF` - Operating by schedule, current state is 'off'.
+        - `FOREVER_ON` - Switched on by a manual action (physical button or through an app), no switch off scheduled.
+        - `TIME_LIMITED_ON` - Switched on by a manual action (through an app), the switch off is scheduled.
+        - `SCHEDULED_ON` - Operating by schedule, current state is 'on'.
+      type: string
+      anyOf:
+        - enum:
+            - 'OFF'
+            - FOREVER_ON
+            - TIME_LIMITED_ON
+            - SCHEDULED_ON
+        - {}
+    PowerSocketError:
+      description: |
+        TIMER_CANCELLED: error: action was canceled.
+        UNKNOWN: unknown error.
+      type: string
+      anyOf:
+        - enum:
+            - TIMER_CANCELLED
+            - UNKNOWN
+        - {}
+    TimestampedMowerError:
+      type: object
+      required:
+        - value
+        - timestamp
+      properties:
+        value:
+          $ref: '#/components/schemas/MowerError'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    TimestampedMowerActivity:
+      type: object
+      required:
+        - value
+        - timestamp
+      properties:
+        value:
+          $ref: '#/components/schemas/MowerActivity'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    MowerActivity:
+      description: |
+        The mower is usually either "active" or not, depending on the schedule.
+        If mower is active then it would be in out of "OK_" states, otherwise in one of "PARKED_" states.
+        All other states are special cases.
+        - `PAUSED` - The mower in a waiting state with hatch closed.
+        - `PAUSED_IN_CS` - The mower is paused in charging station.
+        - `OK_CUTTING` - The mower id cutting in AUTO mode (schedule).
+        - `OK_CUTTING_TIMER_OVERRIDDEN` - The mower is cutting outside schedule.
+        - `OK_SEARCHING` - The mower is searching for the charging station.
+        - `OK_LEAVING` - The mower is leaving charging station.
+        - `OK_CHARGING` - The mower has to be mowing but insufficient charge level keeps it in the charging station.
+        - `PARKED_TIMER` - The mower is parked according to timer, will start again at configured time.
+        - `PARKED_PARK_SELECTED` - The mower is parked until further notice.
+        - `PARKED_AUTOTIMER` - The mower skips mowing because of insufficient grass height.
+        - `PARKED_FROST` - The mower is parked due to frost.
+        - `STOPPED_IN_GARDEN` - The mower is stopped in the garden.
+        - `INITIATE_NEXT_ACTION` - The mower is initiating the next action.
+        - `SEARCHING_FOR_SATELLITES` - The mower is searching for satellites.
+        - `NONE` - No activity is happening, perhaps due to an error.
+      type: string
+      anyOf:
+        - enum:
+            - PAUSED
+            - PAUSED_IN_CS
+            - OK_CUTTING
+            - OK_CUTTING_TIMER_OVERRIDDEN
+            - OK_SEARCHING
+            - OK_LEAVING
+            - OK_CHARGING
+            - PARKED_TIMER
+            - PARKED_PARK_SELECTED
+            - PARKED_AUTOTIMER
+            - PARKED_FROST
+            - STOPPED_IN_GARDEN
+            - INITIATE_NEXT_ACTION
+            - SEARCHING_FOR_SATELLITES
+            - NONE
+        - {}
+    MowerError:
+      description: |
+        This field should be paid attention to if the mower is in one of the two error states.
+        - `NO_MESSAGE` - No message
+        - `OUTSIDE_WORKING_AREA` - Outside working area
+        - `NO_LOOP_SIGNAL` - No loop signal
+        - `WRONG_LOOP_SIGNAL` - Wrong loop signal
+        - `LOOP_SENSOR_PROBLEM_FRONT` - Front loop sensor defect
+        - `LOOP_SENSOR_PROBLEM_REAR` - Rear loop sensor defect
+        - `LEFT_LOOP_SENSOR` - Left loop sensor defect
+        - `RIGHT_LOOP_SENSOR` - Right loop sensor defect
+        - `WRONG_PIN` - Wrong PIN
+        - `TRAPPED` - Trapped
+        - `UPSIDE_DOWN` - Upside down
+        - `LOW_BATTERY` - Low battery voltage
+        - `EMPTY_BATTERY` - Empty battery
+        - `NO_DRIVE` - No drive
+        - `TEMPORARY_LIFT` - Temporary lifted
+        - `LIFTED` - Lifted
+        - `STUCK_IN_CHARGING_STATION` - Stuck in charging station
+        - `CHARGING_STATION_BLOCKED` - Charging station blocked
+        - `COLLISION_SENSOR_PROBLEM_REAR` - Rear collision sensor
+        - `COLLISION_SENSOR_PROBLEM_FRONT` - Front collision sensor
+        - `WHEEL_MOTOR_BLOCKED_RIGHT` - Right wheel motor blocked
+        - `WHEEL_MOTOR_BLOCKED_LEFT` - Left wheel motor blocked
+        - `WHEEL_DRIVE_PROBLEM_RIGHT` - Right wheel drive system
+        - `WHEEL_DRIVE_PROBLEM_LEFT` - Left wheel drive system
+        - `CUTTING_DRIVE` - Cutting motor drive defect
+        - `CUTTING_SYSTEM_BLOCKED` - Cutting means blocked
+        - `INVALID_SUB_DEVICE_COMBINATION` - Invalid sub-device/mower ID
+        - `SETTINGS_RESTORED` - NVRAM data set to default
+        - `ELECTRONIC_PROBLEM` - Unsolved NVRAM fail
+        - `STEEP_SLOPE` - Too steep slope
+        - `CHARGING_SYSTEM_PROBLEM` - Charging System Problem
+        - `STOP_BUTTON_FAIL` - Failed Start/Stop button
+        - `TILT_SENSOR_PROBLEM` - Failed Tilt sensor
+        - `MOWER_TILTED` - Max tilt angle reached
+        - `ANGLE_CUTTING_MEANS_OFF` - Cut means turn off in slope
+        - `WHEEL_MOTOR_OVERLOADED_RIGHT` - Right wheel overloaded
+        - `WHEEL_MOTOR_OVERLOADED_LEFT` - Left wheel overloaded
+        - `CHARGING_CURRENT_TOO_HIGH` - Too high charging current
+        - `TEMPORARY_PROBLEM` - No connection with slave mcu
+        - `CUTTING_OVERLOAD` - Cutting means overloaded
+        - `CUTTING_HEIGHT_RANGE` - Limited cutting height range
+        - `CUTTING_HEIGHT_DRIFT` - Cutting height drift
+        - `CUTTING_HEIGHT_LIMITED` - Cutting height limited
+        - `CUTTING_HEIGHT_DRIVE` - Cutting height drive system
+        - `CUTTING_HEIGHT_CURRENT` - High cutting height current
+        - `CUTTING_HEIGHT_DIRECTION` - Running in opposite direction
+        - `CUTTING_HEIGHT_BLOCKED` - Cutting height blocked
+        - `CUTTING_HEIGHT_PROBLEM` - Undefined cut height problem
+        - `MOWER_TO_CS_COM` - Problems when com with cs
+        - `ULTRASONIC_ERROR` - Error reported from US
+        - `GUIDE_1_NOT_FOUND` - Guide 1 not present in system
+        - `GUIDE_2_NOT_FOUND` - Guide 2 not present in system
+        - `GUIDE_3_NOT_FOUND` - Guide 3 not present in system
+        - `GPS_TRACKER_MODULE_ERROR` - Problem with GPS map signal
+        - `WEAK_GPS_SIGNAL` - Weak GPS map signal
+        - `DIFFICULT_FINDING_HOME` - Follow boundary around detect
+        - `GUIDE_CALIBRATION_ACCOMPLISHED` - Guide calibration success
+        - `GUIDE_CALIBRATION_FAILED` - Guide calibration failed
+        - `TEMPORARY_BATTERY_PROBLEM` - Temporary battery problem
+        - `TOO_LOW_VOLTAGE_BAT_A` - Too low voltage for bat A
+        - `TOO_LOW_VOLTAGE_BAT_B` - Too low voltage for bat B
+        - `BATTERY_PROBLEM` - No valid battery found
+        - `ALARM_MOWER_SWITCHED_OFF` - Alarm Main switch to off
+        - `ALARM_MOWER_STOPPED` - Alarm Stop button pressed
+        - `ALARM_MOWER_LIFTED` - Alarm Lifted
+        - `ALARM_MOWER_TILTED` - Alarm Upside down
+        - `ALARM_MOTION` - Alarm Motion of mower
+        - `ALARM_GEOFENCE` - Alarm Outside geofence
+        - `CONNECTION_CHANGED` - CS communication OK
+        - `CONNECTION_NOT_CHANGED` - CS communication failed
+        - `COM_BOARD_NOT_AVAILABLE` - Com board not available
+        - `SLIPPED` - Slipped
+        - `INVALID_BATTERY_COMBINATION` - Invalid battery combination for this device
+        - `IMBALANCED_CUTTING_DISC` - Imbalanced Cutting Disk Detected
+        - `SAFETY_FUNCTION_FAULTY` - Safety Function Faulty
+        - `RR_WHEEL_BLOCKED` - Rear right wheel motor blocked
+        - `RL_WHEEL_BLOCKED` - Rear left wheel motor blocked
+        - `RR_WHEEL_DRIVE` - Rear right wheel drive system
+        - `RL_WHEEL_DRIVE` - Rear left wheel drive system
+        - `REAR_RIGHT_WHEEL_OVERLOADED` - Rear right wheel overloaded
+        - `REAR_LEFT_WHEEL_OVERLOADED` - Rear left wheel overloaded
+        - `ANGULAR_SENSOR_DEFECT` - Invalid values from the angular sensor
+        - `INVALID_SYSTEM_CONF` - Invalid setup of nodes in the system
+        - `NO_POWER_IN_CS` - No power in Charging Station
+        - `SWITCH_CORD_SENSOR_DEFECT` - Invalid values from the switch cord sensor
+        - `MAP_NOT_VALID` - Programmed working area (site map) does not exit or is not valid
+        - `NO_POSITION` - Hi-resolution positioning system has no valid position
+        - `NO_RS_COMMUNICATION` - Reference station communication disturbed
+        - `FOLDING_SENSOR_ACTIVATED` - Cutting deck folding mechanism is not locked
+        - `ULTRASONIC_SENSOR_1_DEFECT` - No communication, error or test fail on ultrasonic sensor 1
+        - `ULTRASONIC_SENSOR_2_DEFECT` - No communication, error or test fail on ultrasonic sensor 2
+        - `ULTRASONIC_SENSOR_3_DEFECT` - No communication, error or test fail on ultrasonic sensor 3
+        - `ULTRASONIC_SENSOR_4_DEFECT` - No communication, error or test fail on ultrasonic sensor 4
+        - `CUTTING_DRIVE_MOTOR_1_DEFECT` - Cutting motor 1 has fault in drive electronics or motor
+        - `CUTTING_DRIVE_MOTOR_2_DEFECT` - Cutting motor 2 has fault in drive electronics or motor
+        - `CUTTING_DRIVE_MOTOR_3_DEFECT` - Cutting motor 3 has fault in drive electronics or motor
+        - `LIFT_SENSOR_DEFECT` - One of the lift sensors are defect
+        - `COLLISION_SENSOR_DEFECT` - One of the collision sensors are defect
+        - `DOCKING_SENSOR_DEFECT` - Docking sensor is defect
+        - `FOLDING_CUTTING_DECK_SENSOR_DEFECT` - The sensor checking locked position of cutting deck release lever is defect
+        - `LOOP_SENSOR_DEFECT` - One or more loop sensors are defect
+        - `COLLISION_SENSOR_ERROR` - Mower is jammed or collision sensor is defect
+        - `NO_CONFIRMED_POSITION` - Hi-resolution positioning system has no confirmed position
+        - `MAJOR_CUTTING_DISK_IMBALANCE` - Major imbalance in cutting disk
+        - `COMPLEX_WORKING_AREA` - Working area contains too many waypoints
+        - `MOBILE_LOOP_DEFECT` - Mobile Loop fault detected
+        - `DESTINATION_NOT_REACHABLE` - Error, mower failed to reach destination
+        - `DESTINATION_NOT_REACHABLE_WARNING` - Warning, Mower failed to reach destination
+        - `BATTERY_NEAR_END_OF_LIFE` - Battery is near end of life
+        - `BATTERY_FET_ERROR` - BMS discharge FET error
+        - `EDGEMOTOR_BLOCKED` - Edge motor blocked
+        - `INVALID_SW_CONFIGURATION` - Invalid SW configuration
+        - `NO_CORRECTION_DATA` - No correction data available
+        - `INVALID_CORRECTION_DATA` - Invalid correction data
+        - `WAIT_STOP_PRESSED` - Stop button has been pushed
+        - `WAIT_FOR_SAFETY_PIN` - Pin required
+        - `NO_CHARGING_STATION_SIGNAL` - Charging station not connected
+        - `RADAR_ERROR` - Error reported from Radar
+        - `WORK_AREA_TAMPERED` - The reference station and/or charging station has been moved
+        Synthetic errors: states in SG but warnings/errors in integration api
+        - `WAIT_UPDATING`: Mower waiting, updating firmware.
+        - `WAIT_POWER_UP`: Mower powering up.
+        - `OFF_DISABLED`: Mower disabled on main switch.
+        - `OFF_HATCH_OPEN`: Mower in waiting state with hatch open.
+        - `OFF_HATCH_CLOSED`: Mower in waiting state with hatch closed.
+        - `PARKED_DAILY_LIMIT_REACHED`: Mower has completed cutting due to daily limit reached.
+      type: string
+      anyOf:
+        - enum:
+            - UNINITIALISED
+            - NO_MESSAGE
+            - OUTSIDE_WORKING_AREA
+            - NO_LOOP_SIGNAL
+            - NO_CHARGING_STATION_SIGNAL
+            - WRONG_LOOP_SIGNAL
+            - LOOP_SENSOR_PROBLEM_FRONT
+            - LOOP_SENSOR_PROBLEM_REAR
+            - TRAPPED
+            - UPSIDE_DOWN
+            - LOW_BATTERY
+            - EMPTY_BATTERY
+            - NO_DRIVE
+            - LIFTED
+            - STUCK_IN_CHARGING_STATION
+            - CHARGING_STATION_BLOCKED
+            - COLLISION_SENSOR_PROBLEM_REAR
+            - COLLISION_SENSOR_PROBLEM_FRONT
+            - WHEEL_MOTOR_BLOCKED_RIGHT
+            - WHEEL_MOTOR_BLOCKED_LEFT
+            - WHEEL_DRIVE_PROBLEM_RIGHT
+            - WHEEL_DRIVE_PROBLEM_LEFT
+            - CUTTING_SYSTEM_BLOCKED
+            - INVALID_SUB_DEVICE_COMBINATION
+            - SETTINGS_RESTORED
+            - CHARGING_SYSTEM_PROBLEM
+            - TILT_SENSOR_PROBLEM
+            - MOWER_TILTED
+            - WHEEL_MOTOR_OVERLOADED_RIGHT
+            - WHEEL_MOTOR_OVERLOADED_LEFT
+            - CHARGING_CURRENT_TOO_HIGH
+            - ELECTRONIC_PROBLEM
+            - CUTTING_HEIGHT_BLOCKED
+            - CUTTING_HEIGHT_PROBLEM
+            - TEMPORARY_PROBLEM
+            - GUIDE_1_NOT_FOUND
+            - GUIDE_2_NOT_FOUND
+            - GUIDE_3_NOT_FOUND
+            - GPS_TRACKER_MODULE_ERROR
+            - WEAK_GPS_SIGNAL
+            - GUIDE_CALIBRATION_FAILED
+            - TEMPORARY_BATTERY_PROBLEM
+            - BATTERY_PROBLEM
+            - ALARM_MOWER_SWITCHED_OFF
+            - ALARM_MOWER_STOPPED
+            - ALARM_MOWER_LIFTED
+            - ALARM_MOWER_TILTED
+            - COM_BOARD_NOT_AVAILABLE
+            - SLIPPED
+            - INVALID_BATTERY_COMBINATION
+            - SAFETY_FUNCTION_FAULTY
+            - INVALID_SYSTEM_CONF
+            - LIFT_SENSOR_DEFECT
+            - MOBILE_LOOP_DEFECT
+            - LEFT_LOOP_SENSOR
+            - RIGHT_LOOP_SENSOR
+            - WRONG_PIN
+            - TEMPORARY_LIFT
+            - CUTTING_DRIVE
+            - STEEP_SLOPE
+            - STOP_BUTTON_FAIL
+            - ANGLE_CUTTING_MEANS_OFF
+            - SLAVE_MCU_LOST
+            - CUTTING_OVERLOAD
+            - CUTTING_HEIGHT_RANGE
+            - CUTTING_HEIGHT_DRIFT
+            - CUTTING_HEIGHT_LIMITED
+            - CUTTING_HEIGHT_DRIVE
+            - CUTTING_HEIGHT_CURRENT
+            - CUTTING_HEIGHT_DIRECTION
+            - MOWER_TO_CS_COM
+            - ULTRASONIC_ERROR
+            - HIGH_LOW_BAT_TEMP_A
+            - HIGH_LOW_BAT_TEMP_B
+            - TOO_LOW_VOLTAGE_BAT_A
+            - TOO_LOW_VOLTAGE_BAT_B
+            - ALARM_MOTION
+            - ALARM_GEOFENCE
+            - RR_WHEEL_BLOCKED
+            - RL_WHEEL_BLOCKED
+            - RR_WHEEL_DRIVE
+            - RL_WHEEL_DRIVE
+            - REAR_RIGHT_WHEEL_OVERLOADED
+            - REAR_LEFT_WHEEL_OVERLOADED
+            - ANGULAR_SENSOR_DEFECT
+            - NO_POWER_IN_CS
+            - SWITCH_CORD_SENSOR_DEFECT
+            - MAP_NOT_VALID
+            - NO_POSITION
+            - NO_RS_COMMUNICATION
+            - FOLDING_SENSOR_ACTIVATED
+            - ULTRASONIC_SENSOR_1_DEFECT
+            - ULTRASONIC_SENSOR_2_DEFECT
+            - ULTRASONIC_SENSOR_4_DEFECT
+            - ULTRASONIC_SENSOR_3_DEFECT
+            - CUTTING_DRIVE_MOTOR_1_DEFECT
+            - CUTTING_DRIVE_MOTOR_2_DEFECT
+            - CUTTING_DRIVE_MOTOR_3_DEFECT
+            - COLLISION_SENSOR_DEFECT
+            - DOCKING_SENSOR_DEFECT
+            - FOLDING_CUTTING_DECK_SENSOR_DEFECT
+            - LOOP_SENSOR_DEFECT
+            - COLLISION_SENSOR_ERROR
+            - NO_CONFIRMED_POSITION
+            - MAJOR_CUTTING_DISK_IMBALANCE
+            - COMPLEX_WORKING_AREA
+            - INVALID_SW_CONFIGURATION
+            - RADAR_ERROR
+            - WORK_AREA_TAMPERED
+            - DESTINATION_NOT_REACHABLE
+            - WAIT_STOP_PRESSED
+            - WAIT_FOR_SAFETY_PIN
+            - DESTINATION_NOT_REACHABLE_WARNING
+            - BATTERY_NEAR_END_OF_LIFE
+            - EDGEMOTOR_BLOCKED
+            - NO_CORRECTION_DATA
+            - INVALID_CORRECTION_DATA
+            - WAIT_UPDATING
+            - WAIT_POWER_UP
+            - OFF_DISABLED
+            - OFF_HATCH_OPEN
+            - OFF_HATCH_CLOSED
+            - PARKED_DAILY_LIMIT_REACHED
+        - {}
+    TimestampedServiceState:
+      type: object
+      required:
+        - value
+        - timestamp
+      properties:
+        value:
+          $ref: '#/components/schemas/ServiceState'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    ServiceState:
+      description: |
+        The service state.
+        - `OK` - The service is fully operation can receive commands.
+        - `WARNING` - The user must pay attention to the "lastErrorCode" field. Automatic operation might be impaired.
+        - `ERROR` - The user must pay attention to the "lastErrorCode" field. Automatic operation is impossible.
+        - `UNAVAILABLE` - The service is online but can not be used. See service description for more details.
+      type: string
+      enum:
+        - OK
+        - WARNING
+        - ERROR
+        - UNAVAILABLE
+    TimestampedRFLinkState:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/RFLinkState'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    RFLinkState:
+      description: The device is ONLINE if radio exchange is expected to be possible.
+      type: string
+      anyOf:
+        - enum:
+            - ONLINE
+            - OFFLINE
+            - UNKNOWN
+        - {}
+    TimestampedBatteryState:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          $ref: '#/components/schemas/BatteryState'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+    BatteryState:
+      description: |
+        The battery state.
+        - `OK` - The battery operates normally.
+        - `LOW` - The battery is getting depleted but is still OK for the short term device operation.
+        - `REPLACE_NOW` - The battery must be replaced now, the next device operation might fail with it.
+        - `OUT_OF_OPERATION` - The battery must be replaced because device fails to operate with it.
+        - `CHARGING` - The battery is being charged.
+        - `NO_BATTERY` - This device has no battery.
+        - `UNKNOWN` - The battery state can not be determined.
+      type: string
+      anyOf:
+        - enum:
+            - OK
+            - LOW
+            - REPLACE_NOW
+            - OUT_OF_OPERATION
+            - CHARGING
+            - NO_BATTERY
+            - UNKNOWN
+        - {}

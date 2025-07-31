@@ -1,24 +1,45 @@
-DOMAIN = "gardena_smart_system"
-GARDENA_SYSTEM = "gardena_system"
-GARDENA_LOCATION = "gardena_location"
+"""Constants for the Gardena Smart System integration."""
+from __future__ import annotations
 
-CONF_MOWER_DURATION = "mower_duration"
-CONF_SMART_IRRIGATION_DURATION = "smart_irrigation_control_duration"
-CONF_SMART_WATERING_DURATION = "smart_watering_duration"
+from typing import Final
 
-DEFAULT_MOWER_DURATION = 60
-DEFAULT_SMART_IRRIGATION_DURATION = 30
-DEFAULT_SMART_WATERING_DURATION = 30
+# Domain
+DOMAIN: Final = "gardena_smart_system"
 
-ATTR_NAME = "name"
-ATTR_ACTIVITY = "activity"
-ATTR_BATTERY_STATE = "battery_state"
-ATTR_RF_LINK_LEVEL = "rf_link_level"
-ATTR_RF_LINK_STATE = "rf_link_state"
-ATTR_SERIAL = "serial"
-ATTR_OPERATING_HOURS = "operating_hours"
-ATTR_LAST_ERROR = "last_error"
-ATTR_ERROR = "error"
-ATTR_STATE = "state"
-ATTR_STINT_START = "stint_start"
-ATTR_STINT_END = "stint_end"
+# Configuration keys
+CONF_CLIENT_ID: Final = "client_id"
+CONF_CLIENT_SECRET: Final = "client_secret"
+
+# API constants
+API_BASE_URL: Final = "https://api.smart.gardena.dev/v2"
+API_TIMEOUT: Final = 30
+
+# Device types
+DEVICE_TYPE_MOWER: Final = "MOWER"
+DEVICE_TYPE_VALVE: Final = "VALVE"
+DEVICE_TYPE_POWER_SOCKET: Final = "POWER_SOCKET"
+DEVICE_TYPE_SENSOR: Final = "SENSOR"
+
+# Service types
+SERVICE_TYPE_COMMON: Final = "COMMON"
+SERVICE_TYPE_MOWER: Final = "MOWER"
+SERVICE_TYPE_VALVE: Final = "VALVE"
+SERVICE_TYPE_POWER_SOCKET: Final = "POWER_SOCKET"
+SERVICE_TYPE_SENSOR: Final = "SENSOR"
+
+# Mower states
+MOWER_STATE_OK: Final = "OK"
+MOWER_STATE_WARNING: Final = "WARNING"
+MOWER_STATE_ERROR: Final = "ERROR"
+MOWER_STATE_UNAVAILABLE: Final = "UNAVAILABLE"
+
+# Mower activities
+MOWER_ACTIVITY_PAUSED: Final = "PAUSED"
+MOWER_ACTIVITY_CUTTING: Final = "OK_CUTTING"
+MOWER_ACTIVITY_SEARCHING: Final = "OK_SEARCHING"
+MOWER_ACTIVITY_LEAVING: Final = "OK_LEAVING"
+MOWER_ACTIVITY_CHARGING: Final = "OK_CHARGING"
+MOWER_ACTIVITY_PARKED: Final = "PARKED_TIMER"
+
+# Update intervals
+UPDATE_INTERVAL: Final = 60  # seconds 

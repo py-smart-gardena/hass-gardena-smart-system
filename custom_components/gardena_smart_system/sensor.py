@@ -1,147 +1,91 @@
-"""Support for Gardena Smart System sensors."""
+"""Sensor platform for Gardena Smart System."""
+from __future__ import annotations
+
 import logging
+from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, UnitOfTemperature
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE, TEMP_CELSIUS
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 
-from homeassistant.helpers.entity import Entity
-from homeassistant.const import (
-    ATTR_BATTERY_LEVEL,
-    PERCENTAGE,
-)
-
-from .const import (
-    DOMAIN,
-    ATTR_BATTERY_STATE,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    GARDENA_LOCATION,
-)
-
+from .const import DOMAIN, SERVICE_TYPE_SENSOR
+from .coordinator import GardenaSmartSystemCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-SOIL_SENSOR_TYPES = {
-    "soil_temperature": [
-        UnitOfTemperature.CELSIUS,
-        "mdi:thermometer",
-        SensorDeviceClass.TEMPERATURE,
-    ],
-    "soil_humidity": ["%", "mdi:water-percent", SensorDeviceClass.HUMIDITY],
-    ATTR_BATTERY_LEVEL: [PERCENTAGE, "mdi:battery", SensorDeviceClass.BATTERY],
-}
 
-SENSOR_TYPES = {
-    **{
-        "ambient_temperature": [
-            UnitOfTemperature.CELSIUS,
-            "mdi:thermometer",
-            SensorDeviceClass.TEMPERATURE,
-        ],
-        "light_intensity": ["lx", None, SensorDeviceClass.ILLUMINANCE],
-    },
-    **SOIL_SENSOR_TYPES,
-}
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Gardena Smart System sensor platform."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Perform the setup for Gardena sensor devices."""
     entities = []
-    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SENSOR"):
-        for sensor_type in SENSOR_TYPES:
-            entities.append(GardenaSensor(sensor, sensor_type))
+    
+    for device in coordinator.data.get("devices", []):
+        if device.get("type") == SERVICE_TYPE_SENSOR:
+            entities.append(
+                GardenaSensor(
+                    coordinator,
+                    device,
+                )
+            )
 
-    for sensor in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
-        "SOIL_SENSOR"
-    ):
-        for sensor_type in SOIL_SENSOR_TYPES:
-            entities.append(GardenaSensor(sensor, sensor_type))
-
-    for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
-        # Add battery sensor for mower
-        entities.append(GardenaSensor(mower, ATTR_BATTERY_LEVEL))
-
-    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type(
-        "WATER_CONTROL"
-    ):
-        # Add battery sensor for water control
-        entities.append(GardenaSensor(water_control, ATTR_BATTERY_LEVEL))
-    _LOGGER.debug("Adding sensor as sensor %s", entities)
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
-class GardenaSensor(Entity):
-    """Representation of a Gardena Sensor."""
+class GardenaSensor(SensorEntity):
+    """Representation of a Gardena Smart System sensor."""
 
-    def __init__(self, device, sensor_type):
-        """Initialize the Gardena Sensor."""
-        self._sensor_type = sensor_type
-        self._name = f"{device.name} {sensor_type.replace('_', ' ')}"
-        self._unique_id = f"{device.serial}-{sensor_type}"
-        self._device = device
-
-    async def async_added_to_hass(self):
-        """Subscribe to sensor events."""
-        self._device.add_callback(self.update_callback)
+    def __init__(
+        self,
+        coordinator: GardenaSmartSystemCoordinator,
+        device: dict[str, Any],
+    ) -> None:
+        """Initialize the sensor."""
+        self.coordinator = coordinator
+        self.device = device
+        self._attr_unique_id = f"{device['id']}_sensor"
+        self._attr_name = device.get("attributes", {}).get("name", {}).get("value", "Gardena Sensor")
+        
+        # Set device info
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device["id"])},
+            name=self._attr_name,
+            manufacturer="Gardena",
+        )
 
     @property
-    def should_poll(self) -> bool:
-        """No polling needed for a sensor."""
-        return False
-
-    def update_callback(self, device):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.coordinator.last_update_success
 
     @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
-
-    @property
-    def icon(self):
-        """Return the icon to use in the frontend."""
-        return SENSOR_TYPES[self._sensor_type][1]
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement of this entity, if any."""
-        return SENSOR_TYPES[self._sensor_type][0]
-
-    @property
-    def device_class(self):
-        """Return the device class of this entity."""
-        if self._sensor_type in SENSOR_TYPES:
-            return SENSOR_TYPES[self._sensor_type][2]
+    def native_value(self) -> float | None:
+        """Return the native value of the sensor."""
+        # This is a placeholder - implement based on sensor type
         return None
 
     @property
-    def state(self):
-        """Return the state of the sensor."""
-        return getattr(self._device, self._sensor_type)
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement."""
+        # This is a placeholder - implement based on sensor type
+        return None
 
     @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the sensor."""
-        return {
-            ATTR_BATTERY_LEVEL: self._device.battery_level,
-            ATTR_BATTERY_STATE: self._device.battery_state,
-            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
-            ATTR_RF_LINK_STATE: self._device.rf_link_state,
-        }
+    def state_class(self) -> SensorStateClass | None:
+        """Return the state class."""
+        # This is a placeholder - implement based on sensor type
+        return None
 
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._device.serial)
-            },
-            "name": self._device.name,
-            "manufacturer": "Gardena",
-            "model": self._device.model_type,
-        }
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to hass."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        ) 

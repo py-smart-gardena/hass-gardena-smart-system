@@ -1,61 +1,87 @@
-"""Support for Gardena Smart System websocket connection status."""
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+"""Binary sensor platform for Gardena Smart System."""
+from __future__ import annotations
 
-from custom_components.gardena_smart_system import GARDENA_SYSTEM
+import logging
+from typing import Any
+
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN
+from .coordinator import GardenaSmartSystemCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Perform the setup for Gardena websocket connection status."""
-    async_add_entities(
-        [SmartSystemWebsocketStatus(hass.data[DOMAIN][GARDENA_SYSTEM].smart_system)],
-        True,
-    )
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Gardena Smart System binary sensor platform."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+    entities = []
+    
+    # Add binary sensors based on device states
+    for device in coordinator.data.get("devices", []):
+        if device.get("type") == "DEVICE":
+            # Add online/offline status
+            entities.append(
+                GardenaOnlineSensor(
+                    coordinator,
+                    device,
+                )
+            )
+
+    async_add_entities(entities)
 
 
-class SmartSystemWebsocketStatus(BinarySensorEntity):
-    """Representation of Gardena Smart System websocket connection status."""
+class GardenaOnlineSensor(BinarySensorEntity):
+    """Representation of a Gardena device online status."""
 
-    def __init__(self, smart_system) -> None:
+    def __init__(
+        self,
+        coordinator: GardenaSmartSystemCoordinator,
+        device: dict[str, Any],
+    ) -> None:
         """Initialize the binary sensor."""
-        super().__init__()
-        self._unique_id = "smart_gardena_websocket_status"
-        self._name = "Gardena Smart System connection"
-        self._smart_system = smart_system
-
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._smart_system.add_ws_status_callback(self.update_callback)
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+        self.coordinator = coordinator
+        self.device = device
+        self._attr_unique_id = f"{device['id']}_online"
+        self._attr_name = f"{device.get('attributes', {}).get('name', {}).get('value', 'Gardena Device')} Online"
+        
+        # Set device info
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device["id"])},
+            name=device.get("attributes", {}).get("name", {}).get("value", "Gardena Device"),
+            manufacturer="Gardena",
+        )
 
     @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self.coordinator.last_update_success
 
     @property
-    def is_on(self) -> bool:
-        """Return the status of the sensor."""
-        return self._smart_system.is_ws_connected
+    def is_on(self) -> bool | None:
+        """Return true if the binary sensor is on."""
+        # Check if device is online based on RF link state
+        for service in self.coordinator.data.get("devices", []):
+            if (
+                service.get("type") == "COMMON"
+                and service.get("relationships", {}).get("device", {}).get("data", {}).get("id") == self.device["id"]
+            ):
+                rf_state = service.get("attributes", {}).get("rfLinkState", {}).get("value")
+                return rf_state == "ONLINE"
+        return None
 
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed for a sensor."""
-        return False
-
-    def update_callback(self, status):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
-
-    @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return BinarySensorDeviceClass.CONNECTIVITY
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to hass."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        ) 
