@@ -44,6 +44,18 @@
           "description": "Kesto sekunteina."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Aloita automaattisesti",
+      "description": "Käynnistä ruohonleikkuri automaattisella aikataululla."
+    },
+    "park_until_next_task": {
+      "name": "Pysäytä seuraavaan tehtävään asti",
+      "description": "Pysäytä ruohonleikkuri seuraavaan suunniteltuun tehtävään asti."
+    },
+    "park_until_further_notice": {
+      "name": "Pysäytä toistaiseksi",
+      "description": "Pysäytä ruohonleikkuri toistaiseksi."
     }
   }
 }

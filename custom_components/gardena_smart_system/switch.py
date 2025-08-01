@@ -1,141 +1,91 @@
-"""Support for Gardena switch (Power control)."""
-import asyncio
+"""Support for Gardena Smart System switches."""
+from __future__ import annotations
+
 import logging
+from typing import Any
 
-from homeassistant.core import callback
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.const import ATTR_BATTERY_LEVEL
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    ATTR_ACTIVITY,
-    ATTR_BATTERY_STATE,
-    ATTR_LAST_ERROR,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    ATTR_SERIAL,
-    DOMAIN,
-    GARDENA_LOCATION,
-)
-from .sensor import GardenaSensor
-
+from .const import DOMAIN
+from .coordinator import GardenaSmartSystemCoordinator
+from .entities import GardenaDeviceEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the switches platform."""
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Gardena Smart System switches."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    # Create switch entities for each device
     entities = []
-    # Note: Water control and smart irrigation control are now handled by the valve platform
-    for power_switch in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("POWER_SOCKET"):
-        entities.append(GardenaPowerSocket(power_switch))
+    
+    for location in coordinator.locations.values():
+        for device in location.devices.values():
+            _LOGGER.debug(f"Checking device {device.name} ({device.id}) - Services: {list(device.services.keys())}")
+            # Add power socket switches if available
+            if "POWER_SOCKET" in device.services:
+                power_services = device.services["POWER_SOCKET"]
+                _LOGGER.info(f"Found {len(power_services)} power socket services for device: {device.name} ({device.id})")
+                for power_service in power_services:
+                    _LOGGER.info(f"Creating power socket switch for service: {power_service.id}")
+                    entities.append(GardenaPowerSocketSwitch(coordinator, device, power_service))
+            else:
+                _LOGGER.debug(f"Device {device.name} ({device.id}) has no POWER_SOCKET service")
 
-    _LOGGER.debug(
-        "Adding power socket as switch: %s",
-        entities)
-    async_add_entities(entities, True)
+    _LOGGER.info(f"Created {len(entities)} power socket switch entities")
+    async_add_entities(entities)
 
 
-class GardenaPowerSocket(SwitchEntity):
-    """Representation of a Gardena Power Socket."""
+class GardenaPowerSocketSwitch(GardenaDeviceEntity, SwitchEntity):
+    """Representation of a Gardena power socket switch."""
 
-    def __init__(self, ps):
-        """Initialize the Gardena Power Socket."""
-        self._device = ps
-        self._name = f"{self._device.name}"
-        self._unique_id = f"{self._device.serial}"
-        self._state = None
-        self._error_message = ""
-
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._device.add_callback(self.update_callback)
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, power_service) -> None:
+        """Initialize the power socket switch."""
+        super().__init__(coordinator, device, "POWER_SOCKET")
+        self._attr_name = f"{device.name} Power Socket"
+        self._power_service = power_service
 
     @property
-    def should_poll(self) -> bool:
-        """No polling needed for a power socket."""
+    def is_on(self) -> bool:
+        """Return true if switch is on."""
+        if self._power_service and self._power_service.activity:
+            return self._power_service.activity in ["FOREVER_ON", "TIME_LIMITED_ON", "SCHEDULED_ON"]
         return False
 
-    def update_callback(self, device):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        if self._power_service:
+            command_data = {
+                "data": {
+                    "id": "turn_on",
+                    "type": "POWER_SOCKET_CONTROL",
+                    "attributes": {
+                        "command": "START_OVERRIDE",
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._power_service.id, command_data)
+            await self.coordinator.async_request_refresh()
 
-    async def async_update(self):
-        """Update the states of Gardena devices."""
-        _LOGGER.debug("Running Gardena update")
-        # Managing state
-        state = self._device.state
-        _LOGGER.debug("Power socket has state %s", state)
-        if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
-            _LOGGER.debug("Power socket has an error")
-            self._state = False
-            self._error_message = self._device.last_error_code
-        else:
-            _LOGGER.debug("Getting Power socket state")
-            activity = self._device.activity
-            self._error_message = ""
-            _LOGGER.debug("Power socket has activity %s", activity)
-            if activity == "OFF":
-                self._state = False
-            elif activity in ["FOREVER_ON", "TIME_LIMITED_ON", "SCHEDULED_ON"]:
-                self._state = True
-            else:
-                _LOGGER.debug("Power socket has none activity")
-
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
-
-    @property
-    def is_on(self):
-        """Return true if it is on."""
-        return self._state
-
-    @property
-    def available(self):
-        """Return True if the device is available."""
-        return self._device.state != "UNAVAILABLE"
-
-    def error(self):
-        """Return the error message."""
-        return self._error_message
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the power switch."""
-        return {
-            ATTR_ACTIVITY: self._device.activity,
-            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
-            ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_LAST_ERROR: self._error_message,
-        }
-
-    def turn_on(self, **kwargs):
-        """Start watering."""
-        return asyncio.run_coroutine_threadsafe(
-            self._device.start_override(), self.hass.loop
-        ).result()
-
-    def turn_off(self, **kwargs):
-        """Stop watering."""
-        return asyncio.run_coroutine_threadsafe(
-            self._device.stop_until_next_task(), self.hass.loop
-        ).result()
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._device.serial)
-            },
-            "name": self._device.name,
-            "manufacturer": "Gardena",
-            "model": self._device.model_type,
-        }
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        if self._power_service:
+            command_data = {
+                "data": {
+                    "id": "turn_off",
+                    "type": "POWER_SOCKET_CONTROL",
+                    "attributes": {
+                        "command": "STOP_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._power_service.id, command_data)
+            await self.coordinator.async_request_refresh() 

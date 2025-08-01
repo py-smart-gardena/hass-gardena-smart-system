@@ -1,61 +1,73 @@
-"""Support for Gardena Smart System websocket connection status."""
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+"""Support for Gardena Smart System binary sensors."""
+from __future__ import annotations
 
-from custom_components.gardena_smart_system import GARDENA_SYSTEM
+import logging
+from typing import Any
+
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
+from .coordinator import GardenaSmartSystemCoordinator
+from .entities import GardenaOnlineEntity, GardenaEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Perform the setup for Gardena websocket connection status."""
-    async_add_entities(
-        [SmartSystemWebsocketStatus(hass.data[DOMAIN][GARDENA_SYSTEM].smart_system)],
-        True,
-    )
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Gardena Smart System binary sensors."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+    # Create binary sensor entities for each device
+    entities = []
+    
+    for location in coordinator.locations.values():
+        for device in location.devices.values():
+            # Add online status sensors for all devices
+            entities.append(GardenaOnlineBinarySensor(coordinator, device))
+            # Add battery sensors if available
+            if "COMMON" in device.services:
+                common_services = device.services["COMMON"]
+                _LOGGER.info(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
+                for common_service in common_services:
+                    _LOGGER.info(f"Creating battery sensor for service: {common_service.id}")
+                    entities.append(GardenaBatterySensor(coordinator, device, common_service))
+            else:
+                _LOGGER.debug(f"Device {device.name} ({device.id}) has no COMMON service")
+
+    async_add_entities(entities)
 
 
-class SmartSystemWebsocketStatus(BinarySensorEntity):
-    """Representation of Gardena Smart System websocket connection status."""
+class GardenaOnlineBinarySensor(GardenaOnlineEntity, BinarySensorEntity):
+    """Representation of a Gardena device online status sensor."""
 
-    def __init__(self, smart_system) -> None:
-        """Initialize the binary sensor."""
-        super().__init__()
-        self._unique_id = "smart_gardena_websocket_status"
-        self._name = "Gardena Smart System connection"
-        self._smart_system = smart_system
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
+        """Initialize the online status sensor."""
+        super().__init__(coordinator, device)
+        self._attr_name = f"{device.name} Online" 
 
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._smart_system.add_ws_status_callback(self.update_callback)
 
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+class GardenaBatterySensor(GardenaEntity, BinarySensorEntity):
+    """Representation of a Gardena battery sensor."""
 
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, common_service) -> None:
+        """Initialize the battery sensor."""
+        super().__init__(coordinator, device, "COMMON")
+        self._attr_unique_id = f"{device.id}_{common_service.id}_battery"
+        self._attr_name = f"{device.name} Battery"
+        self._common_service = common_service
 
     @property
     def is_on(self) -> bool:
-        """Return the status of the sensor."""
-        return self._smart_system.is_ws_connected
-
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed for a sensor."""
+        """Return true if battery is in a normal state."""
+        if self._common_service and self._common_service.battery_state:
+            # States considered normal: OK, CHARGING, NO_BATTERY
+            # States considered problematic: LOW, REPLACE_NOW, OUT_OF_OPERATION, UNKNOWN
+            return self._common_service.battery_state in ["OK", "CHARGING", "NO_BATTERY"]
         return False
-
-    def update_callback(self, status):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
-
-    @property
-    def device_class(self):
-        """Return the class of this device, from component DEVICE_CLASSES."""
-        return BinarySensorDeviceClass.CONNECTIVITY

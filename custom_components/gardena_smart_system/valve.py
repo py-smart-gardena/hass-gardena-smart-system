@@ -1,294 +1,398 @@
-"""Support for Gardena valves (Water control, smart irrigation control)."""
-import asyncio
+"""Support for Gardena Smart System valves."""
+from __future__ import annotations
+
 import logging
+from typing import Any
 
-from homeassistant.core import callback
 from homeassistant.components.valve import ValveEntity, ValveEntityFeature, ValveDeviceClass
-from homeassistant.const import ATTR_BATTERY_LEVEL
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    ATTR_ACTIVITY,
-    ATTR_BATTERY_STATE,
-    ATTR_LAST_ERROR,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    ATTR_SERIAL,
-    CONF_SMART_IRRIGATION_DURATION,
-    CONF_SMART_WATERING_DURATION,
-    DEFAULT_SMART_IRRIGATION_DURATION,
-    DEFAULT_SMART_WATERING_DURATION,
-    DOMAIN,
-    GARDENA_LOCATION,
-)
-
+from .const import DOMAIN
+from .coordinator import GardenaSmartSystemCoordinator
+from .entities import GardenaEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the valves platform."""
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Gardena Smart System valves."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    # Create valve entities for each device
     entities = []
-    for water_control in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("WATER_CONTROL"):
-        entities.append(GardenaSmartWaterControl(water_control, config_entry.options))
+    
+    for location in coordinator.locations.values():
+        for device in location.devices.values():
+            _LOGGER.debug(f"Checking device {device.name} ({device.id}) - Model: {getattr(device, 'model_type', 'Unknown')} - Services: {list(device.services.keys())}")
+            
+            # Check if this is a Water Control (single valve device)
+            if device.model_type == "WATER_CONTROL" and "VALVE" in device.services:
+                valve_services = device.services["VALVE"]
+                if len(valve_services) == 1:
+                    _LOGGER.info(f"Found Water Control device: {device.name} ({device.id})")
+                    entities.append(GardenaWaterControl(coordinator, device, valve_services[0]))
+                else:
+                    _LOGGER.warning(f"Water Control device {device.name} has {len(valve_services)} valve services, expected 1")
+            
+            # Check if this is a Smart Irrigation Control (multiple valve device)
+            elif device.model_type == "SMART_IRRIGATION_CONTROL" and "VALVE" in device.services:
+                valve_services = device.services["VALVE"]
+                _LOGGER.info(f"Found Smart Irrigation Control device: {device.name} ({device.id}) with {len(valve_services)} valves")
+                for valve_service in valve_services:
+                    _LOGGER.info(f"Creating valve entity for Smart Irrigation Control: {valve_service.name} ({valve_service.id})")
+                    entities.append(GardenaSmartIrrigationControl(coordinator, device, valve_service))
+            
+            # Fallback for other devices with VALVE services
+            elif "VALVE" in device.services:
+                valve_services = device.services["VALVE"]
+                _LOGGER.info(f"Found generic device with valves: {device.name} ({device.id}) with {len(valve_services)} valves")
+                for valve_service in valve_services:
+                    _LOGGER.info(f"Creating generic valve entity: {valve_service.name} ({valve_service.id})")
+                    entities.append(GardenaValve(coordinator, device, valve_service))
 
-    for smart_irrigation in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("SMART_IRRIGATION_CONTROL"):
-        for valve in smart_irrigation.valves.values():
-            entities.append(GardenaSmartIrrigationControl(
-                smart_irrigation, valve['id'], config_entry.options))
-
-    _LOGGER.debug(
-        "Adding water control and smart irrigation control as valve: %s",
-        entities)
-    async_add_entities(entities, True)
+    _LOGGER.info(f"Created {len(entities)} valve entities")
+    async_add_entities(entities)
 
 
-class GardenaSmartWaterControl(ValveEntity):
-    """Representation of a Gardena Smart Water Control."""
+class GardenaWaterControl(GardenaEntity, ValveEntity):
+    """Representation of a Gardena Water Control (single valve device)."""
 
-    def __init__(self, wc, options):
-        """Initialize the Gardena Smart Water Control."""
-        self._device = wc
-        self._options = options
-        self._name = f"{self._device.name}"
-        self._unique_id = f"{self._device.serial}-valve"
-        self._state = None
-        self._error_message = ""
-
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._device.add_callback(self.update_callback)
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the Water Control."""
+        super().__init__(coordinator, device, "VALVE")
+        self.valve_service = valve_service
+        self._attr_name = device.name  # Use device name, not service name
+        self._attr_unique_id = f"{device.id}_water_control"
+        
+        # Set required attributes for valve entities
+        self._attr_reports_position = False
+        self._attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
+        self._attr_device_class = ValveDeviceClass.WATER
 
     @property
-    def should_poll(self) -> bool:
-        """No polling needed for a water valve."""
+    def is_closed(self) -> bool:
+        """Return true if valve is closed."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            is_closed = current_service.activity == "CLOSED"
+            _LOGGER.info(f"Water Control {self.device.name} activity: {current_service.activity} -> is_closed: {is_closed}")
+            return is_closed
+        _LOGGER.info(f"Water Control {self.device.name} has no activity data -> assuming closed")
+        return True
+
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self.device.id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self.valve_service.id:
+                    return service
+        return None
+
+    @property
+    def is_open(self) -> bool:
+        """Return true if valve is open (watering)."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            # According to API: MANUAL_WATERING or SCHEDULED_WATERING means valve is open
+            is_open = current_service.activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]
+            _LOGGER.info(f"Water Control {self.device.name} activity: {current_service.activity} -> is_open: {is_open}")
+            return is_open
+        _LOGGER.info(f"Water Control {self.device.name} has no activity data -> assuming closed")
         return False
 
-    def update_callback(self, device):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
+    @property
+    def is_opening(self) -> bool:
+        """Return true if valve is opening."""
+        return False
 
-    async def async_update(self):
-        """Update the states of Gardena devices."""
-        _LOGGER.debug("Running Gardena update")
-        # Managing state
-        state = self._device.valve_state
-        _LOGGER.debug("Water control has state %s", state)
-        if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
-            _LOGGER.debug("Water control has an error")
-            self._state = False
-            self._error_message = self._device.last_error_code
+    @property
+    def is_closing(self) -> bool:
+        """Return true if valve is closing."""
+        return False
+
+    async def async_open_valve(self, **kwargs: Any) -> None:
+        """Open the valve."""
+        _LOGGER.info(f"=== OPEN_VALVE called for Water Control {self.device.name} ===")
+        _LOGGER.info(f"Opening Water Control {self.device.name} ({self.valve_service.id})")
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "open_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "START_SECONDS_TO_OVERRIDE",
+                        "seconds": 3600,  # Default 1 hour
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self.valve_service.id, command_data)
+                _LOGGER.info(f"Command sent successfully, requesting refresh")
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== OPEN_VALVE completed for Water Control {self.device.name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error opening Water Control {self.device.name}: {e}")
+                raise
         else:
-            _LOGGER.debug("Getting water control state")
-            activity = self._device.valve_activity
-            self._error_message = ""
-            _LOGGER.debug("Water control has activity %s", activity)
-            if activity == "CLOSED":
-                self._state = False
-            elif activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]:
-                self._state = True
-            else:
-                _LOGGER.debug("Water control has none activity")
+            _LOGGER.error(f"No valve service available for Water Control {self.device.name}")
 
-    @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
-
-    @property
-    def is_closed(self):
-        """Return true if the valve is closed."""
-        return not self._state
-
-    @property
-    def device_class(self):
-        """Return the device class for water valves."""
-        return ValveDeviceClass.WATER
-
-    @property
-    def supported_features(self):
-        """Return the supported features."""
-        return ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
-
-    @property
-    def reports_position(self):
-        """Return False as this valve does not report position."""
-        return False
-
-    @property
-    def available(self):
-        """Return True if the device is available."""
-        return self._device.valve_state != "UNAVAILABLE"
-
-    def error(self):
-        """Return the error message."""
-        return self._error_message
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the water valve."""
-        return {
-            ATTR_ACTIVITY: self._device.valve_activity,
-            ATTR_BATTERY_LEVEL: self._device.battery_level,
-            ATTR_BATTERY_STATE: self._device.battery_state,
-            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
-            ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_LAST_ERROR: self._error_message,
-        }
-
-    @property
-    def option_smart_watering_duration(self) -> int:
-        return self._options.get(
-            CONF_SMART_WATERING_DURATION, DEFAULT_SMART_WATERING_DURATION
-        )
-
-    async def async_open_valve(self):
-        """Open the valve to start watering."""
-        duration = self.option_smart_watering_duration * 60
-        await self._device.start_seconds_to_override(duration)
-
-    async def async_close_valve(self):
-        """Close the valve to stop watering."""
-        await self._device.stop_until_next_task()
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._device.serial)
-            },
-            "name": self._device.name,
-            "manufacturer": "Gardena",
-            "model": self._device.model_type,
-        }
-
-
-class GardenaSmartIrrigationControl(ValveEntity):
-    """Representation of a Gardena Smart Irrigation Control."""
-
-    def __init__(self, sic, valve_id, options):
-        """Initialize the Gardena Smart Irrigation Control."""
-        self._device = sic
-        self._valve_id = valve_id
-        self._options = options
-        self._name = f"{self._device.name} - {self._device.valves[self._valve_id]['name']}"
-        self._unique_id = f"{self._device.serial}-{self._valve_id}"
-        self._state = None
-        self._error_message = ""
-
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._device.add_callback(self.update_callback)
-
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed for a smart irrigation control."""
-        return False
-
-    def update_callback(self, device):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
-
-    async def async_update(self):
-        """Update the states of Gardena devices."""
-        _LOGGER.debug("Running Gardena update")
-        # Managing state
-        valve = self._device.valves[self._valve_id]
-        _LOGGER.debug("Valve has state: %s", valve["state"])
-        if valve["state"] in ["WARNING", "ERROR", "UNAVAILABLE"]:
-            _LOGGER.debug("Valve has an error")
-            self._state = False
-            self._error_message = valve["last_error_code"]
+    async def async_close_valve(self, **kwargs: Any) -> None:
+        """Close the valve."""
+        _LOGGER.info(f"=== CLOSE_VALVE called for Water Control {self.device.name} ===")
+        _LOGGER.info(f"Closing Water Control {self.device.name} ({self.valve_service.id})")
+        _LOGGER.info(f"Current valve state - is_open: {self.is_open}, is_closed: {self.is_closed}, activity: {self.valve_service.activity if self.valve_service else 'None'}")
+        
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "close_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "STOP_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self.valve_service.id, command_data)
+                _LOGGER.info(f"Command sent successfully, requesting refresh")
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== CLOSE_VALVE completed for Water Control {self.device.name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error closing Water Control {self.device.name}: {e}")
+                raise
         else:
-            _LOGGER.debug("Getting Valve state")
-            activity = valve["activity"]
-            self._error_message = ""
-            _LOGGER.debug("Valve has activity: %s", activity)
-            if activity == "CLOSED":
-                self._state = False
-            elif activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]:
-                self._state = True
-            else:
-                _LOGGER.debug("Valve has unknown activity")
+            _LOGGER.error(f"No valve service available for Water Control {self.device.name}")
+
+
+class GardenaSmartIrrigationControl(GardenaEntity, ValveEntity):
+    """Representation of a Gardena Smart Irrigation Control valve (multiple valve device)."""
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the Smart Irrigation Control valve."""
+        super().__init__(coordinator, device, "VALVE")
+        self.valve_service = valve_service
+        self._attr_name = f"{device.name} - {valve_service.name}"
+        self._attr_unique_id = f"{device.id}_{valve_service.id}"
+        
+        # Set required attributes for valve entities
+        self._attr_reports_position = False
+        self._attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
+        self._attr_device_class = ValveDeviceClass.WATER
 
     @property
-    def name(self):
-        """Return the name of the device."""
-        return self._name
+    def is_closed(self) -> bool:
+        """Return true if valve is closed."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            is_closed = current_service.activity == "CLOSED"
+            _LOGGER.info(f"Smart Irrigation Control valve {self._attr_name} activity: {current_service.activity} -> is_closed: {is_closed}")
+            return is_closed
+        _LOGGER.info(f"Smart Irrigation Control valve {self._attr_name} has no activity data -> assuming closed")
+        return True
+
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self.device.id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self.valve_service.id:
+                    return service
+        return None
 
     @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
-
-    @property
-    def is_closed(self):
-        """Return true if the valve is closed."""
-        return not self._state
-
-    @property
-    def device_class(self):
-        """Return the device class for water valves."""
-        return ValveDeviceClass.WATER
-
-    @property
-    def supported_features(self):
-        """Return the supported features."""
-        return ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
-
-    @property
-    def reports_position(self):
-        """Return False as this valve does not report position."""
+    def is_open(self) -> bool:
+        """Return true if valve is open (watering)."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            # According to API: MANUAL_WATERING or SCHEDULED_WATERING means valve is open
+            is_open = current_service.activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]
+            _LOGGER.info(f"Smart Irrigation Control valve {self._attr_name} activity: {current_service.activity} -> is_open: {is_open}")
+            return is_open
+        _LOGGER.info(f"Smart Irrigation Control valve {self._attr_name} has no activity data -> assuming closed")
         return False
 
     @property
-    def available(self):
-        """Return True if the device is available."""
-        return self._device.valves[self._valve_id]["state"] != "UNAVAILABLE"
-
-    def error(self):
-        """Return the error message."""
-        return self._error_message
+    def is_opening(self) -> bool:
+        """Return true if valve is opening."""
+        return False
 
     @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the smart irrigation control."""
-        return {
-            ATTR_ACTIVITY: self._device.valves[self._valve_id]["activity"],
-            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
-            ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_LAST_ERROR: self._error_message,
-        }
+    def is_closing(self) -> bool:
+        """Return true if valve is closing."""
+        return False
+
+    async def async_open_valve(self, **kwargs: Any) -> None:
+        """Open the valve."""
+        _LOGGER.info(f"=== OPEN_VALVE called for Smart Irrigation Control valve {self._attr_name} ===")
+        _LOGGER.info(f"Opening Smart Irrigation Control valve {self._attr_name} ({self.valve_service.id})")
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "open_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "START_SECONDS_TO_OVERRIDE",
+                        "seconds": 3600,  # Default 1 hour
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self.valve_service.id, command_data)
+                _LOGGER.info(f"Command sent successfully, requesting refresh")
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== OPEN_VALVE completed for Smart Irrigation Control valve {self._attr_name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error opening Smart Irrigation Control valve {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._attr_name}")
+
+    async def async_close_valve(self, **kwargs: Any) -> None:
+        """Close the valve."""
+        _LOGGER.info(f"=== CLOSE_VALVE called for Smart Irrigation Control valve {self._attr_name} ===")
+        _LOGGER.info(f"Closing Smart Irrigation Control valve {self._attr_name} ({self.valve_service.id})")
+        _LOGGER.info(f"Current valve state - is_open: {self.is_open}, is_closed: {self.is_closed}, activity: {self.valve_service.activity if self.valve_service else 'None'}")
+        
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "close_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "STOP_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self.valve_service.id, command_data)
+                _LOGGER.info(f"Command sent successfully, requesting refresh")
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== CLOSE_VALVE completed for Smart Irrigation Control valve {self._attr_name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error closing Smart Irrigation Control valve {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._attr_name}")
+
+
+class GardenaValve(GardenaEntity, ValveEntity):
+    """Representation of a Gardena valve."""
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the valve."""
+        super().__init__(coordinator, device, "VALVE")
+        self.valve_service = valve_service
+        self._attr_name = valve_service.name
+        self._attr_unique_id = f"{device.id}_{valve_service.id}"
+        
+        # Set required attributes for valve entities
+        self._attr_reports_position = False
+        self._attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
 
     @property
-    def option_smart_irrigation_duration(self) -> int:
-        return self._options.get(
-            CONF_SMART_IRRIGATION_DURATION, DEFAULT_SMART_IRRIGATION_DURATION
-        )
+    def is_closed(self) -> bool:
+        """Return true if valve is closed."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            is_closed = current_service.activity == "CLOSED"
+            _LOGGER.info(f"Valve {current_service.name} activity: {current_service.activity} -> is_closed: {is_closed}")
+            return is_closed
+        _LOGGER.info(f"Valve has no activity data -> assuming closed")
+        return True
 
-    async def async_open_valve(self):
-        """Open the valve to start watering."""
-        duration = self.option_smart_irrigation_duration * 60
-        await self._device.start_seconds_to_override(duration, self._valve_id)
-
-    async def async_close_valve(self):
-        """Close the valve to stop watering."""
-        await self._device.stop_until_next_task(self._valve_id)
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self.device.id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self.valve_service.id:
+                    return service
+        return None
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._device.serial)
-            },
-            "name": self._device.name,
-            "manufacturer": "Gardena",
-            "model": self._device.model_type,
-        } 
+    def is_open(self) -> bool:
+        """Return true if valve is open (watering)."""
+        # Get fresh data from coordinator
+        current_service = self._get_current_valve_service()
+        if current_service and current_service.activity:
+            # According to API: MANUAL_WATERING or SCHEDULED_WATERING means valve is open
+            is_open = current_service.activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]
+            _LOGGER.info(f"Valve {current_service.name} activity: {current_service.activity} -> is_open: {is_open}")
+            return is_open
+        _LOGGER.info(f"Valve has no activity data -> assuming closed")
+        return False
+
+    @property
+    def is_opening(self) -> bool:
+        """Return true if valve is opening."""
+        # API doesn't provide intermediate opening state, return False
+        # Valve goes directly from CLOSED to WATERING
+        return False
+
+    @property
+    def is_closing(self) -> bool:
+        """Return true if valve is closing."""
+        # API doesn't provide intermediate closing state, return False
+        # Valve goes directly from WATERING to CLOSED
+        return False
+
+    async def async_open_valve(self, **kwargs: Any) -> None:
+        """Open the valve."""
+        _LOGGER.info(f"Opening valve {self.valve_service.name} ({self.valve_service.id})")
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "open_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "START_SECONDS_TO_OVERRIDE",
+                        "seconds": 3600,  # Default 1 hour
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self.valve_service.id, command_data)
+            await self.coordinator.async_request_refresh()
+
+    async def async_close_valve(self, **kwargs: Any) -> None:
+        """Close the valve."""
+        _LOGGER.info(f"=== CLOSE_VALVE called for {self.valve_service.name} ===")
+        _LOGGER.info(f"Closing valve {self.valve_service.name} ({self.valve_service.id})")
+        _LOGGER.info(f"Current valve state - is_open: {self.is_open}, is_closed: {self.is_closed}, activity: {self.valve_service.activity if self.valve_service else 'None'}")
+        
+        if self.valve_service:
+            command_data = {
+                "data": {
+                    "id": "close_valve",
+                    "type": "VALVE_CONTROL",
+                    "attributes": {
+                        "command": "STOP_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self.valve_service.id, command_data)
+                _LOGGER.info(f"Command sent successfully, requesting refresh")
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== CLOSE_VALVE completed for {self.valve_service.name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error closing valve {self.valve_service.name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No valve service available for {self.valve_service.name}")

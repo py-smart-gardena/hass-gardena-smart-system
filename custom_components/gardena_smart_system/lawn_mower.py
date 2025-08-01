@@ -1,60 +1,56 @@
-"""Support for Gardena mower."""
-import asyncio
-import logging
-from datetime import datetime, timedelta
+"""Support for Gardena Smart System lawn mowers."""
+from __future__ import annotations
 
+import logging
+from typing import Any
+
+from homeassistant.components.lawn_mower import LawnMowerEntity, LawnMowerActivity, LawnMowerEntityFeature
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback, async_get_current_platform
+from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
-from homeassistant.const import (
-    ATTR_BATTERY_LEVEL,
-)
-from homeassistant.components.lawn_mower import (
-    LawnMowerEntity,
-    LawnMowerEntityFeature,
-    LawnMowerActivity
-)
-from homeassistant.helpers import config_validation as cv, entity_platform
-from .const import (
-    ATTR_ACTIVITY,
-    ATTR_BATTERY_STATE,
-    ATTR_NAME,
-    ATTR_OPERATING_HOURS,
-    ATTR_RF_LINK_LEVEL,
-    ATTR_RF_LINK_STATE,
-    ATTR_SERIAL,
-    ATTR_LAST_ERROR,
-    ATTR_ERROR,
-    ATTR_STATE,
-    ATTR_STINT_START,
-    ATTR_STINT_END,
-    CONF_MOWER_DURATION,
-    DEFAULT_MOWER_DURATION,
-    DOMAIN,
-    GARDENA_LOCATION,
-)
-
+from .const import DOMAIN, MOWER_ACTIVITY_MAP
+from .coordinator import GardenaSmartSystemCoordinator
+from .entities import GardenaEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(minutes=1)
 
-SUPPORT_GARDENA = (
-    LawnMowerEntityFeature.START_MOWING |
-    LawnMowerEntityFeature.PAUSE |
-    LawnMowerEntityFeature.DOCK
-)
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Gardena Smart System lawn mowers."""
+    coordinator: GardenaSmartSystemCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    """Set up the Gardena smart mower system."""
+    # Create lawn mower entities for each device
     entities = []
-    for mower in hass.data[DOMAIN][GARDENA_LOCATION].find_device_by_type("MOWER"):
-        entities.append(GardenaSmartMowerLawnMowerEntity(hass, mower, config_entry.options))
-
-    _LOGGER.debug("Adding mower as lawn_mower: %s", entities)
-    async_add_entities(entities, True)
     
-    platform = entity_platform.async_get_current_platform()
+    for location in coordinator.locations.values():
+        for device in location.devices.values():
+            _LOGGER.debug(f"Checking device {device.name} ({device.id}) - Services: {list(device.services.keys())}")
+            # Add lawn mower entities if available
+            if "MOWER" in device.services:
+                mower_services = device.services["MOWER"]
+                _LOGGER.info(f"Found {len(mower_services)} mower services for device: {device.name} ({device.id})")
+                for mower_service in mower_services:
+                    _LOGGER.info(f"Creating lawn mower entity for service: {mower_service.id}")
+                    entities.append(GardenaLawnMower(coordinator, device, mower_service))
+            else:
+                _LOGGER.debug(f"Device {device.name} ({device.id}) has no MOWER service")
+
+    _LOGGER.info(f"Created {len(entities)} lawn mower entities")
+    _LOGGER.info(f"Adding entities to Home Assistant: {[entity.name for entity in entities]}")
+    async_add_entities(entities)
+    _LOGGER.info("Lawn mower entities added to Home Assistant")
+    
+    # Register custom services
+    platform = async_get_current_platform()
+    
+    # Start mowing for a specific duration
     platform.async_register_entity_service(
         "start_override",
         {
@@ -62,165 +58,230 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         },
         "async_start_override",
     )
+    
+    # Start mowing with automatic schedule
+    platform.async_register_entity_service(
+        "start_automatic",
+        {},
+        "async_start_automatic",
+    )
+    
+    # Park until next scheduled task
+    platform.async_register_entity_service(
+        "park_until_next_task",
+        {},
+        "async_park_until_next_task",
+    )
+    
+    # Park until further notice
+    platform.async_register_entity_service(
+        "park_until_further_notice",
+        {},
+        "async_park_until_further_notice",
+    )
 
 
-class GardenaSmartMowerLawnMowerEntity(LawnMowerEntity):
-    """Representation of a Gardena Connected Mower."""
+class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
+    """Representation of a Gardena lawn mower."""
 
-    def __init__(self, hass, mower, options):
-        """Initialize the Gardena Connected Mower."""
-        self.hass = hass
-        self._device = mower
-        self._options = options
-        self._name = "{}".format(self._device.name)
-        self._unique_id = f"{self._device.serial}-mower"
-        self._activity = None
-        self._error_message = ""
-        self._stint_start = None
-        self._stint_end = None
-
-    async def async_added_to_hass(self):
-        """Subscribe to events."""
-        self._device.add_callback(self.update_callback)
-
-    @property
-    def should_poll(self) -> bool:
-        """No polling needed for a lawn_mower."""
-        return False
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, mower_service) -> None:
+        """Initialize the lawn mower."""
+        super().__init__(coordinator, device, "MOWER")
+        self._attr_name = f"{device.name} Lawn Mower"
+        self._mower_service = mower_service
+        self._attr_unique_id = f"{device.id}_mower"
+        self._attr_supported_features = (
+            LawnMowerEntityFeature.START_MOWING |
+            LawnMowerEntityFeature.PAUSE |
+            LawnMowerEntityFeature.DOCK
+        )
+        _LOGGER.info(f"Initialized lawn mower entity: {self._attr_name} with unique_id: {self._attr_unique_id} and features: {self._attr_supported_features}")
+        _LOGGER.info(f"Mower service ID: {mower_service.id}, Device ID: {device.id}")
+        _LOGGER.info(f"Supported features: START_MOWING={bool(self._attr_supported_features & LawnMowerEntityFeature.START_MOWING)}, PAUSE={bool(self._attr_supported_features & LawnMowerEntityFeature.PAUSE)}, DOCK={bool(self._attr_supported_features & LawnMowerEntityFeature.DOCK)}")
 
     @property
     def activity(self) -> LawnMowerActivity:
-        """Return the state of the mower."""
-        return self._activity
-
-    def update_callback(self, device):
-        """Call update for Home Assistant when the device is updated."""
-        self.schedule_update_ha_state(True)
-
-    async def async_update(self):
-        """Update the states of Gardena devices."""
-        _LOGGER.debug("Running Gardena update")
-        # Managing state
-        state = self._device.state
-        _LOGGER.debug("Mower has state %s", state)
-        if state in ["WARNING", "ERROR", "UNAVAILABLE"]:
-            self._error_message = self._device.last_error_code
-            if self._device.last_error_code == "PARKED_DAILY_LIMIT_REACHED":
-                self._activity = LawnMowerActivity.DOCKED
-            else:
-                _LOGGER.debug("Mower has an error")
-                self._activity = LawnMowerActivity.ERROR
-        else:
-            _LOGGER.debug("Getting mower state")
-            activity = self._device.activity
-            _LOGGER.debug("Mower has activity %s", activity)
-            if activity in ["PAUSED", "PAUSED_IN_CS"]:
-                self._activity = LawnMowerActivity.PAUSED
-            elif activity in [
-                "OK_CUTTING",
-                "OK_CUTTING_TIMER_OVERRIDDEN",
-                "OK_LEAVING",
-            ]:
-                if self._activity != LawnMowerActivity.MOWING:
-                    self._stint_start = datetime.now()
-                    self._stint_end = None
-                self._activity = LawnMowerActivity.MOWING
-            elif activity in ["OK_SEARCHING", "INITIATE_NEXT_ACTION"]:
-                if self._activity == LawnMowerActivity.MOWING:
-                    self._stint_end = datetime.now()
-                self._activity =  LawnMowerActivity.RETURNING
-            elif activity in [
-                "OK_CHARGING",
-                "PARKED_TIMER",
-                "PARKED_PARK_SELECTED",
-                "PARKED_AUTOTIMER",
-                "PARKED_FROST",
-                "STOPPED_IN_GARDEN",
-                "SEARCHING_FOR_SATELLITES",
-            ]:
-                self._activity = LawnMowerActivity.DOCKED
-            elif activity == "NONE":
-                self._activity = None
-                _LOGGER.debug("Mower has no activity")
+        """Return the current activity of the lawn mower."""
+        if not self.available:
+            _LOGGER.debug(f"Lawn mower {self._attr_name} not available")
+            return LawnMowerActivity.ERROR
+        
+        mower_service = self._mower_service
+        if not mower_service:
+            _LOGGER.debug(f"Lawn mower {self._attr_name} has no mower service")
+            return LawnMowerActivity.ERROR
+        
+        activity = mower_service.activity
+        mapped_activity = MOWER_ACTIVITY_MAP.get(activity, LawnMowerActivity.ERROR)
+        _LOGGER.debug(f"Lawn mower {self._attr_name} activity: {activity} -> {mapped_activity}")
+        return mapped_activity
 
     @property
-    def name(self):
-        """Return the name of the device."""
-        return self._device.name
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return entity specific state attributes."""
+        attrs = super().extra_state_attributes
+        
+        mower_service = self._mower_service
+        if mower_service:
+            attrs.update({
+                "operating_hours": mower_service.operating_hours,
+                "state": mower_service.state,
+                "activity": mower_service.activity,
+                "last_error_code": getattr(mower_service, 'last_error_code', None),
+                "device_id": self.device.id,
+                "service_id": mower_service.id,
+            })
+        
+        return attrs
 
-    @property
-    def supported_features(self):
-        """Flag lawn mower robot features that are supported."""
-        return SUPPORT_GARDENA
-
-    @property
-    def battery_level(self):
-        """Return the battery level of the lawn mower."""
-        return self._device.battery_level
-
-    @property
-    def available(self):
-        """Return True if the device is available."""
-        return self._device.state != "UNAVAILABLE"
-
-    def error(self):
-        """Return the error message."""
-        if self._activity == LawnMowerActivity.ERROR:
-            return self._error_message
-        return ""
-
-    @property
-    def extra_state_attributes(self):
-        """Return the state attributes of the lawn mower."""
-        return {
-            ATTR_ACTIVITY: self._device.activity,
-            ATTR_BATTERY_LEVEL: self._device.battery_level,
-            ATTR_BATTERY_STATE: self._device.battery_state,
-            ATTR_RF_LINK_LEVEL: self._device.rf_link_level,
-            ATTR_RF_LINK_STATE: self._device.rf_link_state,
-            ATTR_OPERATING_HOURS: self._device.operating_hours,
-            ATTR_LAST_ERROR: self._device.last_error_code,
-            ATTR_ERROR: "NONE" if self._device.activity != "NONE" else self._device.last_error_code,
-            ATTR_STATE: self._device.activity if self._device.activity != "NONE" else self._device.last_error_code,
-            ATTR_STINT_START: self._stint_start,
-            ATTR_STINT_END: self._stint_end
-        }
-
-    @property
-    def option_mower_duration(self) -> int:
-        return self._options.get(CONF_MOWER_DURATION, DEFAULT_MOWER_DURATION)
+    def start_mowing(self) -> None:
+        """Start mowing - synchronous wrapper."""
+        raise NotImplementedError("Use async_start_mowing instead")
 
     async def async_start_mowing(self) -> None:
-        """Resume schedule."""
-        await self._device.start_dont_override()
+        """Start mowing."""
+        _LOGGER.info(f"=== START_MOWING called for {self._attr_name} ===")
+        _LOGGER.info(f"Starting mowing for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "start_mowing",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "START_DONT_OVERRIDE",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self._mower_service.id, command_data)
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== START_MOWING completed for {self._attr_name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error in start_mowing for {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No mower service available for {self._attr_name}")
 
-    async def async_dock(self) -> None:
-        """Parks the mower until next schedule."""
-        await self._device.park_until_next_task()
+    def pause(self) -> None:
+        """Pause mowing - synchronous wrapper."""
+        raise NotImplementedError("Use async_pause instead")
 
     async def async_pause(self) -> None:
-        """Parks the mower until further notice."""
-        await self._device.park_until_further_notice()
-        
-    async def async_start_override(
-        self, duration: int
-    ) -> None:
-        """Start the mower using Gardena API command START_SECONDS_TO_OVERRIDE."""
-        await self._device.start_seconds_to_override(duration)
+        """Pause mowing."""
+        _LOGGER.info(f"=== PAUSE called for {self._attr_name} ===")
+        _LOGGER.info(f"Pausing mowing for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "pause_mowing",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "PARK_UNTIL_FURTHER_NOTICE",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self._mower_service.id, command_data)
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== PAUSE completed for {self._attr_name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error in pause for {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No mower service available for {self._attr_name}")
 
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._unique_id
+    def dock(self) -> None:
+        """Dock the mower - synchronous wrapper."""
+        raise NotImplementedError("Use async_dock instead")
 
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {
-                # Serial numbers are unique identifiers within a specific domain
-                (DOMAIN, self._device.serial)
-            },
-            "name": self._device.name,
-            "manufacturer": "Gardena",
-            "model": self._device.model_type,
-        }
+    async def async_dock(self) -> None:
+        """Dock the mower."""
+        _LOGGER.info(f"=== DOCK called for {self._attr_name} ===")
+        _LOGGER.info(f"Docking mower {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "dock_mower",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "PARK_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            _LOGGER.info(f"Sending command: {command_data}")
+            try:
+                await self.coordinator.client.send_command(self._mower_service.id, command_data)
+                await self.coordinator.async_request_refresh()
+                _LOGGER.info(f"=== DOCK completed for {self._attr_name} ===")
+            except Exception as e:
+                _LOGGER.error(f"Error in dock for {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No mower service available for {self._attr_name}")
+
+    async def async_start_override(self, duration: int) -> None:
+        """Start mowing for a specific duration."""
+        _LOGGER.info(f"Starting mowing for {duration} seconds for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "start_override",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "START_SECONDS_TO_OVERRIDE",
+                        "seconds": duration,
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._mower_service.id, command_data)
+            await self.coordinator.async_request_refresh()
+
+    async def async_start_automatic(self) -> None:
+        """Start mowing with automatic schedule."""
+        _LOGGER.info(f"Starting automatic mowing for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "start_automatic",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "START_DONT_OVERRIDE",
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._mower_service.id, command_data)
+            await self.coordinator.async_request_refresh()
+
+    async def async_park_until_next_task(self) -> None:
+        """Park the mower until the next scheduled task."""
+        _LOGGER.info(f"Parking mower until next task for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "park_next_task",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "PARK_UNTIL_NEXT_TASK",
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._mower_service.id, command_data)
+            await self.coordinator.async_request_refresh()
+
+    async def async_park_until_further_notice(self) -> None:
+        """Park the mower until further notice."""
+        _LOGGER.info(f"Parking mower until further notice for {self.device.name} ({self._mower_service.id})")
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "park_further_notice",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "PARK_UNTIL_FURTHER_NOTICE",
+                    },
+                }
+            }
+            await self.coordinator.client.send_command(self._mower_service.id, command_data)
+            await self.coordinator.async_request_refresh() 

@@ -1,16 +1,84 @@
-# Packages
-*.egg
-*.egg-info
-eggs
-.eggs
-
-# GITHUB Proposed Python stuff:
-*.py[cod]
-
-# emacs auto backups
-*~
-*#
-*.orig
-.idea
+# Environnement virtuel
+venv/
+env/
 .venv/
-.venv-test/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Tests et couverture
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Variables d'environnement
+.env
+.env.local
+.env.*.local
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Documentation générée
+docs/_build/
+docs/api/
+
+# Fichiers de configuration locaux
+config.local.yaml
+secrets.yaml
+
+# Home Assistant test environment
+.homeassistant/
+.ha.pid
+home-assistant.log
+*.pid

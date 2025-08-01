@@ -1,21 +1,25 @@
 {
   "config": {
     "abort": {
-      "already_configured": "La localisation est déjà configurée"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
     },
     "error": {
       "cannot_connect": "Impossible de se connecter, veuillez ré-essayer.",
-      "invalid_auth": "Authentification invalide.",
-      "too_many_requests": "Trop de requêtes, veuillez ré-essayer plus tard.",
-      "unknown": "Erreur innatendue."
+      "invalid_auth": "Identifiants d'authentification invalides. Veuillez vérifier votre Client ID et Client Secret.",
+      "insufficient_permissions": "Permissions insuffisantes. Veuillez vérifier votre clé API et vos permissions.",
+      "no_locations": "Aucun emplacement trouvé. Veuillez vous assurer que votre Gardena Smart System est correctement configuré.",
+      "server_error": "Erreur serveur survenue. Veuillez ré-essayer plus tard.",
+      "auth_error": "Erreur d'authentification survenue. Veuillez vérifier vos identifiants.",
+      "unknown_error": "Une erreur inattendue s'est produite. Veuillez ré-essayer.",
+      "too_many_requests": "Trop de requêtes, ré-essayez plus tard.",
+      "unknown": "Erreur inattendue."
     },
     "step": {
       "user": {
-        "description": "Veuillez renseigner vos identifiants.",
+        "description": "Veuillez saisir vos identifiants API Gardena Smart System. Vous pouvez les obtenir depuis le Portail Développeur Gardena.",
         "data": {
-          "email": "E-mail",
-          "password": "Mot de passe",
-          "client_id": "Application Key / Client ID"
+          "client_id": "Clé d'application / Client ID",
+          "client_secret": "Secret d'application / Client secret"
         },
         "title": "Gardena Smart System"
       }
@@ -37,13 +41,24 @@
     "start_override": {
       "name": "Démarrer la substitution",
       "description": "Démarrer la tondeuse immédiatement pour une durée spécifique et remplacer le planning.",
-      "icon": "mdi:mower-on",
       "fields": {
         "duration": {
           "name": "Durée",
           "description": "La durée en secondes."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Démarrer automatique",
+      "description": "Démarrer la tondeuse avec le planning automatique."
+    },
+    "park_until_next_task": {
+      "name": "Ranger jusqu'à la prochaine tâche",
+      "description": "Ranger la tondeuse jusqu'à la prochaine tâche programmée."
+    },
+    "park_until_further_notice": {
+      "name": "Ranger jusqu'à nouvel ordre",
+      "description": "Ranger la tondeuse jusqu'à nouvel ordre."
     }
   }
 }

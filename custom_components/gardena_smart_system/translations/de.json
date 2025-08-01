@@ -44,6 +44,18 @@
           "description": "Die Dauer in Sekunden."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Automatisch starten",
+      "description": "Starten Sie den Mäher mit dem automatischen Zeitplan."
+    },
+    "park_until_next_task": {
+      "name": "Bis zur nächsten Aufgabe parken",
+      "description": "Parken Sie den Mäher bis zur nächsten geplanten Aufgabe."
+    },
+    "park_until_further_notice": {
+      "name": "Bis auf weiteres parken",
+      "description": "Parken Sie den Mäher bis auf weiteres."
     }
   }
 }
