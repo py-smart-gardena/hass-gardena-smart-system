@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import GardenaSmartSystemCoordinator
+from .entities import GardenaOnlineEntity, GardenaEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,46 +27,47 @@ async def async_setup_entry(
     # Create binary sensor entities for each device
     entities = []
     
-    for location_id, devices in coordinator.devices.items():
-        for device_id, device_data in devices.items():
+    for location in coordinator.locations.values():
+        for device in location.devices.values():
             # Add online status sensors for all devices
-            entities.append(
-                GardenaOnlineSensor(coordinator, location_id, device_id, device_data)
-            )
+            entities.append(GardenaOnlineBinarySensor(coordinator, device))
+            # Add battery sensors if available
+            if "COMMON" in device.services:
+                common_services = device.services["COMMON"]
+                _LOGGER.info(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
+                for common_service in common_services:
+                    _LOGGER.info(f"Creating battery sensor for service: {common_service.id}")
+                    entities.append(GardenaBatterySensor(coordinator, device, common_service))
+            else:
+                _LOGGER.debug(f"Device {device.name} ({device.id}) has no COMMON service")
 
     async_add_entities(entities)
 
 
-class GardenaOnlineSensor(BinarySensorEntity):
+class GardenaOnlineBinarySensor(GardenaOnlineEntity, BinarySensorEntity):
     """Representation of a Gardena device online status sensor."""
 
-    def __init__(
-        self,
-        coordinator: GardenaSmartSystemCoordinator,
-        location_id: str,
-        device_id: str,
-        device_data: dict[str, Any],
-    ) -> None:
-        """Initialize the binary sensor."""
-        self.coordinator = coordinator
-        self.location_id = location_id
-        self.device_id = device_id
-        self.device_data = device_data
-        
-        # Set unique ID
-        self._attr_unique_id = f"{device_id}_online"
-        
-        # Set name
-        device_name = device_data.get("attributes", {}).get("name", {}).get("value", "Unknown Device")
-        self._attr_name = f"{device_name} Online"
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
+        """Initialize the online status sensor."""
+        super().__init__(coordinator, device)
+        self._attr_name = f"{device.name} Online" 
+
+
+class GardenaBatterySensor(GardenaEntity, BinarySensorEntity):
+    """Representation of a Gardena battery sensor."""
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, common_service) -> None:
+        """Initialize the battery sensor."""
+        super().__init__(coordinator, device, "COMMON")
+        self._attr_unique_id = f"{device.id}_{common_service.id}_battery"
+        self._attr_name = f"{device.name} Battery"
+        self._common_service = common_service
 
     @property
     def is_on(self) -> bool:
-        """Return true if the device is online."""
-        # This is a placeholder - implement based on device state
-        return True
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.coordinator.last_update_success 
+        """Return true if battery is in a normal state."""
+        if self._common_service and self._common_service.battery_state:
+            # States considered normal: OK, CHARGING, NO_BATTERY
+            # States considered problematic: LOW, REPLACE_NOW, OUT_OF_OPERATION, UNKNOWN
+            return self._common_service.battery_state in ["OK", "CHARGING", "NO_BATTERY"]
+        return False

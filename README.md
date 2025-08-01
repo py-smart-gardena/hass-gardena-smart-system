@@ -1,6 +1,23 @@
 # Gardena Smart System Integration v2.0.0
 
-A modern Home Assistant integration for the Gardena Smart System, based on Gardena's v2 API.
+A **complete reimplementation** of the Home Assistant integration for the Gardena Smart System, based on Gardena's v2 API.
+
+## ⚠️ Important: Complete Reimplementation
+
+This is a **complete rewrite** of the Gardena Smart System integration. It is **strongly recommended** to:
+
+1. **Remove the existing integration** from Home Assistant
+2. **Restart Home Assistant**
+3. **Re-add the integration** with this new version
+
+This ensures a clean installation and prevents any conflicts between the old and new implementations.
+
+### Why a Complete Reimplementation?
+
+- **New API v2**: Uses Gardena's completely new API architecture
+- **Modern Framework**: Built using the latest Home Assistant integration patterns
+- **Improved Architecture**: Better state management and error handling
+- **Enhanced Features**: More reliable device detection and control
 
 ## 🚀 v2 New Features
 
@@ -29,6 +46,16 @@ A modern Home Assistant integration for the Gardena Smart System, based on Garde
 - State and activity monitoring
 
 ## 🛠️ Installation
+
+### ⚠️ Important: Clean Installation Required
+
+**Before installing this new version, you must remove the existing Gardena Smart System integration:**
+
+1. Go to **Configuration** > **Integrations**
+2. Find **Gardena Smart System** in the list
+3. Click on it and select **Delete**
+4. Confirm the deletion
+5. **Restart Home Assistant**
 
 ### Manual Installation
 
@@ -105,14 +132,32 @@ pytest custom_components/gardena_smart_system/test_init.py -v
 - **Installation** : Integration installation test
 - **Uninstallation** : Integration uninstallation test
 
-## 🔄 Update
+## 🔄 Migration from Previous Versions
 
-To update to v2:
+### ⚠️ Migration Required
 
-1. Backup your current configuration
-2. Uninstall the old version
-3. Install the new version
-4. Reconfigure the integration
+This is a **complete reimplementation** and requires a full migration:
+
+1. **Remove the existing integration** from Home Assistant
+2. **Restart Home Assistant**
+3. **Install this new version**
+4. **Re-add the integration** with your API credentials
+
+### What Changes?
+
+- **New entity IDs**: All entities will have new unique IDs
+- **New device structure**: Devices are now organized differently
+- **Enhanced features**: Better device detection and control
+- **Improved reliability**: More stable connection and state management
+
+### Migration Checklist
+
+- [ ] Remove existing Gardena Smart System integration
+- [ ] Restart Home Assistant
+- [ ] Install new integration files
+- [ ] Re-add integration with API credentials
+- [ ] Verify all devices are detected
+- [ ] Update any automations or scripts that reference old entity IDs
 
 ## 🐛 Troubleshooting
 
@@ -125,10 +170,17 @@ To update to v2:
 **No Devices Detected**
 - Check that your devices are connected to the Smart System
 - Make sure they are visible in the Gardena app
+- **Ensure you've removed the old integration first**
 
 **Entities Not Available**
 - Check internet connection
 - Check Home Assistant logs for more details
+- **Verify you've restarted Home Assistant after removing the old integration**
+
+**Duplicate Entities or Conflicts**
+- **This usually happens when the old integration wasn't properly removed**
+- Remove the integration completely and restart Home Assistant
+- Re-add the integration fresh
 
 ### Logs
 

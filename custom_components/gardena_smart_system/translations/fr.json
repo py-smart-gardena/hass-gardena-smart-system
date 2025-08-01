@@ -47,6 +47,18 @@
           "description": "La durée en secondes."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Démarrer automatique",
+      "description": "Démarrer la tondeuse avec le planning automatique."
+    },
+    "park_until_next_task": {
+      "name": "Ranger jusqu'à la prochaine tâche",
+      "description": "Ranger la tondeuse jusqu'à la prochaine tâche programmée."
+    },
+    "park_until_further_notice": {
+      "name": "Ranger jusqu'à nouvel ordre",
+      "description": "Ranger la tondeuse jusqu'à nouvel ordre."
     }
   }
 }

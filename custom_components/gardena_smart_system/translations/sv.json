@@ -44,6 +44,18 @@
           "description": "Varaktigheten i sekunder."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Starta automatiskt",
+      "description": "Starta gräsklipparen med det automatiska schemat."
+    },
+    "park_until_next_task": {
+      "name": "Parkera till nästa uppgift",
+      "description": "Parkera gräsklipparen till nästa planerade uppgift."
+    },
+    "park_until_further_notice": {
+      "name": "Parkera tills vidare",
+      "description": "Parkera gräsklipparen tills vidare."
     }
   }
 }

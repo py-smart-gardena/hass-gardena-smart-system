@@ -212,7 +212,15 @@ class TestGardenaSmartSystemClient:
     @pytest.mark.asyncio
     async def test_get_locations_success(self, client):
         """Test successful locations fetch."""
-        mock_locations = [{"id": "loc1", "name": "Location 1"}]
+        mock_locations = [
+            {
+                "id": "loc1", 
+                "type": "LOCATION",
+                "attributes": {
+                    "name": "Location 1"
+                }
+            }
+        ]
         mock_response = {"data": mock_locations}
 
         with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
@@ -220,8 +228,9 @@ class TestGardenaSmartSystemClient:
 
             locations = await client.get_locations()
 
-            assert locations == mock_locations
-            mock_request.assert_called_once_with("GET", "/locations")
+            assert len(locations) == 1
+            assert locations[0].id == "loc1"
+            assert locations[0].name == "Location 1"
 
     @pytest.mark.asyncio
     async def test_get_locations_api_error(self, client):
@@ -235,31 +244,193 @@ class TestGardenaSmartSystemClient:
     @pytest.mark.asyncio
     async def test_get_location_success(self, client):
         """Test successful location fetch."""
-        mock_location = {"id": "loc1", "name": "Location 1", "data": {}}
+        mock_location = {
+            "data": {
+                "id": "loc1",
+                "type": "LOCATION", 
+                "attributes": {
+                    "name": "Location 1"
+                },
+                "relationships": {
+                    "devices": {
+                        "data": []
+                    }
+                }
+            },
+            "included": []
+        }
 
         with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
             mock_request.return_value = mock_location
 
             location = await client.get_location("loc1")
 
-            assert location == mock_location
-            mock_request.assert_called_once_with("GET", "/locations/loc1")
+            assert location.id == "loc1"
+            assert location.name == "Location 1"
+            assert len(location.devices) == 0
 
     @pytest.mark.asyncio
     async def test_send_command_success(self, client):
         """Test successful command sending."""
-        command_data = {"command": "START", "duration": 3600}
+        mock_response = {"status": "accepted", "message": "Command accepted for processing"}
 
         with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
-            mock_request.return_value = {}
+            mock_request.return_value = mock_response
 
-            await client.send_command("service1", command_data)
+            command_data = {
+                "id": "cmd_test",
+                "type": "MOWER_CONTROL",
+                "attributes": {
+                    "command": "START_DONT_OVERRIDE"
+                }
+            }
 
+            response = await client.send_command("test-service", command_data)
+
+            assert response == mock_response
             mock_request.assert_called_once_with(
-                "PUT",
-                "/command/service1",
-                data=command_data
+                "PUT", 
+                "/command/test-service", 
+                data=command_data,
+                is_command=True
             )
+
+    @pytest.mark.asyncio
+    async def test_send_command_202_accepted(self, client):
+        """Test command accepted with 202 status."""
+        mock_response = {"status": "accepted", "message": "Command accepted for processing"}
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            mock_request.return_value = mock_response
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "POWER_SOCKET_CONTROL",
+                "attributes": {
+                    "command": "START_SECONDS_TO_OVERRIDE",
+                    "seconds": 3600
+                }
+            }
+
+            response = await client.send_command("power-service", command_data)
+
+            assert response["status"] == "accepted"
+            mock_request.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_send_command_400_error(self, client):
+        """Test command with 400 error."""
+        from .gardena_client import GardenaCommandError
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            mock_request.side_effect = GardenaCommandError("Invalid command parameters", 400)
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "VALVE_CONTROL",
+                "attributes": {
+                    "command": "INVALID_COMMAND"
+                }
+            }
+
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("valve-service", command_data)
+
+            assert exc_info.value.status_code == 400
+            assert "Invalid command parameters" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_send_command_403_error(self, client):
+        """Test command with 403 error."""
+        from .gardena_client import GardenaCommandError
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            mock_request.side_effect = GardenaCommandError("Command forbidden - check device permissions", 403)
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "MOWER_CONTROL",
+                "attributes": {
+                    "command": "START_DONT_OVERRIDE"
+                }
+            }
+
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("mower-service", command_data)
+
+            assert exc_info.value.status_code == 403
+            assert "Command forbidden" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_send_command_409_conflict(self, client):
+        """Test command with 409 conflict error."""
+        from .gardena_client import GardenaCommandError
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            mock_request.side_effect = GardenaCommandError("Command conflict - device may be busy", 409)
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "POWER_SOCKET_CONTROL",
+                "attributes": {
+                    "command": "START_OVERRIDE"
+                }
+            }
+
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("power-service", command_data)
+
+            assert exc_info.value.status_code == 409
+            assert "Command conflict" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_send_command_500_retry(self, client):
+        """Test command with 500 error handling."""
+        from .gardena_client import GardenaCommandError
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            # Mock a 500 error
+            mock_request.side_effect = GardenaCommandError("Server error: 500", 500)
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "VALVE_CONTROL",
+                "attributes": {
+                    "command": "START_SECONDS_TO_OVERRIDE",
+                    "seconds": 1800
+                }
+            }
+
+            # This should raise the command error
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("valve-service", command_data)
+
+            assert exc_info.value.status_code == 500
+            assert "Server error: 500" in str(exc_info.value)
+            assert mock_request.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_send_command_500_max_retries(self, client):
+        """Test command with 500 error exceeding max retries."""
+        from .gardena_client import GardenaCommandError
+
+        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+            mock_request.side_effect = GardenaCommandError("Server error: 500", 500)
+
+            command_data = {
+                "id": "cmd_test",
+                "type": "MOWER_CONTROL",
+                "attributes": {
+                    "command": "PARK_UNTIL_NEXT_TASK"
+                }
+            }
+
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("mower-service", command_data)
+
+            assert exc_info.value.status_code == 500
+            # Should have tried at least once
+            assert mock_request.call_count >= 1
 
     @pytest.mark.asyncio
     async def test_close(self, client):

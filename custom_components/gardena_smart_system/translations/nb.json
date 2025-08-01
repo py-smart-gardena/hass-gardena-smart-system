@@ -44,6 +44,18 @@
           "description": "Varigheten i sekunder."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Start automatisk",
+      "description": "Start klipperen med den automatiske timeplanen."
+    },
+    "park_until_next_task": {
+      "name": "Parker til neste oppgave",
+      "description": "Parker klipperen til neste planlagte oppgave."
+    },
+    "park_until_further_notice": {
+      "name": "Parker til videre",
+      "description": "Parker klipperen til videre."
     }
   }
 }

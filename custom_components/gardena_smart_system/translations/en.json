@@ -47,6 +47,18 @@
           "description": "The duration in seconds."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Start automatic",
+      "description": "Start the mower with automatic schedule."
+    },
+    "park_until_next_task": {
+      "name": "Park until next task",
+      "description": "Park the mower until the next scheduled task."
+    },
+    "park_until_further_notice": {
+      "name": "Park until further notice",
+      "description": "Park the mower until further notice."
     }
   }
 }

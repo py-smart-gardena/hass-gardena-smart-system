@@ -44,6 +44,18 @@
           "description": "Trvanie v sekundách."
         }
       }
+    },
+    "start_automatic": {
+      "name": "Spustiť automaticky",
+      "description": "Spustite kosačku s automatickým harmonogramom."
+    },
+    "park_until_next_task": {
+      "name": "Zaparkovať do ďalšej úlohy",
+      "description": "Zaparkujte kosačku do ďalšej plánovanej úlohy."
+    },
+    "park_until_further_notice": {
+      "name": "Zaparkovať do ďalšieho upozornenia",
+      "description": "Zaparkujte kosačku do ďalšieho upozornenia."
     }
   }
 }
