@@ -1,3 +1,40 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Gardena Smart System Integration v2.0.0](#gardena-smart-system-integration-v200)
+  - [⚠️ Important: Complete Reimplementation](#-important-complete-reimplementation)
+    - [Why a Complete Reimplementation?](#why-a-complete-reimplementation)
+  - [🚀 v2 New Features](#-v2-new-features)
+  - [📋 Features](#-features)
+    - [Supported Entities](#supported-entities)
+    - [Lawn Mower Features](#lawn-mower-features)
+  - [🛠️ Installation](#-installation)
+    - [⚠️ Important: Clean Installation Required](#-important-clean-installation-required)
+    - [Manual Installation](#manual-installation)
+    - [Configuration](#configuration)
+  - [🔧 Technical Architecture](#-technical-architecture)
+    - [File Structure](#file-structure)
+    - [Main Components](#main-components)
+      - [Coordinator (`coordinator.py`)](#coordinator-coordinatorpy)
+      - [API Client (`gardena_client.py`)](#api-client-gardena_clientpy)
+      - [Entities](#entities)
+  - [🧪 Tests](#-tests)
+    - [Running Tests](#running-tests)
+    - [Available Tests](#available-tests)
+  - [🔄 Migration from Previous Versions](#-migration-from-previous-versions)
+    - [⚠️ Migration Required](#-migration-required)
+    - [What Changes?](#what-changes)
+    - [Migration Checklist](#migration-checklist)
+  - [🐛 Troubleshooting](#-troubleshooting)
+    - [Common Issues](#common-issues)
+    - [Logs](#logs)
+  - [🤝 Contribution](#-contribution)
+  - [📄 License](#-license)
+  - [🔗 Useful Links](#-useful-links)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Gardena Smart System Integration v2.0.0
 
 A **complete reimplementation** of the Home Assistant integration for the Gardena Smart System, based on Gardena's v2 API.
