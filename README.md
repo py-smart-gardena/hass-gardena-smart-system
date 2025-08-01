@@ -65,6 +65,32 @@ This ensures a clean installation and prevents any conflicts between the old and
 - **Centralized State Management** : Coordinator for data synchronization
 - **Automated Tests** : Unit tests with mocks
 
+## 🧪 Testing Status
+
+### ✅ Tested and Working
+
+- **Lawn Mower** (`lawn_mower`) : ✅ Fully tested and functional
+  - Start/pause/dock controls working
+  - Real-time status updates via WebSocket
+  - Custom service buttons operational
+- **Smart Irrigation Control** (`valve`) : ✅ Fully tested and functional
+  - Multiple valve control (6 valves detected)
+  - Open/close operations working
+  - Real-time status updates
+- **Power Socket** (`switch`) : ✅ Fully tested and functional
+  - On/off control working
+  - Real-time status updates
+
+### ⚠️ Not Yet Tested
+
+- **Water Control** (`valve`) : ⚠️ Implementation complete but not tested
+  - Single valve control implementation ready
+  - Needs real device testing
+- **Sensors** (`sensor`) : ⚠️ Implementation complete but not tested
+  - Temperature, humidity, light sensors
+  - Soil sensors implementation ready
+  - Needs real device testing
+
 ## 📋 Features
 
 ### Supported Entities
