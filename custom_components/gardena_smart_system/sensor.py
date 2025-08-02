@@ -73,7 +73,7 @@ async def async_setup_entry(
     # Add WebSocket status sensor
     entities.append(GardenaWebSocketStatusSensor(coordinator))
 
-            _LOGGER.debug(f"Created {len(entities)} sensor entities")
+    _LOGGER.debug(f"Created {len(entities)} sensor entities")
     async_add_entities(entities)
 
 
