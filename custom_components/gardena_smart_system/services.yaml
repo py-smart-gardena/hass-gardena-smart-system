@@ -29,3 +29,6 @@ websocket_diagnostics:
       default: false
       selector:
         boolean:
+
+reconnect_websocket:
+  description: Force WebSocket reconnection for the Gardena Smart System integration.

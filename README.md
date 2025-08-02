@@ -111,6 +111,242 @@ This ensures a clean installation and prevents any conflicts between the old and
 - Return to charging station
 - State and activity monitoring
 
+## 🔧 Available Services
+
+The integration provides several services that can be called from automations, scripts, or the Developer Tools. All services require a `device_id` parameter.
+
+### 🚜 Lawn Mower Services
+
+#### `gardena_smart_system.mower_start`
+Start automatic mowing (follows the device's schedule).
+
+**Parameters:**
+- `device_id` (required): The device ID of the lawn mower
+
+**Example:**
+```yaml
+service: gardena_smart_system.mower_start
+data:
+  device_id: "your_mower_device_id"
+```
+
+#### `gardena_smart_system.mower_start_manual`
+Start manual mowing for a specified duration.
+
+**Parameters:**
+- `device_id` (required): The device ID of the lawn mower
+- `duration` (optional): Duration in seconds (60-14400, default: 1800)
+
+**Example:**
+```yaml
+service: gardena_smart_system.mower_start_manual
+data:
+  device_id: "your_mower_device_id"
+  duration: 3600  # 1 hour
+```
+
+#### `gardena_smart_system.mower_park`
+Park the mower until the next scheduled task.
+
+**Parameters:**
+- `device_id` (required): The device ID of the lawn mower
+
+**Example:**
+```yaml
+service: gardena_smart_system.mower_park
+data:
+  device_id: "your_mower_device_id"
+```
+
+#### `gardena_smart_system.mower_park_until_notice`
+Park the mower until further notice (ignores schedule).
+
+**Parameters:**
+- `device_id` (required): The device ID of the lawn mower
+
+**Example:**
+```yaml
+service: gardena_smart_system.mower_park_until_notice
+data:
+  device_id: "your_mower_device_id"
+```
+
+### 🔌 Power Socket Services
+
+#### `gardena_smart_system.power_socket_on`
+Turn on the power socket for a specified duration.
+
+**Parameters:**
+- `device_id` (required): The device ID of the power socket
+- `duration` (optional): Duration in seconds (60-86400, default: 3600)
+
+**Example:**
+```yaml
+service: gardena_smart_system.power_socket_on
+data:
+  device_id: "your_power_socket_device_id"
+  duration: 7200  # 2 hours
+```
+
+#### `gardena_smart_system.power_socket_on_indefinite`
+Turn on the power socket indefinitely.
+
+**Parameters:**
+- `device_id` (required): The device ID of the power socket
+
+**Example:**
+```yaml
+service: gardena_smart_system.power_socket_on_indefinite
+data:
+  device_id: "your_power_socket_device_id"
+```
+
+#### `gardena_smart_system.power_socket_off`
+Turn off the power socket immediately.
+
+**Parameters:**
+- `device_id` (required): The device ID of the power socket
+
+**Example:**
+```yaml
+service: gardena_smart_system.power_socket_off
+data:
+  device_id: "your_power_socket_device_id"
+```
+
+#### `gardena_smart_system.power_socket_pause`
+Pause automatic operation of the power socket.
+
+**Parameters:**
+- `device_id` (required): The device ID of the power socket
+
+**Example:**
+```yaml
+service: gardena_smart_system.power_socket_pause
+data:
+  device_id: "your_power_socket_device_id"
+```
+
+#### `gardena_smart_system.power_socket_unpause`
+Resume automatic operation of the power socket.
+
+**Parameters:**
+- `device_id` (required): The device ID of the power socket
+
+**Example:**
+```yaml
+service: gardena_smart_system.power_socket_unpause
+data:
+  device_id: "your_power_socket_device_id"
+```
+
+### 🚰 Valve Services
+
+#### `gardena_smart_system.valve_open`
+Open the valve for a specified duration.
+
+**Parameters:**
+- `device_id` (required): The device ID of the valve
+- `duration` (optional): Duration in seconds (60-14400, default: 3600)
+
+**Example:**
+```yaml
+service: gardena_smart_system.valve_open
+data:
+  device_id: "your_valve_device_id"
+  duration: 1800  # 30 minutes
+```
+
+#### `gardena_smart_system.valve_close`
+Close the valve immediately.
+
+**Parameters:**
+- `device_id` (required): The device ID of the valve
+
+**Example:**
+```yaml
+service: gardena_smart_system.valve_close
+data:
+  device_id: "your_valve_device_id"
+```
+
+#### `gardena_smart_system.valve_pause`
+Pause automatic operation of the valve.
+
+**Parameters:**
+- `device_id` (required): The device ID of the valve
+
+**Example:**
+```yaml
+service: gardena_smart_system.valve_pause
+data:
+  device_id: "your_valve_device_id"
+```
+
+#### `gardena_smart_system.valve_unpause`
+Resume automatic operation of the valve.
+
+**Parameters:**
+- `device_id` (required): The device ID of the valve
+
+**Example:**
+```yaml
+service: gardena_smart_system.valve_unpause
+data:
+  device_id: "your_valve_device_id"
+```
+
+### 🌐 WebSocket Services
+
+#### `gardena_smart_system.reconnect_websocket`
+Force reconnection of the WebSocket connection.
+
+**Parameters:** None
+
+**Example:**
+```yaml
+service: gardena_smart_system.reconnect_websocket
+```
+
+### 📋 System Services
+
+#### `gardena_smart_system.reload`
+Reload the Gardena Smart System integration.
+
+**Parameters:** None
+
+**Example:**
+```yaml
+service: gardena_smart_system.reload
+```
+
+#### `gardena_smart_system.websocket_diagnostics`
+Get WebSocket connection diagnostics and status information.
+
+**Parameters:**
+- `detailed` (optional): Include detailed connection information (default: false)
+
+**Example:**
+```yaml
+service: gardena_smart_system.websocket_diagnostics
+data:
+  detailed: true
+```
+
+### 🔍 Finding Device IDs
+
+To find the device ID for a specific device:
+
+1. Go to **Developer Tools** > **States**
+2. Search for your device (e.g., "mower", "valve", "switch")
+3. Look for the `device_id` attribute in the entity state
+4. Or check the entity's unique ID (usually contains the device ID)
+
+**Example entity state:**
+```yaml
+device_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
 ## 🛠️ Installation
 
 ### ⚠️ Important: Clean Installation Required

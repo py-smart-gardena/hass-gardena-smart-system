@@ -61,6 +61,9 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
             await self.websocket_client.start()
             _LOGGER.info("WebSocket client started successfully")
             
+            # Notify entities that WebSocket client is now available
+            self.async_set_updated_data(self.locations)
+            
         except Exception as e:
             _LOGGER.error(f"Failed to start WebSocket client: {e}")
 

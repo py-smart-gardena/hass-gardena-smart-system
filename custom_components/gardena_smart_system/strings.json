@@ -59,6 +59,10 @@
     "park_until_further_notice": {
       "name": "Park until further notice",
       "description": "Park the mower until further notice."
+    },
+    "reconnect_websocket": {
+      "name": "Reconnect WebSocket",
+      "description": "Force WebSocket reconnection for the Gardena Smart System integration."
     }
   }
 }

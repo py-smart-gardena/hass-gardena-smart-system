@@ -41,7 +41,10 @@ class GardenaOnlineBinarySensor(GardenaOnlineEntity, BinarySensorEntity):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
         """Initialize the online status sensor."""
         super().__init__(coordinator, device)
-        self._attr_name = f"{device.name} Online" 
+        self._attr_name = f"{device.name} Online"
+
+
+ 
 
 
 

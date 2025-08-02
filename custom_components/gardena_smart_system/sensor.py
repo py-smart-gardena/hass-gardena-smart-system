@@ -200,16 +200,30 @@ class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
         self._attr_icon = "mdi:connection"
 
     @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        # WebSocket status sensor is always available
+        return True
+
+    @property
     def native_value(self) -> str:
         """Return the WebSocket connection status."""
         if self.coordinator.websocket_client:
-            return self.coordinator.websocket_client.connection_status
-        return "not_available"
+            status = self.coordinator.websocket_client.connection_status
+            _LOGGER.debug(f"WebSocket status sensor: client available, status={status}")
+            return status
+        _LOGGER.debug("WebSocket status sensor: client not available")
+        return "disconnected"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = super().extra_state_attributes
+        
+        # Add reconnect button when disconnected
+        if self.native_value == "disconnected":
+            attrs["reconnect_button"] = True
+            attrs["reconnect_service"] = "gardena_smart_system.reconnect_websocket"
         
         if self.coordinator.websocket_client:
             attrs.update({
@@ -218,4 +232,6 @@ class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
                 "is_connecting": self.coordinator.websocket_client.is_connecting,
             })
         
-        return attrs 
+        return attrs
+
+ 

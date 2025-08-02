@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Parkeren tot nader order",
       "description": "Parkeer de maaier tot nader order."
+    },
+    "reconnect_websocket": {
+      "name": "WebSocket opnieuw verbinden",
+      "description": "WebSocket-verbinding forceren voor de Gardena Smart System-integratie."
     }
   }
 }

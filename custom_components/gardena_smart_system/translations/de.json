@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Bis auf weiteres parken",
       "description": "Parken Sie den Mäher bis auf weiteres."
+    },
+    "reconnect_websocket": {
+      "name": "WebSocket neu verbinden",
+      "description": "WebSocket-Verbindung für die Gardena Smart System-Integration erzwungen."
     }
   }
 }

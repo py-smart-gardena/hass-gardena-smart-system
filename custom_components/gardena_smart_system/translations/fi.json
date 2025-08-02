@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Pysäytä toistaiseksi",
       "description": "Pysäytä ruohonleikkuri toistaiseksi."
+    },
+    "reconnect_websocket": {
+      "name": "Yhdistä WebSocket uudelleen",
+      "description": "Pakota WebSocket-yhteys Gardena Smart System -integraatiota varten."
     }
   }
 }

@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Parkera tills vidare",
       "description": "Parkera gräsklipparen tills vidare."
+    },
+    "reconnect_websocket": {
+      "name": "Återanslut WebSocket",
+      "description": "Tvinga WebSocket-anslutning för Gardena Smart System-integrationen."
     }
   }
 }

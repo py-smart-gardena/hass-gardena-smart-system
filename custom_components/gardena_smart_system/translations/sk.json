@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Zaparkovať do ďalšieho upozornenia",
       "description": "Zaparkujte kosačku do ďalšieho upozornenia."
+    },
+    "reconnect_websocket": {
+      "name": "Znovu pripojiť WebSocket",
+      "description": "Vynútiť WebSocket pripojenie pre integráciu Gardena Smart System."
     }
   }
 }

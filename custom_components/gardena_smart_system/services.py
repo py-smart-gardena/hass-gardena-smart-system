@@ -207,6 +207,13 @@ class GardenaServiceManager:
             self._service_valve_unpause,
             schema=SERVICE_SCHEMA_BASE,
         )
+        
+        # WebSocket services
+        self.hass.services.async_register(
+            DOMAIN,
+            "reconnect_websocket",
+            self._service_reconnect_websocket,
+        )
 
     def _get_coordinator(self, device_id: str) -> Optional[GardenaSmartSystemCoordinator]:
         """Get coordinator for device."""
@@ -398,4 +405,24 @@ class GardenaServiceManager:
             return
         
         command = ValveCommand(service_id, "UNPAUSE")
-        await self._send_command(service_id, command) 
+        await self._send_command(service_id, command)
+
+    # WebSocket services
+    async def _service_reconnect_websocket(self, call: ServiceCall) -> None:
+        """Force WebSocket reconnection."""
+        _LOGGER.info("WebSocket reconnection service called")
+        
+        # Get the first available coordinator (skip service_manager)
+        for entry_id in self.hass.data[DOMAIN]:
+            if entry_id == "service_manager":
+                continue
+            entry_data = self.hass.data[DOMAIN][entry_id]
+            if hasattr(entry_data, 'websocket_client') and entry_data.websocket_client:
+                try:
+                    await entry_data.websocket_client.force_reconnect()
+                    _LOGGER.info("WebSocket reconnection initiated successfully")
+                    return
+                except Exception as e:
+                    _LOGGER.error(f"Failed to reconnect WebSocket: {e}")
+        
+        _LOGGER.error("No WebSocket client found to reconnect") 

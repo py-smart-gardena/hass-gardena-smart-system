@@ -69,6 +69,24 @@ class GardenaWebSocketClient:
         self.is_connecting = False
         self.reconnect_attempts = 0
 
+    async def force_reconnect(self) -> None:
+        """Force a reconnection attempt."""
+        if self._shutdown:
+            return
+        
+        _LOGGER.info("Forcing WebSocket reconnection")
+        self.reconnect_attempts = 0  # Reset attempts
+        self.is_connected = False
+        self.is_connecting = False
+        
+        # Cancel any existing reconnect task
+        if self.reconnect_task and not self.reconnect_task.done():
+            self.reconnect_task.cancel()
+            self.reconnect_task = None
+        
+        # Start fresh connection
+        await self._connect()
+
     async def _connect(self) -> None:
         """Establish WebSocket connection."""
         if self.is_connecting:
@@ -82,6 +100,7 @@ class GardenaWebSocketClient:
             
             if not self.websocket_url:
                 _LOGGER.error("Failed to get WebSocket URL")
+                self.is_connecting = False
                 await self._schedule_reconnect()
                 return
             
@@ -111,6 +130,10 @@ class GardenaWebSocketClient:
             
             # Start listening for messages
             self.listen_task = asyncio.create_task(self._listen_for_messages())
+            
+            # Notify coordinator of status change
+            if self.coordinator:
+                self.coordinator.async_set_updated_data(self.coordinator.locations)
             
         except Exception as e:
             _LOGGER.error(f"Failed to connect to WebSocket: {e}")
@@ -193,6 +216,10 @@ class GardenaWebSocketClient:
             self.is_connected = False
             if not self._shutdown:
                 await self._schedule_reconnect()
+            
+            # Notify coordinator of status change
+            if self.coordinator:
+                self.coordinator.async_set_updated_data(self.coordinator.locations)
 
     async def _process_message(self, data: Dict[str, Any]) -> None:
         """Process received WebSocket message."""
@@ -282,8 +309,16 @@ class GardenaWebSocketClient:
 
     async def _schedule_reconnect(self) -> None:
         """Schedule reconnection attempt."""
-        if self._shutdown or self.reconnect_task:
+        if self._shutdown:
             return
+        
+        # Cancel any existing reconnect task
+        if self.reconnect_task and not self.reconnect_task.done():
+            self.reconnect_task.cancel()
+            try:
+                await self.reconnect_task
+            except asyncio.CancelledError:
+                pass
         
         self.reconnect_attempts += 1
         
@@ -294,16 +329,24 @@ class GardenaWebSocketClient:
         delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 1))
         _LOGGER.info(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
         
+        # Notify coordinator of status change
+        if self.coordinator:
+            self.coordinator.async_set_updated_data(self.coordinator.locations)
+        
         self.reconnect_task = asyncio.create_task(self._delayed_reconnect(delay))
 
     async def _delayed_reconnect(self, delay: int) -> None:
         """Delayed reconnection attempt."""
         try:
+            _LOGGER.info(f"Waiting {delay} seconds before reconnection attempt")
             await asyncio.sleep(delay)
             if not self._shutdown:
+                _LOGGER.info("Starting reconnection attempt")
                 await self._connect()
+            else:
+                _LOGGER.debug("WebSocket shutdown during delay, not reconnecting")
         except asyncio.CancelledError:
-            pass
+            _LOGGER.debug("Reconnection task cancelled")
         finally:
             self.reconnect_task = None
 

@@ -36,8 +36,14 @@ class GardenaEntity(CoordinatorEntity, ABC):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
+        # Check if coordinator is working and WebSocket is connected
         if not self.coordinator.last_update_success:
             return False
+        
+        # Check WebSocket connection status
+        if self.coordinator.websocket_client:
+            if self.coordinator.websocket_client.connection_status != "connected":
+                return False
         
         # Check if device exists in coordinator data
         for location in self.coordinator.locations.values():

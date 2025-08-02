@@ -56,6 +56,10 @@
     "park_until_further_notice": {
       "name": "Parker til videre",
       "description": "Parker klipperen til videre."
+    },
+    "reconnect_websocket": {
+      "name": "Koble til WebSocket på nytt",
+      "description": "Tving WebSocket-tilkobling for Gardena Smart System-integrasjonen."
     }
   }
 }

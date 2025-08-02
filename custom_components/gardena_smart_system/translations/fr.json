@@ -59,6 +59,10 @@
     "park_until_further_notice": {
       "name": "Ranger jusqu'à nouvel ordre",
       "description": "Ranger la tondeuse jusqu'à nouvel ordre."
+    },
+    "reconnect_websocket": {
+      "name": "Reconnecter WebSocket",
+      "description": "Forcer la reconnexion WebSocket pour l'intégration Gardena Smart System."
     }
   }
 }
