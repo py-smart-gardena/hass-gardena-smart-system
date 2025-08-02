@@ -140,10 +140,12 @@ ha-start: ## Start Home Assistant with the integration
 		echo "  time_zone: Europe/Paris" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "logger:" >> $(HA_CONFIG_DIR)/configuration.yaml; \
-		echo "  default: warning" >> $(HA_CONFIG_DIR)/configuration.yaml; \
+		echo "  default: info" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "  logs:" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "    custom_components.gardena_smart_system: debug" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "    gardena_smart_system: debug" >> $(HA_CONFIG_DIR)/configuration.yaml; \
+		echo "    homeassistant.components.websocket_api: warning" >> $(HA_CONFIG_DIR)/configuration.yaml; \
+		echo "    homeassistant.components.camera: warning" >> $(HA_CONFIG_DIR)/configuration.yaml; \
 		echo "$(GREEN)✅ Configuration file created$(NC)"; \
 	fi
 	@echo "$(GREEN)🚀 Starting Home Assistant...$(NC)"

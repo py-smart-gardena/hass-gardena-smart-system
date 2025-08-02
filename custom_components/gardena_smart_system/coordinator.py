@@ -91,8 +91,8 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
             device_id = event.get("device_id")
             event_data = event.get("data", {})
             
-            _LOGGER.info(f"Processing service update: service_id={service_id}, device_id={device_id}, type={service_type}")
-            _LOGGER.info(f"Event data: {event_data}")
+            _LOGGER.debug(f"Processing service update: service_id={service_id}, device_id={device_id}, type={service_type}")
+            _LOGGER.debug(f"Event data: {event_data}")
             
             if not device_id or not service_id:
                 _LOGGER.debug("Service update missing device_id or service_id")
@@ -104,7 +104,7 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
             # Notify listeners of data update
             self.async_set_updated_data(self.locations)
             
-            _LOGGER.info(f"Updated {service_type} service {service_id} for device {device_id} via WebSocket")
+            _LOGGER.debug(f"Updated {service_type} service {service_id} for device {device_id} via WebSocket")
             
         except Exception as e:
             _LOGGER.error(f"Error processing service update: {e}")

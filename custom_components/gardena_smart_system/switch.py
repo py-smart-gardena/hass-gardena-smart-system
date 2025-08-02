@@ -33,14 +33,14 @@ async def async_setup_entry(
             # Add power socket switches if available
             if "POWER_SOCKET" in device.services:
                 power_services = device.services["POWER_SOCKET"]
-                _LOGGER.info(f"Found {len(power_services)} power socket services for device: {device.name} ({device.id})")
+                _LOGGER.debug(f"Found {len(power_services)} power socket services for device: {device.name} ({device.id})")
                 for power_service in power_services:
-                    _LOGGER.info(f"Creating power socket switch for service: {power_service.id}")
+                    _LOGGER.debug(f"Creating power socket switch for service: {power_service.id}")
                     entities.append(GardenaPowerSocketSwitch(coordinator, device, power_service))
             else:
                 _LOGGER.debug(f"Device {device.name} ({device.id}) has no POWER_SOCKET service")
 
-    _LOGGER.info(f"Created {len(entities)} power socket switch entities")
+            _LOGGER.debug(f"Created {len(entities)} power socket switch entities")
     async_add_entities(entities)
 
 

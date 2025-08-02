@@ -82,9 +82,9 @@ class GardenaWaterControl(GardenaEntity, ValveEntity):
         current_service = self._get_current_valve_service()
         if current_service and current_service.activity:
             is_closed = current_service.activity == "CLOSED"
-            _LOGGER.info(f"Water Control {self.device.name} activity: {current_service.activity} -> is_closed: {is_closed}")
+            _LOGGER.debug(f"Water Control {self.device.name} activity: {current_service.activity} -> is_closed: {is_closed}")
             return is_closed
-        _LOGGER.info(f"Water Control {self.device.name} has no activity data -> assuming closed")
+        _LOGGER.debug(f"Water Control {self.device.name} has no activity data -> assuming closed")
         return True
 
     def _get_current_valve_service(self):
@@ -104,9 +104,9 @@ class GardenaWaterControl(GardenaEntity, ValveEntity):
         if current_service and current_service.activity:
             # According to API: MANUAL_WATERING or SCHEDULED_WATERING means valve is open
             is_open = current_service.activity in ["MANUAL_WATERING", "SCHEDULED_WATERING"]
-            _LOGGER.info(f"Water Control {self.device.name} activity: {current_service.activity} -> is_open: {is_open}")
+            _LOGGER.debug(f"Water Control {self.device.name} activity: {current_service.activity} -> is_open: {is_open}")
             return is_open
-        _LOGGER.info(f"Water Control {self.device.name} has no activity data -> assuming closed")
+        _LOGGER.debug(f"Water Control {self.device.name} has no activity data -> assuming closed")
         return False
 
     @property

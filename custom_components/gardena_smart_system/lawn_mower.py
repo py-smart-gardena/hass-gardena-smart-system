@@ -35,17 +35,17 @@ async def async_setup_entry(
             # Add lawn mower entities if available
             if "MOWER" in device.services:
                 mower_services = device.services["MOWER"]
-                _LOGGER.info(f"Found {len(mower_services)} mower services for device: {device.name} ({device.id})")
+                _LOGGER.debug(f"Found {len(mower_services)} mower services for device: {device.name} ({device.id})")
                 for mower_service in mower_services:
-                    _LOGGER.info(f"Creating lawn mower entity for service: {mower_service.id}")
+                    _LOGGER.debug(f"Creating lawn mower entity for service: {mower_service.id}")
                     entities.append(GardenaLawnMower(coordinator, device, mower_service))
             else:
                 _LOGGER.debug(f"Device {device.name} ({device.id}) has no MOWER service")
 
-    _LOGGER.info(f"Created {len(entities)} lawn mower entities")
-    _LOGGER.info(f"Adding entities to Home Assistant: {[entity.name for entity in entities]}")
-    async_add_entities(entities)
-    _LOGGER.info("Lawn mower entities added to Home Assistant")
+            _LOGGER.debug(f"Created {len(entities)} lawn mower entities")
+        _LOGGER.debug(f"Adding entities to Home Assistant: {[entity.name for entity in entities]}")
+        async_add_entities(entities)
+        _LOGGER.debug("Lawn mower entities added to Home Assistant")
     
     # Register custom services
     platform = async_get_current_platform()
@@ -95,9 +95,9 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             LawnMowerEntityFeature.PAUSE |
             LawnMowerEntityFeature.DOCK
         )
-        _LOGGER.info(f"Initialized lawn mower entity: {self._attr_name} with unique_id: {self._attr_unique_id} and features: {self._attr_supported_features}")
-        _LOGGER.info(f"Mower service ID: {mower_service.id}, Device ID: {device.id}")
-        _LOGGER.info(f"Supported features: START_MOWING={bool(self._attr_supported_features & LawnMowerEntityFeature.START_MOWING)}, PAUSE={bool(self._attr_supported_features & LawnMowerEntityFeature.PAUSE)}, DOCK={bool(self._attr_supported_features & LawnMowerEntityFeature.DOCK)}")
+        _LOGGER.debug(f"Initialized lawn mower entity: {self._attr_name} with unique_id: {self._attr_unique_id} and features: {self._attr_supported_features}")
+        _LOGGER.debug(f"Mower service ID: {mower_service.id}, Device ID: {device.id}")
+        _LOGGER.debug(f"Supported features: START_MOWING={bool(self._attr_supported_features & LawnMowerEntityFeature.START_MOWING)}, PAUSE={bool(self._attr_supported_features & LawnMowerEntityFeature.PAUSE)}, DOCK={bool(self._attr_supported_features & LawnMowerEntityFeature.DOCK)}")
 
     @property
     def activity(self) -> LawnMowerActivity:

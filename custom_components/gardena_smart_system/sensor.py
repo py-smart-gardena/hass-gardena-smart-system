@@ -40,17 +40,17 @@ async def async_setup_entry(
             # Add battery sensors if available
             if "COMMON" in device.services:
                 common_services = device.services["COMMON"]
-                _LOGGER.info(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
+                _LOGGER.debug(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
                 for common_service in common_services:
-                    _LOGGER.info(f"Creating battery sensor for service: {common_service.id}")
+                    _LOGGER.debug(f"Creating battery sensor for service: {common_service.id}")
                     entities.append(GardenaBatterySensor(coordinator, device, common_service))
             
             # Add sensor entities if available
             if "SENSOR" in device.services:
                 sensor_services = device.services["SENSOR"]
-                _LOGGER.info(f"Found {len(sensor_services)} sensor services for device: {device.name} ({device.id})")
+                _LOGGER.debug(f"Found {len(sensor_services)} sensor services for device: {device.name} ({device.id})")
                 for sensor_service in sensor_services:
-                    _LOGGER.info(f"Creating sensor entities for service: {sensor_service.id}")
+                    _LOGGER.debug(f"Creating sensor entities for service: {sensor_service.id}")
                     
                     # Check if this is a soil sensor (has soil_humidity or soil_temperature)
                     is_soil_sensor = (sensor_service.soil_humidity is not None or 
@@ -73,7 +73,7 @@ async def async_setup_entry(
     # Add WebSocket status sensor
     entities.append(GardenaWebSocketStatusSensor(coordinator))
 
-    _LOGGER.info(f"Created {len(entities)} sensor entities")
+            _LOGGER.debug(f"Created {len(entities)} sensor entities")
     async_add_entities(entities)
 
 

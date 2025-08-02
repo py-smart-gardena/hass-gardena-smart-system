@@ -105,7 +105,7 @@ class GardenaWebSocketClient:
                 return
             
             # Connect to WebSocket
-            _LOGGER.info(f"Connecting to WebSocket: {self.websocket_url}")
+            _LOGGER.debug(f"Connecting to WebSocket: {self.websocket_url}")
             
             # Handle SSL issues on macOS in development
             ssl_context = None
@@ -327,7 +327,7 @@ class GardenaWebSocketClient:
             return
         
         delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 1))
-        _LOGGER.info(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
+        _LOGGER.debug(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
         
         # Notify coordinator of status change
         if self.coordinator:
@@ -338,10 +338,10 @@ class GardenaWebSocketClient:
     async def _delayed_reconnect(self, delay: int) -> None:
         """Delayed reconnection attempt."""
         try:
-            _LOGGER.info(f"Waiting {delay} seconds before reconnection attempt")
+            _LOGGER.debug(f"Waiting {delay} seconds before reconnection attempt")
             await asyncio.sleep(delay)
             if not self._shutdown:
-                _LOGGER.info("Starting reconnection attempt")
+                _LOGGER.debug("Starting reconnection attempt")
                 await self._connect()
             else:
                 _LOGGER.debug("WebSocket shutdown during delay, not reconnecting")

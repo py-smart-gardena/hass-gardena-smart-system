@@ -252,7 +252,7 @@ class GardenaServiceManager:
         
         try:
             await coordinator.client.send_command(service_id, command.to_dict())
-            _LOGGER.info(f"Command {command.command_type} sent successfully to {service_id}")
+            _LOGGER.debug(f"Command {command.command_type} sent successfully to {service_id}")
             return True
         except Exception as e:
             _LOGGER.error(f"Failed to send command {command.command_type} to {service_id}: {e}")
