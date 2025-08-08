@@ -178,11 +178,17 @@ class GardenaOnlineEntity(GardenaEntity):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
         """Initialize the online entity."""
         super().__init__(coordinator, device, "COMMON")
+        self._device_id = device.id
+
+    def _get_current_common_service(self):
+        """Get current common service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "COMMON" in device.services and device.services["COMMON"]:
+            return device.services["COMMON"][0]
+        return None
 
     @property
     def is_on(self) -> bool:
         """Return true if device is online."""
-        if "COMMON" in self.device.services and self.device.services["COMMON"]:
-            common_service = self.device.services["COMMON"][0]
-            return common_service.rf_link_state == "ONLINE"
-        return False 
+        current_service = self._get_current_common_service()
+        return current_service.rf_link_state == "ONLINE" if current_service else False

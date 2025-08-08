@@ -37,13 +37,17 @@ async def async_setup_entry(
         for device in location.devices.values():
             _LOGGER.debug(f"Checking device {device.name} ({device.id}) - Services: {list(device.services.keys())}")
             
-            # Add battery sensors if available
+            # Add battery sensors only for devices that have batteries
             if "COMMON" in device.services:
                 common_services = device.services["COMMON"]
                 _LOGGER.debug(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
                 for common_service in common_services:
-                    _LOGGER.debug(f"Creating battery sensor for service: {common_service.id}")
-                    entities.append(GardenaBatterySensor(coordinator, device, common_service))
+                    # Only create battery sensor if device has a battery
+                    if common_service.battery_state and common_service.battery_state not in ["NO_BATTERY", "UNKNOWN"]:
+                        _LOGGER.debug(f"Creating battery sensor for device with battery: {device.name} (battery_state: {common_service.battery_state})")
+                        entities.append(GardenaBatterySensor(coordinator, device, common_service))
+                    else:
+                        _LOGGER.debug(f"Skipping battery sensor for device without battery: {device.name} (battery_state: {common_service.battery_state})")
             
             # Add sensor entities if available
             if "SENSOR" in device.services:
@@ -84,26 +88,39 @@ class GardenaBatterySensor(GardenaEntity, SensorEntity):
         """Initialize the battery sensor."""
         super().__init__(coordinator, device, "COMMON")
         self._common_service = common_service
+        self._device_id = device.id
         self._attr_name = f"{device.name} Battery Level"
         self._attr_unique_id = f"{device.id}_{common_service.id}_battery_level"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_icon = "mdi:battery"
 
+    def _get_current_common_service(self):
+        """Get current common service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "COMMON" in device.services:
+            for service in device.services["COMMON"]:
+                if service.id == self._common_service.id:
+                    return service
+        return None
+
     @property
     def native_value(self) -> int | None:
         """Return the battery level."""
-        return self._common_service.battery_level
+        current_service = self._get_current_common_service()
+        return current_service.battery_level if current_service else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = super().extra_state_attributes
-        attrs.update({
-            ATTR_BATTERY_STATE: self._common_service.battery_state,
-            ATTR_RF_LINK_LEVEL: self._common_service.rf_link_level,
-            ATTR_RF_LINK_STATE: self._common_service.rf_link_state,
-        })
+        current_service = self._get_current_common_service()
+        if current_service:
+            attrs.update({
+                ATTR_BATTERY_STATE: current_service.battery_state,
+                ATTR_RF_LINK_LEVEL: current_service.rf_link_level,
+                ATTR_RF_LINK_STATE: current_service.rf_link_state,
+            })
         return attrs
 
 
@@ -114,6 +131,7 @@ class GardenaTemperatureSensor(GardenaEntity, SensorEntity):
         """Initialize the temperature sensor."""
         super().__init__(coordinator, device, "SENSOR")
         self._sensor_service = sensor_service
+        self._device_id = device.id
         self._temp_attr = temp_attr
         
         if temp_attr == "soil_temperature":
@@ -131,13 +149,26 @@ class GardenaTemperatureSensor(GardenaEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
         self._attr_icon = "mdi:thermometer"
 
+    def _get_current_sensor_service(self):
+        """Get current sensor service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "SENSOR" in device.services:
+            for service in device.services["SENSOR"]:
+                if service.id == self._sensor_service.id:
+                    return service
+        return None
+
     @property
     def native_value(self) -> int | None:
         """Return the temperature value."""
+        current_service = self._get_current_sensor_service()
+        if not current_service:
+            return None
+            
         if self._temp_attr == "soil_temperature":
-            return self._sensor_service.soil_temperature
+            return current_service.soil_temperature
         else:
-            return self._sensor_service.ambient_temperature
+            return current_service.ambient_temperature
 
 
 class GardenaHumiditySensor(GardenaEntity, SensorEntity):
@@ -147,16 +178,27 @@ class GardenaHumiditySensor(GardenaEntity, SensorEntity):
         """Initialize the humidity sensor."""
         super().__init__(coordinator, device, "SENSOR")
         self._sensor_service = sensor_service
+        self._device_id = device.id
         self._attr_name = f"{device.name} Soil Humidity"
         self._attr_unique_id = f"{device.id}_{sensor_service.id}_soil_humidity"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.HUMIDITY
         self._attr_icon = "mdi:water-percent"
 
+    def _get_current_sensor_service(self):
+        """Get current sensor service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "SENSOR" in device.services:
+            for service in device.services["SENSOR"]:
+                if service.id == self._sensor_service.id:
+                    return service
+        return None
+
     @property
     def native_value(self) -> int | None:
         """Return the humidity value."""
-        return self._sensor_service.soil_humidity
+        current_service = self._get_current_sensor_service()
+        return current_service.soil_humidity if current_service else None
 
 
 class GardenaLightSensor(GardenaEntity, SensorEntity):
@@ -166,16 +208,27 @@ class GardenaLightSensor(GardenaEntity, SensorEntity):
         """Initialize the light sensor."""
         super().__init__(coordinator, device, "SENSOR")
         self._sensor_service = sensor_service
+        self._device_id = device.id
         self._attr_name = f"{device.name} Light Intensity"
         self._attr_unique_id = f"{device.id}_{sensor_service.id}_light_intensity"
         self._attr_native_unit_of_measurement = "lux"
         self._attr_device_class = SensorDeviceClass.ILLUMINANCE
         self._attr_icon = "mdi:white-balance-sunny"
 
+    def _get_current_sensor_service(self):
+        """Get current sensor service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "SENSOR" in device.services:
+            for service in device.services["SENSOR"]:
+                if service.id == self._sensor_service.id:
+                    return service
+        return None
+
     @property
     def native_value(self) -> int | None:
         """Return the light intensity value."""
-        return self._sensor_service.light_intensity
+        current_service = self._get_current_sensor_service()
+        return current_service.light_intensity if current_service else None
 
 
 class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
@@ -233,5 +286,3 @@ class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
             })
         
         return attrs
-
- 

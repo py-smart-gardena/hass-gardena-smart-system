@@ -52,12 +52,15 @@ class GardenaPowerSocketSwitch(GardenaDeviceEntity, SwitchEntity):
         super().__init__(coordinator, device, "POWER_SOCKET")
         self._attr_name = f"{device.name} Power Socket"
         self._power_service = power_service
+        self._device_id = device.id
 
     @property
     def is_on(self) -> bool:
-        """Return true if switch is on."""
-        if self._power_service and self._power_service.activity:
-            return self._power_service.activity in ["FOREVER_ON", "TIME_LIMITED_ON", "SCHEDULED_ON"]
+        """Return true if the switch is on."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        service = device.services.get("POWER_SOCKET")
+        if service and service[0].activity:
+            return service[0].activity in ["FOREVER_ON", "TIME_LIMITED_ON", "SCHEDULED_ON"]
         return False
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -88,4 +91,4 @@ class GardenaPowerSocketSwitch(GardenaDeviceEntity, SwitchEntity):
                 }
             }
             await self.coordinator.client.send_command(self._power_service.id, command_data)
-            await self.coordinator.async_request_refresh() 
+            await self.coordinator.async_request_refresh()

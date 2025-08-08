@@ -89,6 +89,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
         super().__init__(coordinator, device, "MOWER")
         self._attr_name = f"{device.name} Lawn Mower"
         self._mower_service = mower_service
+        self._device_id = device.id
         self._attr_unique_id = f"{device.id}_mower"
         self._attr_supported_features = (
             LawnMowerEntityFeature.START_MOWING |
@@ -99,6 +100,15 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
         _LOGGER.debug(f"Mower service ID: {mower_service.id}, Device ID: {device.id}")
         _LOGGER.debug(f"Supported features: START_MOWING={bool(self._attr_supported_features & LawnMowerEntityFeature.START_MOWING)}, PAUSE={bool(self._attr_supported_features & LawnMowerEntityFeature.PAUSE)}, DOCK={bool(self._attr_supported_features & LawnMowerEntityFeature.DOCK)}")
 
+    def _get_current_mower_service(self):
+        """Get current mower service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "MOWER" in device.services:
+            for service in device.services["MOWER"]:
+                if service.id == self._mower_service.id:
+                    return service
+        return None
+
     @property
     def activity(self) -> LawnMowerActivity:
         """Return the current activity of the lawn mower."""
@@ -106,12 +116,13 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             _LOGGER.debug(f"Lawn mower {self._attr_name} not available")
             return LawnMowerActivity.ERROR
         
-        mower_service = self._mower_service
-        if not mower_service:
-            _LOGGER.debug(f"Lawn mower {self._attr_name} has no mower service")
+        # Get fresh data from coordinator
+        current_service = self._get_current_mower_service()
+        if not current_service:
+            _LOGGER.debug(f"Lawn mower {self._attr_name} has no current mower service")
             return LawnMowerActivity.ERROR
         
-        activity = mower_service.activity
+        activity = current_service.activity
         mapped_activity = MOWER_ACTIVITY_MAP.get(activity, LawnMowerActivity.ERROR)
         _LOGGER.debug(f"Lawn mower {self._attr_name} activity: {activity} -> {mapped_activity}")
         return mapped_activity
@@ -121,15 +132,16 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
         """Return entity specific state attributes."""
         attrs = super().extra_state_attributes
         
-        mower_service = self._mower_service
-        if mower_service:
+        # Get fresh data from coordinator
+        current_service = self._get_current_mower_service()
+        if current_service:
             attrs.update({
-                "operating_hours": mower_service.operating_hours,
-                "state": mower_service.state,
-                "activity": mower_service.activity,
-                "last_error_code": getattr(mower_service, 'last_error_code', None),
+                "operating_hours": current_service.operating_hours,
+                "state": current_service.state,
+                "activity": current_service.activity,
+                "last_error_code": getattr(current_service, 'last_error_code', None),
                 "device_id": self.device.id,
-                "service_id": mower_service.id,
+                "service_id": current_service.id,
             })
         
         return attrs
@@ -284,4 +296,4 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
                 }
             }
             await self.coordinator.client.send_command(self._mower_service.id, command_data)
-            await self.coordinator.async_request_refresh() 
+            await self.coordinator.async_request_refresh()
