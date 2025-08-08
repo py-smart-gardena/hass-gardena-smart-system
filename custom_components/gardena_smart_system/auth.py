@@ -54,8 +54,8 @@ class GardenaAuthenticationManager:
             return False
         if not self._token_expires_at:
             return False
-        # Token expires 5 minutes before actual expiry to be safe
-        return asyncio.get_event_loop().time() < (self._token_expires_at - 300)
+        # Token expires 10 minutes before actual expiry to be safe and prevent interruptions
+        return asyncio.get_event_loop().time() < (self._token_expires_at - 600)
 
     async def _refresh_access_token(self) -> None:
         """Refresh the access token using refresh token."""
@@ -169,4 +169,4 @@ class GardenaAuthenticationManager:
         """Close the authentication manager."""
         if self._session and not self._session.closed:
             await self._session.close()
-            self._session = None 
+            self._session = None

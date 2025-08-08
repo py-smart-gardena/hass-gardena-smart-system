@@ -36,13 +36,19 @@ class GardenaEntity(CoordinatorEntity, ABC):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        # Check if coordinator is working and WebSocket is connected
+        # Only check coordinator success, not WebSocket connection status
+        # This prevents entities from going unavailable during brief reconnections
         if not self.coordinator.last_update_success:
             return False
         
-        # Check WebSocket connection status
+        # Only mark unavailable if WebSocket has been disconnected for too long
+        # Allow brief reconnections without affecting entity availability
         if self.coordinator.websocket_client:
-            if self.coordinator.websocket_client.connection_status != "connected":
+            status = self.coordinator.websocket_client.connection_status
+            # Only mark unavailable if we've exceeded max reconnection attempts
+            # This prevents flickering unavailable states during routine reconnections
+            if (status == "disconnected" and 
+                self.coordinator.websocket_client.reconnect_attempts > 3):
                 return False
         
         # Check if device exists in coordinator data

@@ -326,12 +326,17 @@ class GardenaWebSocketClient:
             _LOGGER.error("Max reconnection attempts reached")
             return
         
-        delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 1))
+        # Use shorter delays for the first few attempts (likely token renewal)
+        # Then longer delays for potential network issues
+        if self.reconnect_attempts <= 3:
+            delay = 5  # Quick reconnect for token renewal scenarios
+        else:
+            delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 4))
+        
         _LOGGER.debug(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
         
-        # Notify coordinator of status change
-        if self.coordinator:
-            self.coordinator.async_set_updated_data(self.coordinator.locations)
+        # DON'T notify coordinator of status change here to prevent entity flickering
+        # Only notify when we actually disconnect after max attempts
         
         self.reconnect_task = asyncio.create_task(self._delayed_reconnect(delay))
 
@@ -360,4 +365,4 @@ class GardenaWebSocketClient:
         elif self.is_connecting:
             return "connecting"
         else:
-            return "disconnected" 
+            return "disconnected"
