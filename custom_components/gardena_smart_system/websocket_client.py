@@ -1,4 +1,5 @@
 """WebSocket client for Gardena Smart System real-time events."""
+
 from __future__ import annotations
 
 import asyncio
@@ -52,19 +53,19 @@ class GardenaWebSocketClient:
         """Stop the WebSocket client."""
         _LOGGER.info("Stopping Gardena WebSocket client")
         self._shutdown = True
-        
+
         # Cancel running tasks
         if self.reconnect_task and not self.reconnect_task.done():
             self.reconnect_task.cancel()
-        
+
         if self.listen_task and not self.listen_task.done():
             self.listen_task.cancel()
-        
+
         # Close WebSocket connection
         if self.websocket:
             await self.websocket.close()
             self.websocket = None
-        
+
         self.is_connected = False
         self.is_connecting = False
         self.reconnect_attempts = 0
@@ -73,17 +74,17 @@ class GardenaWebSocketClient:
         """Force a reconnection attempt."""
         if self._shutdown:
             return
-        
+
         _LOGGER.info("Forcing WebSocket reconnection")
         self.reconnect_attempts = 0  # Reset attempts
         self.is_connected = False
         self.is_connecting = False
-        
+
         # Cancel any existing reconnect task
         if self.reconnect_task and not self.reconnect_task.done():
             self.reconnect_task.cancel()
             self.reconnect_task = None
-        
+
         # Start fresh connection
         await self._connect()
 
@@ -91,50 +92,51 @@ class GardenaWebSocketClient:
         """Establish WebSocket connection."""
         if self.is_connecting:
             return
-        
+
         self.is_connecting = True
-        
+
         try:
             # Get WebSocket URL
             await self._get_websocket_url()
-            
+
             if not self.websocket_url:
                 _LOGGER.error("Failed to get WebSocket URL")
                 self.is_connecting = False
                 await self._schedule_reconnect()
                 return
-            
+
             # Connect to WebSocket
             _LOGGER.debug(f"Connecting to WebSocket: {self.websocket_url}")
-            
+
             # Handle SSL issues on macOS in development
             ssl_context = None
             if self.auth_manager._dev_mode:
                 import ssl
+
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
-            
+
             self.websocket = await websockets.connect(
                 self.websocket_url,
                 ping_interval=30,
                 ping_timeout=10,
                 ssl=ssl_context,
             )
-            
+
             self.is_connected = True
             self.is_connecting = False
             self.reconnect_attempts = 0
-            
+
             _LOGGER.info("WebSocket connected successfully")
-            
+
             # Start listening for messages
             self.listen_task = asyncio.create_task(self._listen_for_messages())
-            
+
             # Notify coordinator of status change
             if self.coordinator:
                 self.coordinator.async_set_updated_data(self.coordinator.locations)
-            
+
         except Exception as e:
             _LOGGER.error(f"Failed to connect to WebSocket: {e}")
             self.is_connected = False
@@ -144,9 +146,11 @@ class GardenaWebSocketClient:
     async def _get_websocket_url(self) -> None:
         """Get WebSocket URL from Gardena API."""
         try:
+            # Ensure we have a valid token before requesting the WebSocket URL
+            await self.auth_manager.authenticate()
             headers = self.auth_manager.get_auth_headers()
             session = await self.auth_manager._get_session()
-            
+
             # Get locationId from coordinator
             location_id = None
             if self.coordinator and self.coordinator.locations:
@@ -154,10 +158,12 @@ class GardenaWebSocketClient:
                 location_id = list(self.coordinator.locations.keys())[0]
                 _LOGGER.debug(f"Using location ID from coordinator: {location_id}")
             else:
-                _LOGGER.warning("No locations available in coordinator, using fallback location ID")
+                _LOGGER.warning(
+                    "No locations available in coordinator, using fallback location ID"
+                )
                 # Fallback to a default location ID if coordinator doesn't have data yet
                 location_id = "2188c99e-df0d-4bb9-8273-71415fa70569"
-            
+
             # Create WebSocket endpoint
             async with session.post(
                 "https://api.smart.gardena.dev/v2/websocket",
@@ -165,9 +171,7 @@ class GardenaWebSocketClient:
                 json={
                     "data": {
                         "type": "WEBSOCKET",
-                        "attributes": {
-                            "locationId": location_id
-                        }
+                        "attributes": {"locationId": location_id},
                     }
                 },
             ) as response:
@@ -178,7 +182,7 @@ class GardenaWebSocketClient:
                 else:
                     _LOGGER.error(f"Failed to get WebSocket URL: {response.status}")
                     self.websocket_url = None
-                    
+
         except Exception as e:
             _LOGGER.error(f"Error getting WebSocket URL: {e}")
             self.websocket_url = None
@@ -196,7 +200,7 @@ class GardenaWebSocketClient:
             async for message in self.websocket:
                 if self._shutdown:
                     break
-                
+
                 try:
                     data = json.loads(message)
                     _LOGGER.debug(f"Received WebSocket message: {data}")
@@ -205,7 +209,7 @@ class GardenaWebSocketClient:
                     _LOGGER.error(f"Failed to parse WebSocket message: {e}")
                 except Exception as e:
                     _LOGGER.error(f"Error processing WebSocket message: {e}")
-                    
+
         except ConnectionClosed:
             _LOGGER.warning("WebSocket connection closed")
         except WebSocketException as e:
@@ -216,7 +220,7 @@ class GardenaWebSocketClient:
             self.is_connected = False
             if not self._shutdown:
                 await self._schedule_reconnect()
-            
+
             # Notify coordinator of status change
             if self.coordinator:
                 self.coordinator.async_set_updated_data(self.coordinator.locations)
@@ -225,16 +229,27 @@ class GardenaWebSocketClient:
         """Process received WebSocket message."""
         try:
             # Check if it's a ping message
-            if "data" in data and "type" in data["data"] and data["data"]["type"] == "WEBSOCKET_PING":
+            if (
+                "data" in data
+                and "type" in data["data"]
+                and data["data"]["type"] == "WEBSOCKET_PING"
+            ):
                 await self._send_pong()
                 return
-            
+
             # Check if it's a service update message (direct service data)
-            if "type" in data and data["type"] in ["VALVE", "COMMON", "MOWER", "POWER_SOCKET", "SENSOR", "VALVE_SET"]:
+            if "type" in data and data["type"] in [
+                "VALVE",
+                "COMMON",
+                "MOWER",
+                "POWER_SOCKET",
+                "SENSOR",
+                "VALVE_SET",
+            ]:
                 await self._process_service_update(data)
             else:
                 _LOGGER.debug(f"Received unknown message type: {data}")
-                
+
         except Exception as e:
             _LOGGER.error(f"Error processing WebSocket message: {e}")
 
@@ -245,16 +260,18 @@ class GardenaWebSocketClient:
             service_id = service_data.get("id")
             service_type = service_data.get("type")
             attributes = service_data.get("attributes", {})
-            
+
             if not service_id:
                 _LOGGER.debug("Service update missing service_id")
                 return
-            
+
             # Extract device_id from service_id (remove suffixes like :1, :2, etc.)
             device_id = service_id.split(":")[0]
-            
-            _LOGGER.debug(f"Processing service update: service_id={service_id}, device_id={device_id}, type={service_type}")
-            
+
+            _LOGGER.debug(
+                f"Processing service update: service_id={service_id}, device_id={device_id}, type={service_type}"
+            )
+
             # Create event for callback
             event = {
                 "type": "service_update",
@@ -263,11 +280,11 @@ class GardenaWebSocketClient:
                 "device_id": device_id,
                 "data": attributes,
             }
-            
+
             # Call the event callback
             if self.event_callback:
                 await self.event_callback(event)
-                
+
         except Exception as e:
             _LOGGER.error(f"Error processing service update: {e}")
 
@@ -277,18 +294,18 @@ class GardenaWebSocketClient:
             # Extract device and service information
             if "attributes" in event_data:
                 attributes = event_data["attributes"]
-                
+
                 # Create event for callback
                 event = {
                     "type": "device_event",
                     "data": attributes,
                     "timestamp": attributes.get("timestamp"),
                 }
-                
+
                 # Call the event callback
                 if self.event_callback:
                     await self.event_callback(event)
-                    
+
         except Exception as e:
             _LOGGER.error(f"Error processing device event: {e}")
 
@@ -296,12 +313,7 @@ class GardenaWebSocketClient:
         """Send pong response to ping."""
         try:
             if self.websocket and self.is_connected:
-                pong_message = {
-                    "data": {
-                        "type": "WEBSOCKET_PONG",
-                        "attributes": {}
-                    }
-                }
+                pong_message = {"data": {"type": "WEBSOCKET_PONG", "attributes": {}}}
                 await self.websocket.send(json.dumps(pong_message))
                 _LOGGER.debug("Sent pong response")
         except Exception as e:
@@ -311,7 +323,7 @@ class GardenaWebSocketClient:
         """Schedule reconnection attempt."""
         if self._shutdown:
             return
-        
+
         # Cancel any existing reconnect task
         if self.reconnect_task and not self.reconnect_task.done():
             self.reconnect_task.cancel()
@@ -319,25 +331,27 @@ class GardenaWebSocketClient:
                 await self.reconnect_task
             except asyncio.CancelledError:
                 pass
-        
+
         self.reconnect_attempts += 1
-        
+
         if self.reconnect_attempts > WEBSOCKET_MAX_RECONNECT_ATTEMPTS:
             _LOGGER.error("Max reconnection attempts reached")
             return
-        
+
         # Use shorter delays for the first few attempts (likely token renewal)
         # Then longer delays for potential network issues
         if self.reconnect_attempts <= 3:
             delay = 5  # Quick reconnect for token renewal scenarios
         else:
             delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 4))
-        
-        _LOGGER.debug(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
-        
+
+        _LOGGER.debug(
+            f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds"
+        )
+
         # DON'T notify coordinator of status change here to prevent entity flickering
         # Only notify when we actually disconnect after max attempts
-        
+
         self.reconnect_task = asyncio.create_task(self._delayed_reconnect(delay))
 
     async def _delayed_reconnect(self, delay: int) -> None:

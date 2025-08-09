@@ -1,4 +1,5 @@
 """Tests for Gardena Smart System authentication."""
+
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -35,7 +36,7 @@ class TestGardenaAuthenticationManager:
         return GardenaAuthenticationManager(
             client_id="test-client-id",
             client_secret="test-client-secret",
-            api_key="test-api-key"
+            api_key="test-api-key",
         )
 
     def test_init(self, auth_manager):
@@ -54,13 +55,17 @@ class TestGardenaAuthenticationManager:
     def test_is_token_valid_expired_token(self, auth_manager):
         """Test token validation with expired token."""
         auth_manager._access_token = "test-token"
-        auth_manager._token_expires_at = asyncio.get_event_loop().time() - 600  # 10 minutes ago
+        auth_manager._token_expires_at = (
+            asyncio.get_event_loop().time() - 600
+        )  # 10 minutes ago
         assert auth_manager._is_token_valid() is False
 
     def test_is_token_valid_valid_token(self, auth_manager):
         """Test token validation with valid token."""
         auth_manager._access_token = "test-token"
-        auth_manager._token_expires_at = asyncio.get_event_loop().time() + 3600  # 1 hour from now
+        auth_manager._token_expires_at = (
+            asyncio.get_event_loop().time() + 3600
+        )  # 1 hour from now
         assert auth_manager._is_token_valid() is True
 
     def test_get_auth_headers(self, auth_manager):
@@ -84,8 +89,10 @@ class TestGardenaAuthenticationManager:
     async def test_authenticate_with_valid_token(self, auth_manager):
         """Test authentication when valid token exists."""
         auth_manager._access_token = "test-token"
-        auth_manager._token_expires_at = asyncio.get_event_loop().time() + 3600  # 1 hour from now
-        
+        auth_manager._token_expires_at = (
+            asyncio.get_event_loop().time() + 3600
+        )  # 1 hour from now
+
         token = await auth_manager.authenticate()
         assert token == "test-token"
 
@@ -95,22 +102,24 @@ class TestGardenaAuthenticationManager:
         mock_response = {
             "access_token": "new-access-token",
             "refresh_token": "new-refresh-token",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
-        with patch.object(auth_manager, '_get_session') as mock_session:
+        with patch.object(auth_manager, "_get_session") as mock_session:
             mock_session_instance = MagicMock()
             mock_session.return_value = mock_session_instance
-            
+
             mock_response_obj = MagicMock()
             mock_response_obj.status = 200
             mock_response_obj.json = AsyncMock(return_value=mock_response)
             mock_response_obj.text = AsyncMock(return_value="{}")
-            
-            mock_session_instance.post.return_value.__aenter__.return_value = mock_response_obj
-            
+
+            mock_session_instance.post.return_value.__aenter__.return_value = (
+                mock_response_obj
+            )
+
             token = await auth_manager.authenticate()
-            
+
             assert token == "new-access-token"
             assert auth_manager._access_token == "new-access-token"
             assert auth_manager._refresh_token == "new-refresh-token"
@@ -118,43 +127,98 @@ class TestGardenaAuthenticationManager:
     @pytest.mark.asyncio
     async def test_authenticate_initial_auth_failure(self, auth_manager):
         """Test failed initial authentication."""
-        with patch.object(auth_manager, '_get_session') as mock_session:
+        with patch.object(auth_manager, "_get_session") as mock_session:
             mock_session_instance = MagicMock()
             mock_session.return_value = mock_session_instance
-            
+
             mock_response_obj = MagicMock()
             mock_response_obj.status = 401
             mock_response_obj.text = AsyncMock(return_value="Unauthorized")
-            
-            mock_session_instance.post.return_value.__aenter__.return_value = mock_response_obj
-            
-            with pytest.raises(GardenaAuthError, match="Authentication failed: 401 - Unauthorized"):
+
+            mock_session_instance.post.return_value.__aenter__.return_value = (
+                mock_response_obj
+            )
+
+            with pytest.raises(
+                GardenaAuthError, match="Authentication failed: 401 - Unauthorized"
+            ):
                 await auth_manager.authenticate()
+
+    @pytest.mark.asyncio
+    async def test_authenticate_refresh_token_success(self, auth_manager):
+        """Ensure refresh token is used when available."""
+        auth_manager._refresh_token = "refresh-token"
+        auth_manager._access_token = None
+        auth_manager._token_expires_at = None
+
+        async def fake_refresh():
+            auth_manager._access_token = "new-token"
+
+        with patch.object(
+            auth_manager, "_refresh_access_token", side_effect=fake_refresh
+        ) as mock_refresh:
+            token = await auth_manager.authenticate()
+            assert token == "new-token"
+            mock_refresh.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_authenticate_refresh_token_failure_falls_back(self, auth_manager):
+        """Test that failed refresh falls back to full authentication."""
+        auth_manager._refresh_token = "refresh-token"
+
+        with patch.object(
+            auth_manager,
+            "_refresh_access_token",
+            side_effect=GardenaAuthError("refresh failed"),
+        ) as mock_refresh, patch.object(auth_manager, "_get_session") as mock_session:
+            mock_session_instance = MagicMock()
+            mock_session.return_value = mock_session_instance
+
+            mock_response_obj = MagicMock()
+            mock_response_obj.status = 200
+            mock_response_obj.json = AsyncMock(
+                return_value={
+                    "access_token": "new-access-token",
+                    "refresh_token": "new-refresh-token",
+                    "expires_in": 3600,
+                }
+            )
+            mock_response_obj.text = AsyncMock(return_value="{}")
+            mock_session_instance.post.return_value.__aenter__.return_value = (
+                mock_response_obj
+            )
+
+            token = await auth_manager.authenticate()
+
+            assert token == "new-access-token"
+            mock_refresh.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_refresh_access_token_success(self, auth_manager):
         """Test successful token refresh."""
         auth_manager._refresh_token = "old-refresh-token"
-        
+
         mock_response = {
             "access_token": "new-access-token",
             "refresh_token": "new-refresh-token",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
-        with patch.object(auth_manager, '_get_session') as mock_session:
+        with patch.object(auth_manager, "_get_session") as mock_session:
             mock_session_instance = MagicMock()
             mock_session.return_value = mock_session_instance
-            
+
             mock_response_obj = MagicMock()
             mock_response_obj.status = 200
             mock_response_obj.json = AsyncMock(return_value=mock_response)
             mock_response_obj.text = AsyncMock(return_value="{}")
-            
-            mock_session_instance.post.return_value.__aenter__.return_value = mock_response_obj
-            
+
+            mock_session_instance.post.return_value.__aenter__.return_value = (
+                mock_response_obj
+            )
+
             await auth_manager._refresh_access_token()
-            
+
             assert auth_manager._access_token == "new-access-token"
             assert auth_manager._refresh_token == "new-refresh-token"
 
@@ -162,18 +226,23 @@ class TestGardenaAuthenticationManager:
     async def test_refresh_access_token_failure(self, auth_manager):
         """Test failed token refresh."""
         auth_manager._refresh_token = "old-refresh-token"
-        
-        with patch.object(auth_manager, '_get_session') as mock_session:
+
+        with patch.object(auth_manager, "_get_session") as mock_session:
             mock_session_instance = MagicMock()
             mock_session.return_value = mock_session_instance
-            
+
             mock_response_obj = MagicMock()
             mock_response_obj.status = 401
             mock_response_obj.text = AsyncMock(return_value="Invalid refresh token")
-            
-            mock_session_instance.post.return_value.__aenter__.return_value = mock_response_obj
-            
-            with pytest.raises(GardenaAuthError, match="Token refresh failed: 401 - Invalid refresh token"):
+
+            mock_session_instance.post.return_value.__aenter__.return_value = (
+                mock_response_obj
+            )
+
+            with pytest.raises(
+                GardenaAuthError,
+                match="Token refresh failed: 401 - Invalid refresh token",
+            ):
                 await auth_manager._refresh_access_token()
 
     @pytest.mark.asyncio
@@ -184,9 +253,9 @@ class TestGardenaAuthenticationManager:
         mock_session.closed = False
         mock_session.close = AsyncMock()
         auth_manager._session = mock_session
-        
+
         await auth_manager.close()
-        
+
         mock_session.close.assert_called_once()
         assert auth_manager._session is None
 
@@ -200,7 +269,7 @@ class TestGardenaSmartSystemClient:
         return GardenaSmartSystemClient(
             client_id="test-client-id",
             client_secret="test-client-secret",
-            api_key="test-api-key"
+            api_key="test-api-key",
         )
 
     def test_init(self, client):
@@ -213,17 +282,13 @@ class TestGardenaSmartSystemClient:
     async def test_get_locations_success(self, client):
         """Test successful locations fetch."""
         mock_locations = [
-            {
-                "id": "loc1", 
-                "type": "LOCATION",
-                "attributes": {
-                    "name": "Location 1"
-                }
-            }
+            {"id": "loc1", "type": "LOCATION", "attributes": {"name": "Location 1"}}
         ]
         mock_response = {"data": mock_locations}
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.return_value = mock_response
 
             locations = await client.get_locations()
@@ -235,7 +300,9 @@ class TestGardenaSmartSystemClient:
     @pytest.mark.asyncio
     async def test_get_locations_api_error(self, client):
         """Test locations fetch with API error."""
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAPIError("API Error", 500)
 
             with pytest.raises(GardenaAPIError, match="API Error"):
@@ -247,20 +314,16 @@ class TestGardenaSmartSystemClient:
         mock_location = {
             "data": {
                 "id": "loc1",
-                "type": "LOCATION", 
-                "attributes": {
-                    "name": "Location 1"
-                },
-                "relationships": {
-                    "devices": {
-                        "data": []
-                    }
-                }
+                "type": "LOCATION",
+                "attributes": {"name": "Location 1"},
+                "relationships": {"devices": {"data": []}},
             },
-            "included": []
+            "included": [],
         }
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.return_value = mock_location
 
             location = await client.get_location("loc1")
@@ -272,44 +335,46 @@ class TestGardenaSmartSystemClient:
     @pytest.mark.asyncio
     async def test_send_command_success(self, client):
         """Test successful command sending."""
-        mock_response = {"status": "accepted", "message": "Command accepted for processing"}
+        mock_response = {
+            "status": "accepted",
+            "message": "Command accepted for processing",
+        }
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.return_value = mock_response
 
             command_data = {
                 "id": "cmd_test",
                 "type": "MOWER_CONTROL",
-                "attributes": {
-                    "command": "START_DONT_OVERRIDE"
-                }
+                "attributes": {"command": "START_DONT_OVERRIDE"},
             }
 
             response = await client.send_command("test-service", command_data)
 
             assert response == mock_response
             mock_request.assert_called_once_with(
-                "PUT", 
-                "/command/test-service", 
-                data=command_data,
-                is_command=True
+                "PUT", "/command/test-service", data=command_data, is_command=True
             )
 
     @pytest.mark.asyncio
     async def test_send_command_202_accepted(self, client):
         """Test command accepted with 202 status."""
-        mock_response = {"status": "accepted", "message": "Command accepted for processing"}
+        mock_response = {
+            "status": "accepted",
+            "message": "Command accepted for processing",
+        }
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.return_value = mock_response
 
             command_data = {
                 "id": "cmd_test",
                 "type": "POWER_SOCKET_CONTROL",
-                "attributes": {
-                    "command": "START_SECONDS_TO_OVERRIDE",
-                    "seconds": 3600
-                }
+                "attributes": {"command": "START_SECONDS_TO_OVERRIDE", "seconds": 3600},
             }
 
             response = await client.send_command("power-service", command_data)
@@ -322,15 +387,17 @@ class TestGardenaSmartSystemClient:
         """Test command with 400 error."""
         from .gardena_client import GardenaCommandError
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
-            mock_request.side_effect = GardenaCommandError("Invalid command parameters", 400)
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
+            mock_request.side_effect = GardenaCommandError(
+                "Invalid command parameters", 400
+            )
 
             command_data = {
                 "id": "cmd_test",
                 "type": "VALVE_CONTROL",
-                "attributes": {
-                    "command": "INVALID_COMMAND"
-                }
+                "attributes": {"command": "INVALID_COMMAND"},
             }
 
             with pytest.raises(GardenaCommandError) as exc_info:
@@ -344,15 +411,17 @@ class TestGardenaSmartSystemClient:
         """Test command with 403 error."""
         from .gardena_client import GardenaCommandError
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
-            mock_request.side_effect = GardenaCommandError("Command forbidden - check device permissions", 403)
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
+            mock_request.side_effect = GardenaCommandError(
+                "Command forbidden - check device permissions", 403
+            )
 
             command_data = {
                 "id": "cmd_test",
                 "type": "MOWER_CONTROL",
-                "attributes": {
-                    "command": "START_DONT_OVERRIDE"
-                }
+                "attributes": {"command": "START_DONT_OVERRIDE"},
             }
 
             with pytest.raises(GardenaCommandError) as exc_info:
@@ -366,15 +435,17 @@ class TestGardenaSmartSystemClient:
         """Test command with 409 conflict error."""
         from .gardena_client import GardenaCommandError
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
-            mock_request.side_effect = GardenaCommandError("Command conflict - device may be busy", 409)
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
+            mock_request.side_effect = GardenaCommandError(
+                "Command conflict - device may be busy", 409
+            )
 
             command_data = {
                 "id": "cmd_test",
                 "type": "POWER_SOCKET_CONTROL",
-                "attributes": {
-                    "command": "START_OVERRIDE"
-                }
+                "attributes": {"command": "START_OVERRIDE"},
             }
 
             with pytest.raises(GardenaCommandError) as exc_info:
@@ -388,17 +459,16 @@ class TestGardenaSmartSystemClient:
         """Test command with 500 error handling."""
         from .gardena_client import GardenaCommandError
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             # Mock a 500 error
             mock_request.side_effect = GardenaCommandError("Server error: 500", 500)
 
             command_data = {
                 "id": "cmd_test",
                 "type": "VALVE_CONTROL",
-                "attributes": {
-                    "command": "START_SECONDS_TO_OVERRIDE",
-                    "seconds": 1800
-                }
+                "attributes": {"command": "START_SECONDS_TO_OVERRIDE", "seconds": 1800},
             }
 
             # This should raise the command error
@@ -414,15 +484,15 @@ class TestGardenaSmartSystemClient:
         """Test command with 500 error exceeding max retries."""
         from .gardena_client import GardenaCommandError
 
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaCommandError("Server error: 500", 500)
 
             command_data = {
                 "id": "cmd_test",
                 "type": "MOWER_CONTROL",
-                "attributes": {
-                    "command": "PARK_UNTIL_NEXT_TASK"
-                }
+                "attributes": {"command": "PARK_UNTIL_NEXT_TASK"},
             }
 
             with pytest.raises(GardenaCommandError) as exc_info:
@@ -435,7 +505,9 @@ class TestGardenaSmartSystemClient:
     @pytest.mark.asyncio
     async def test_close(self, client):
         """Test closing the client."""
-        with patch.object(client.auth_manager, 'close', new_callable=AsyncMock) as mock_auth_close:
+        with patch.object(
+            client.auth_manager, "close", new_callable=AsyncMock
+        ) as mock_auth_close:
             # Create a mock session first
             mock_session = MagicMock()
             mock_session.closed = False
@@ -456,10 +528,12 @@ class TestAuthenticationErrorHandling:
     async def test_401_unauthorized(self):
         """Test handling of 401 Unauthorized error."""
         client = GardenaSmartSystemClient("client_id", "client_secret")
-        
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAuthError("Authentication failed")
-            
+
             with pytest.raises(GardenaAuthError):
                 await client.get_locations()
 
@@ -467,10 +541,12 @@ class TestAuthenticationErrorHandling:
     async def test_403_forbidden(self):
         """Test handling of 403 Forbidden error."""
         client = GardenaSmartSystemClient("client_id", "client_secret")
-        
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAPIError("Access denied", 403)
-            
+
             with pytest.raises(GardenaAPIError, match="Access denied"):
                 await client.get_locations()
 
@@ -478,10 +554,12 @@ class TestAuthenticationErrorHandling:
     async def test_404_not_found(self):
         """Test handling of 404 Not Found error."""
         client = GardenaSmartSystemClient("client_id", "client_secret")
-        
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAPIError("Resource not found", 404)
-            
+
             with pytest.raises(GardenaAPIError, match="Resource not found"):
                 await client.get_locations()
 
@@ -489,10 +567,12 @@ class TestAuthenticationErrorHandling:
     async def test_500_server_error(self):
         """Test handling of 500 Server Error."""
         client = GardenaSmartSystemClient("client_id", "client_secret")
-        
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAPIError("Server error", 500)
-            
+
             with pytest.raises(GardenaAPIError, match="Server error"):
                 await client.get_locations()
 
@@ -500,10 +580,12 @@ class TestAuthenticationErrorHandling:
     async def test_502_bad_gateway(self):
         """Test handling of 502 Bad Gateway error."""
         client = GardenaSmartSystemClient("client_id", "client_secret")
-        
-        with patch.object(client, '_make_request', new_callable=AsyncMock) as mock_request:
+
+        with patch.object(
+            client, "_make_request", new_callable=AsyncMock
+        ) as mock_request:
             mock_request.side_effect = GardenaAPIError("Bad gateway", 502)
-            
+
             with pytest.raises(GardenaAPIError, match="Bad gateway"):
                 await client.get_locations()
 
@@ -522,7 +604,9 @@ class TestConfigFlowAuthentication:
 
         # Create a mock client
         mock_client = MagicMock()
-        mock_client.get_locations = AsyncMock(return_value=[{"id": "loc1", "name": "Test Location"}])
+        mock_client.get_locations = AsyncMock(
+            return_value=[{"id": "loc1", "name": "Test Location"}]
+        )
         mock_client.close = AsyncMock()
 
         # Replace the class in the module
@@ -530,10 +614,9 @@ class TestConfigFlowAuthentication:
         config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
-            result = await flow.async_step_user({
-                "client_id": "test-client-id",
-                "client_secret": "test-client-secret"
-            })
+            result = await flow.async_step_user(
+                {"client_id": "test-client-id", "client_secret": "test-client-secret"}
+            )
 
             assert result["type"] == "create_entry"
             assert result["data"]["client_id"] == "test-client-id"
@@ -543,7 +626,7 @@ class TestConfigFlowAuthentication:
             config_flow.GardenaSmartSystemClient.assert_called_once_with(
                 client_id="test-client-id",
                 client_secret="test-client-secret",
-                dev_mode=False
+                dev_mode=False,
             )
 
         finally:
@@ -562,7 +645,9 @@ class TestConfigFlowAuthentication:
 
         # Create a mock client
         mock_client = MagicMock()
-        mock_client.get_locations = AsyncMock(side_effect=GardenaAuthError("Invalid credentials"))
+        mock_client.get_locations = AsyncMock(
+            side_effect=GardenaAuthError("Invalid credentials")
+        )
         mock_client.close = AsyncMock()
 
         # Replace the class in the module
@@ -570,10 +655,9 @@ class TestConfigFlowAuthentication:
         config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
-            result = await flow.async_step_user({
-                "client_id": "test-client-id",
-                "client_secret": "test-client-secret"
-            })
+            result = await flow.async_step_user(
+                {"client_id": "test-client-id", "client_secret": "test-client-secret"}
+            )
 
             assert result["type"] == "form"
             assert "errors" in result
@@ -602,10 +686,9 @@ class TestConfigFlowAuthentication:
         config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
-            result = await flow.async_step_user({
-                "client_id": "test-client-id",
-                "client_secret": "test-client-secret"
-            })
+            result = await flow.async_step_user(
+                {"client_id": "test-client-id", "client_secret": "test-client-secret"}
+            )
 
             assert result["type"] == "form"
             assert "errors" in result
@@ -613,4 +696,4 @@ class TestConfigFlowAuthentication:
 
         finally:
             # Restore original class
-            config_flow.GardenaSmartSystemClient = original_client 
+            config_flow.GardenaSmartSystemClient = original_client
