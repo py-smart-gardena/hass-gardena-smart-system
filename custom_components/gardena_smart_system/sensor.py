@@ -43,7 +43,7 @@ async def async_setup_entry(
                 _LOGGER.debug(f"Found {len(common_services)} common services for device: {device.name} ({device.id})")
                 for common_service in common_services:
                     # Only create battery sensor if device has a battery
-                    if common_service.battery_state and common_service.battery_state not in ["NO_BATTERY", "UNKNOWN"]:
+                    if common_service.battery_state and common_service.battery_state not in ["NO_BATTERY"]:
                         _LOGGER.debug(f"Creating battery sensor for device with battery: {device.name} (battery_state: {common_service.battery_state})")
                         entities.append(GardenaBatterySensor(coordinator, device, common_service))
                     else:
