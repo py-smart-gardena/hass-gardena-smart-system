@@ -32,11 +32,11 @@ async def async_setup_entry(
 
     # Create sensor entities for each device
     entities = []
-    
+
     for location in coordinator.locations.values():
         for device in location.devices.values():
             _LOGGER.debug(f"Checking device {device.name} ({device.id}) - Services: {list(device.services.keys())}")
-            
+
             # Add battery sensors only for devices that have batteries
             if "COMMON" in device.services:
                 common_services = device.services["COMMON"]
@@ -48,30 +48,30 @@ async def async_setup_entry(
                         entities.append(GardenaBatterySensor(coordinator, device, common_service))
                     else:
                         _LOGGER.debug(f"Skipping battery sensor for device without battery: {device.name} (battery_state: {common_service.battery_state})")
-            
+
             # Add sensor entities if available
             if "SENSOR" in device.services:
                 sensor_services = device.services["SENSOR"]
                 _LOGGER.debug(f"Found {len(sensor_services)} sensor services for device: {device.name} ({device.id})")
                 for sensor_service in sensor_services:
                     _LOGGER.debug(f"Creating sensor entities for service: {sensor_service.id}")
-                    
+
                     # Check if this is a soil sensor (has soil_humidity or soil_temperature)
-                    is_soil_sensor = (sensor_service.soil_humidity is not None or 
+                    is_soil_sensor = (sensor_service.soil_humidity is not None or
                                     sensor_service.soil_temperature is not None)
-                    
+
                     # Create temperature sensors
                     if sensor_service.soil_temperature is not None:
                         entities.append(GardenaTemperatureSensor(coordinator, device, sensor_service, "soil_temperature", is_soil_sensor))
                     if sensor_service.ambient_temperature is not None:
                         entities.append(GardenaTemperatureSensor(coordinator, device, sensor_service, "ambient_temperature", is_soil_sensor))
-                    
+
                     # Create humidity sensor (only for soil sensors)
                     if sensor_service.soil_humidity is not None:
                         entities.append(GardenaHumiditySensor(coordinator, device, sensor_service))
-                    
+
                     # Create light sensor (only for non-soil sensors)
-                    if sensor_service.light_intensity is not None and not is_soil_sensor:
+                    if sensor_service.light_intensity is not None:
                         entities.append(GardenaLightSensor(coordinator, device, sensor_service))
 
     # Add WebSocket status sensor
@@ -133,18 +133,18 @@ class GardenaTemperatureSensor(GardenaEntity, SensorEntity):
         self._sensor_service = sensor_service
         self._device_id = device.id
         self._temp_attr = temp_attr
-        
+
         if temp_attr == "soil_temperature":
             self._attr_name = f"{device.name} Soil Temperature"
             self._attr_unique_id = f"{device.id}_{sensor_service.id}_soil_temperature"
         else:
             self._attr_name = f"{device.name} Ambient Temperature"
             self._attr_unique_id = f"{device.id}_{sensor_service.id}_ambient_temperature"
-        
+
         # Add soil sensor indicator to name if it's a soil sensor
         if is_soil_sensor and temp_attr == "soil_temperature":
             self._attr_name = f"{device.name} Soil Temperature (Soil Sensor)"
-        
+
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
         self._attr_icon = "mdi:thermometer"
@@ -164,7 +164,7 @@ class GardenaTemperatureSensor(GardenaEntity, SensorEntity):
         current_service = self._get_current_sensor_service()
         if not current_service:
             return None
-            
+
         if self._temp_attr == "soil_temperature":
             return current_service.soil_temperature
         else:
@@ -246,7 +246,7 @@ class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
             services={},
             location_id=""
         )
-        
+
         super().__init__(coordinator, dummy_device, "WEBSOCKET")
         self._attr_name = "Gardena WebSocket Status"
         self._attr_unique_id = "gardena_websocket_status"
@@ -272,17 +272,17 @@ class GardenaWebSocketStatusSensor(GardenaEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = super().extra_state_attributes
-        
+
         # Add reconnect button when disconnected
         if self.native_value == "disconnected":
             attrs["reconnect_button"] = True
             attrs["reconnect_service"] = "gardena_smart_system.reconnect_websocket"
-        
+
         if self.coordinator.websocket_client:
             attrs.update({
                 "reconnect_attempts": self.coordinator.websocket_client.reconnect_attempts,
                 "is_connected": self.coordinator.websocket_client.is_connected,
                 "is_connecting": self.coordinator.websocket_client.is_connecting,
             })
-        
+
         return attrs
