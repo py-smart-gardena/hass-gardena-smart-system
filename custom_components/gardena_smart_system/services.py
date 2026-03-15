@@ -16,11 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 
 # Service schemas
 SERVICE_SCHEMA_BASE = vol.Schema({
-    vol.Required("device_id"): cv.string,  # Use string for now, will be validated in service
+    vol.Required("device_id"): cv.string,
+    vol.Optional("service_id"): cv.string,
 })
 
 SERVICE_SCHEMA_DURATION = vol.Schema({
     vol.Required("device_id"): cv.string,
+    vol.Optional("service_id"): cv.string,
     vol.Optional("duration", default=3600): vol.All(
         cv.positive_int, vol.Range(min=60, max=86400)
     ),
@@ -28,6 +30,7 @@ SERVICE_SCHEMA_DURATION = vol.Schema({
 
 SERVICE_SCHEMA_MOWER = vol.Schema({
     vol.Required("device_id"): cv.string,
+    vol.Optional("service_id"): cv.string,
     vol.Optional("duration", default=1800): vol.All(
         cv.positive_int, vol.Range(min=60, max=14400)
     ),
@@ -35,6 +38,7 @@ SERVICE_SCHEMA_MOWER = vol.Schema({
 
 SERVICE_SCHEMA_VALVE = vol.Schema({
     vol.Required("device_id"): cv.string,
+    vol.Optional("service_id"): cv.string,
     vol.Optional("duration", default=3600): vol.All(
         cv.positive_int, vol.Range(min=60, max=14400)
     ),
@@ -231,11 +235,11 @@ class GardenaServiceManager:
         coordinator = self._get_coordinator(device_id)
         if not coordinator:
             return None
-        
+
         device = coordinator.get_device_by_id(device_id)
         if not device or service_type not in device.services:
             return None
-        
+
         # Handle list of services (for devices with multiple services of same type)
         services = device.services[service_type]
         if isinstance(services, list) and len(services) > 0:
@@ -368,44 +372,44 @@ class GardenaServiceManager:
         """Open valve for specified duration."""
         device_id = call.data["device_id"]
         duration = call.data["duration"]
-        service_id = self._get_device_service_id(device_id, "VALVE")
+        service_id = call.data.get("service_id") or self._get_device_service_id(device_id, "VALVE")
         if not service_id:
             _LOGGER.error(f"No VALVE service found for device {device_id}")
             return
-        
+
         command = ValveCommand(service_id, "START_SECONDS_TO_OVERRIDE", seconds=duration)
         await self._send_command(service_id, command)
 
     async def _service_valve_close(self, call: ServiceCall) -> None:
         """Close valve."""
         device_id = call.data["device_id"]
-        service_id = self._get_device_service_id(device_id, "VALVE")
+        service_id = call.data.get("service_id") or self._get_device_service_id(device_id, "VALVE")
         if not service_id:
             _LOGGER.error(f"No VALVE service found for device {device_id}")
             return
-        
+
         command = ValveCommand(service_id, "STOP_UNTIL_NEXT_TASK")
         await self._send_command(service_id, command)
 
     async def _service_valve_pause(self, call: ServiceCall) -> None:
         """Pause valve operation."""
         device_id = call.data["device_id"]
-        service_id = self._get_device_service_id(device_id, "VALVE")
+        service_id = call.data.get("service_id") or self._get_device_service_id(device_id, "VALVE")
         if not service_id:
             _LOGGER.error(f"No VALVE service found for device {device_id}")
             return
-        
+
         command = ValveCommand(service_id, "PAUSE")
         await self._send_command(service_id, command)
 
     async def _service_valve_unpause(self, call: ServiceCall) -> None:
         """Unpause valve operation."""
         device_id = call.data["device_id"]
-        service_id = self._get_device_service_id(device_id, "VALVE")
+        service_id = call.data.get("service_id") or self._get_device_service_id(device_id, "VALVE")
         if not service_id:
             _LOGGER.error(f"No VALVE service found for device {device_id}")
             return
-        
+
         command = ValveCommand(service_id, "UNPAUSE")
         await self._send_command(service_id, command)
 

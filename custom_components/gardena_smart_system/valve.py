@@ -119,9 +119,17 @@ class GardenaWaterControl(GardenaEntity, ValveEntity):
         """Return true if valve is closing."""
         return False
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return entity specific state attributes."""
+        attrs = super().extra_state_attributes
+        attrs["service_id"] = self.valve_service.id
+        return attrs
+
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve."""
-        _LOGGER.info(f"=== OPEN_VALVE called for Water Control {self.device.name} ===")
+        duration = kwargs.get("duration", 3600)
+        _LOGGER.info(f"=== OPEN_VALVE called for Water Control {self.device.name} ({duration}s) ===")
         _LOGGER.info(f"Opening Water Control {self.device.name} ({self.valve_service.id})")
         if self.valve_service:
             command_data = {
@@ -130,7 +138,7 @@ class GardenaWaterControl(GardenaEntity, ValveEntity):
                     "type": "VALVE_CONTROL",
                     "attributes": {
                         "command": "START_SECONDS_TO_OVERRIDE",
-                        "seconds": 3600,  # Default 1 hour
+                        "seconds": duration,
                     },
                 }
             }
@@ -173,6 +181,7 @@ class GardenaWaterControl(GardenaEntity, ValveEntity):
                 raise
         else:
             _LOGGER.error(f"No valve service available for Water Control {self.device.name}")
+
 
 
 class GardenaSmartIrrigationControl(GardenaEntity, ValveEntity):
@@ -234,9 +243,17 @@ class GardenaSmartIrrigationControl(GardenaEntity, ValveEntity):
         """Return true if valve is closing."""
         return False
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return entity specific state attributes."""
+        attrs = super().extra_state_attributes
+        attrs["service_id"] = self.valve_service.id
+        return attrs
+
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve."""
-        _LOGGER.info(f"=== OPEN_VALVE called for Smart Irrigation Control valve {self._attr_name} ===")
+        duration = kwargs.get("duration", 3600)
+        _LOGGER.info(f"=== OPEN_VALVE called for Smart Irrigation Control valve {self._attr_name} ({duration}s) ===")
         _LOGGER.info(f"Opening Smart Irrigation Control valve {self._attr_name} ({self.valve_service.id})")
         if self.valve_service:
             command_data = {
@@ -245,7 +262,7 @@ class GardenaSmartIrrigationControl(GardenaEntity, ValveEntity):
                     "type": "VALVE_CONTROL",
                     "attributes": {
                         "command": "START_SECONDS_TO_OVERRIDE",
-                        "seconds": 3600,  # Default 1 hour
+                        "seconds": duration,
                     },
                 }
             }
@@ -288,6 +305,7 @@ class GardenaSmartIrrigationControl(GardenaEntity, ValveEntity):
                 raise
         else:
             _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._attr_name}")
+
 
 
 class GardenaValve(GardenaEntity, ValveEntity):
@@ -352,9 +370,17 @@ class GardenaValve(GardenaEntity, ValveEntity):
         # Valve goes directly from WATERING to CLOSED
         return False
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return entity specific state attributes."""
+        attrs = super().extra_state_attributes
+        attrs["service_id"] = self.valve_service.id
+        return attrs
+
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve."""
-        _LOGGER.info(f"Opening valve {self.valve_service.name} ({self.valve_service.id})")
+        duration = kwargs.get("duration", 3600)
+        _LOGGER.info(f"Opening valve {self.valve_service.name} for {duration}s ({self.valve_service.id})")
         if self.valve_service:
             command_data = {
                 "data": {
@@ -362,7 +388,7 @@ class GardenaValve(GardenaEntity, ValveEntity):
                     "type": "VALVE_CONTROL",
                     "attributes": {
                         "command": "START_SECONDS_TO_OVERRIDE",
-                        "seconds": 3600,  # Default 1 hour
+                        "seconds": duration,
                     },
                 }
             }
@@ -396,3 +422,4 @@ class GardenaValve(GardenaEntity, ValveEntity):
                 raise
         else:
             _LOGGER.error(f"No valve service available for {self.valve_service.name}")
+
