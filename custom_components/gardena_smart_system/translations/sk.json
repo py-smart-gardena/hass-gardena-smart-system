@@ -6,16 +6,20 @@
     "error": {
       "cannot_connect": "Nepodarilo sa pripojiť, skúste to znova.",
       "invalid_auth": "Neplatné overenie.",
-      "too_many_requests": "Príliš veľa žiadostí, skúste to neskôr.",
+      "insufficient_permissions": "Nedostatočné povolenia. Skontrolujte si kľúč API a povolenia.",
+      "no_locations": "Nenašli sa žiadne lokality. Uistite sa, že váš systém Gardena Smart System je správne nakonfigurovaný.",
+      "server_error": "Vyskytla sa chyba servera. Skúste to znova neskôr.",
+      "auth_error": "Vyskytla sa chyba overenia. Skontrolujte si svoje prihlasovacie údaje.",
+      "unknown_error": "Vyskytla sa neočakávaná chyba. Skúste to znova.",
+      "too_many_requests": "Príliš veľa žiadostí, to neskôr.",
       "unknown": "Neočakávaná chyba."
     },
     "step": {
       "user": {
-        "description": "Zadajte svoje poverenia.",
+        "description": "Zadajte svoje prihlasovacie údaje k rozhraniu Gardena Smart System API. Môžete ich získať na portáli pre vývojárov Gardena.",
         "data": {
-          "email": "E-mail",
-          "password": "Heslo",
-          "client_id": "Aplikačný kľúč / ID klienta"
+          "client_id": "Aplikačný kľúč / ID klienta",
+          "client_secret": "Tajomstvo aplikácie / Tajomstvo klienta"
         },
         "title": "Gardena Smart System"
       }
