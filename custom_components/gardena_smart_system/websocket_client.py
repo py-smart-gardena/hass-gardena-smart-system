@@ -144,6 +144,9 @@ class GardenaWebSocketClient:
     async def _get_websocket_url(self) -> None:
         """Get WebSocket URL from Gardena API."""
         try:
+            # Ensure we have a valid token before making the request
+            await self.auth_manager.authenticate()
+
             headers = self.auth_manager.get_auth_headers()
             session = await self.auth_manager._get_session()
             

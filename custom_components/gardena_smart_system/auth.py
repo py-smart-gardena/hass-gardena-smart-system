@@ -109,6 +109,19 @@ class GardenaAuthenticationManager:
                 _LOGGER.debug("Using existing valid access token")
                 return self._access_token
 
+            # Try to refresh token if we have a refresh token
+            if self._refresh_token:
+                try:
+                    _LOGGER.debug("Token expired, attempting to refresh")
+                    await self._refresh_access_token()
+                    return self._access_token
+                except GardenaAuthError as e:
+                    _LOGGER.warning(f"Token refresh failed: {e}, performing new authentication")
+                    # Clear tokens and fall through to new authentication
+                    self._access_token = None
+                    self._refresh_token = None
+                    self._token_expires_at = None
+
             # Perform new authentication
             _LOGGER.debug("Performing new authentication")
             session = await self._get_session()
