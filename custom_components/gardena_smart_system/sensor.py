@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfIlluminance, UnitOfTemperature, UnitOfTime
+from homeassistant.const import LIGHT_LUX, PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -422,7 +422,7 @@ class GardenaLightSensor(GardenaEntity, SensorEntity):
         self._device_id = device.id
         self._attr_name = f"{device.name} Light Intensity"
         self._attr_unique_id = f"{device.id}_{sensor_service.id}_light_intensity"
-        self._attr_native_unit_of_measurement = UnitOfIlluminance.LUX
+        self._attr_native_unit_of_measurement = LIGHT_LUX
         self._attr_device_class = SensorDeviceClass.ILLUMINANCE
         self._attr_icon = "mdi:white-balance-sunny"
 

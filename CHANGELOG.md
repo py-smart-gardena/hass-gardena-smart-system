@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- `ImportError: cannot import name 'UnitOfIlluminance'` preventing the integration from loading; replaced non-existent `UnitOfIlluminance.LUX` with the `LIGHT_LUX` constant (#351)
+
 ## [3.0.0] - 2026-05-13
 
 ### Breaking Changes
