@@ -57,14 +57,14 @@ class GardenaCommand:
         self.attributes = kwargs
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert command to API format."""
+    """Convert command to API format."""
         return {
-            "data": {
-                "id": f"cmd_{self.service_id}_{self.command_type}",
-                "type": self.command_type,
-                "attributes": self.attributes,
-            }
+        "data": {
+            "type": self.command_type,
+            "attributes": self.attributes,
         }
+    }
+
 
 
 class MowerCommand(GardenaCommand):
@@ -79,11 +79,10 @@ class MowerCommand(GardenaCommand):
     
     def __init__(self, service_id: str, command: str, seconds: Optional[int] = None):
         """Initialize mower command."""
-        super().__init__(service_id, "MOWER_CONTROL")
+        super().__init__(service_id, "MOWER")
         self.attributes["command"] = command
         if seconds and command == "START_SECONDS_TO_OVERRIDE":
-            self.attributes["seconds"] = seconds
-
+            self.attributes["duration"] = seconds
 
 class PowerSocketCommand(GardenaCommand):
     """Power socket-specific commands."""
