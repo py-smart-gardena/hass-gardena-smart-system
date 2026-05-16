@@ -60,7 +60,6 @@ class GardenaCommand:
         """Convert command to API format."""
         return {
             "data": {
-                "id": f"cmd_{self.service_id}_{self.command_type}",
                 "type": self.command_type,
                 "attributes": self.attributes,
             }
@@ -79,10 +78,10 @@ class MowerCommand(GardenaCommand):
     
     def __init__(self, service_id: str, command: str, seconds: Optional[int] = None):
         """Initialize mower command."""
-        super().__init__(service_id, "MOWER_CONTROL")
+        super().__init__(service_id, "MOWER")
         self.attributes["command"] = command
         if seconds and command == "START_SECONDS_TO_OVERRIDE":
-            self.attributes["seconds"] = seconds
+            self.attributes["duration"] = seconds
 
 
 class PowerSocketCommand(GardenaCommand):
@@ -98,10 +97,10 @@ class PowerSocketCommand(GardenaCommand):
     
     def __init__(self, service_id: str, command: str, seconds: Optional[int] = None):
         """Initialize power socket command."""
-        super().__init__(service_id, "POWER_SOCKET_CONTROL")
+        super().__init__(service_id, "POWER_SOCKET")
         self.attributes["command"] = command
         if seconds and command == "START_SECONDS_TO_OVERRIDE":
-            self.attributes["seconds"] = seconds
+            self.attributes["duration"] = seconds
 
 
 class ValveCommand(GardenaCommand):
@@ -116,10 +115,10 @@ class ValveCommand(GardenaCommand):
     
     def __init__(self, service_id: str, command: str, seconds: Optional[int] = None):
         """Initialize valve command."""
-        super().__init__(service_id, "VALVE_CONTROL")
+        super().__init__(service_id, "VALVE")
         self.attributes["command"] = command
         if seconds and command == "START_SECONDS_TO_OVERRIDE":
-            self.attributes["seconds"] = seconds
+            self.attributes["duration"] = seconds
 
 
 class GardenaServiceManager:
