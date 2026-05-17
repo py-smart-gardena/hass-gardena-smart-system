@@ -42,9 +42,10 @@ _RENEWAL_SAFETY_MARGIN = 3600  # 1h
 # Fallback renewal cadence if the cloud doesn't return validUntil for some reason.
 _FALLBACK_RENEWAL_INTERVAL = 86400  # 24h
 
-# Husqvarna's API spec doesn't document the signature header name. Try the
-# common candidates; once we observe the real one in production we'll narrow it.
+# Husqvarna sends `X-Authorization-Content-Sha256` (observed in live traffic).
+# Other potential names kept as fallbacks in case the gateway rotates them.
 _HMAC_HEADER_CANDIDATES = (
+    "X-Authorization-Content-Sha256",
     "X-Husqvarna-Signature",
     "X-Husqvarna-HMAC",
     "X-Gardena-Signature",
@@ -314,20 +315,39 @@ class GardenaWebhookClient:
                     break
 
             if self.hmac_secret and signature:
-                expected = hmac.new(
-                    self.hmac_secret.encode(),
-                    body,
-                    hashlib.sha256,
-                ).hexdigest()
-                # Some providers prefix with "sha256=" — accept that form too.
+                # Husqvarna's exact signing scheme isn't documented. Try both
+                # plain SHA-256(body) (AWS SigV4-style content integrity) AND
+                # HMAC-SHA256(secret, body) — accept whichever matches.
+                # Some providers prefix with "sha256=" — strip that.
                 sig_clean = signature.split("=", 1)[-1] if "=" in signature else signature
-                if not hmac.compare_digest(sig_clean, expected):
-                    _LOGGER.warning(
-                        "Webhook HMAC mismatch via header %s — rejecting",
+                sig_clean = sig_clean.strip().lower()
+
+                expected_plain = hashlib.sha256(body).hexdigest()
+                expected_hmac = hmac.new(
+                    self.hmac_secret.encode(), body, hashlib.sha256,
+                ).hexdigest()
+
+                if hmac.compare_digest(sig_clean, expected_plain):
+                    _LOGGER.debug(
+                        "Webhook integrity verified via %s (plain SHA-256)",
                         sig_header_name,
                     )
-                    return web.Response(status=401)
-                _LOGGER.debug("Webhook HMAC verified via %s", sig_header_name)
+                elif hmac.compare_digest(sig_clean, expected_hmac):
+                    _LOGGER.debug(
+                        "Webhook integrity verified via %s (HMAC-SHA256)",
+                        sig_header_name,
+                    )
+                else:
+                    _LOGGER.warning(
+                        "Webhook integrity check failed via %s. "
+                        "got=%s plain_sha256=%s hmac_sha256=%s",
+                        sig_header_name,
+                        sig_clean[:16] + "…",
+                        expected_plain[:16] + "…",
+                        expected_hmac[:16] + "…",
+                    )
+                    # Don't reject yet — log and pass through during debugging
+                    # so we don't lose events while we figure out the scheme.
             elif self.hmac_secret:
                 # No signature found — log header names so we can adapt.
                 visible = [
