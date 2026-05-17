@@ -15,6 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 # Constants
 SMART_HOST = "https://api.smart.gardena.dev"
 API_TIMEOUT = 30
+# Max concurrent HTTP requests to the Gardena API. Replaces a global asyncio.Lock()
+# which serialized everything — a single 504-retry sequence (~30s+backoff) would
+# then block every other call. Husqvarna rate-limits aggressively, so we still
+# bound concurrency, but allow real parallelism for sibling valve commands.
+MAX_CONCURRENT_REQUESTS = 5
 
 
 class GardenaAPIError(Exception):
@@ -44,7 +49,7 @@ class GardenaSmartSystemClient:
         self.auth_manager = GardenaAuthenticationManager(client_id, client_secret, api_key, dev_mode)
         self._dev_mode = dev_mode
         self._session: Optional[aiohttp.ClientSession] = None
-        self._request_lock = asyncio.Lock()
+        self._request_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create HTTP session."""
@@ -67,7 +72,7 @@ class GardenaSmartSystemClient:
         is_command: bool = False
     ) -> Dict[str, Any]:
         """Make authenticated request to Gardena API."""
-        async with self._request_lock:
+        async with self._request_semaphore:
             # Ensure we have a valid token
             await self.auth_manager.authenticate()
             

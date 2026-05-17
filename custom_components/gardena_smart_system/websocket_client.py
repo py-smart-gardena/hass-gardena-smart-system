@@ -9,7 +9,12 @@ import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from .auth import GardenaAuthenticationManager
-from .const import DOMAIN, WEBSOCKET_RECONNECT_DELAY, WEBSOCKET_MAX_RECONNECT_ATTEMPTS
+from .const import (
+    DOMAIN,
+    WEBSOCKET_RECONNECT_DELAY,
+    WEBSOCKET_MAX_RECONNECT_DELAY,
+    WEBSOCKET_IDLE_TIMEOUT,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -144,49 +149,65 @@ class GardenaWebSocketClient:
             await self._schedule_reconnect()
 
     async def _get_websocket_url(self) -> None:
-        """Get WebSocket URL from Gardena API."""
-        try:
-            # Ensure we have a valid token before making the request
-            await self.auth_manager.authenticate()
+        """Get WebSocket URL from Gardena API with retry on transient server errors."""
+        # Resolve location_id once — same logic as before.
+        location_id = None
+        if self.coordinator and self.coordinator.locations:
+            location_id = list(self.coordinator.locations.keys())[0]
+            _LOGGER.debug(f"Using location ID from coordinator: {location_id}")
+        else:
+            _LOGGER.warning("No locations available in coordinator, using fallback location ID")
+            location_id = "2188c99e-df0d-4bb9-8273-71415fa70569"
 
-            headers = self.auth_manager.get_auth_headers()
-            session = await self.auth_manager._get_session()
-            
-            # Get locationId from coordinator
-            location_id = None
-            if self.coordinator and self.coordinator.locations:
-                # Use the first available location
-                location_id = list(self.coordinator.locations.keys())[0]
-                _LOGGER.debug(f"Using location ID from coordinator: {location_id}")
-            else:
-                _LOGGER.warning("No locations available in coordinator, using fallback location ID")
-                # Fallback to a default location ID if coordinator doesn't have data yet
-                location_id = "2188c99e-df0d-4bb9-8273-71415fa70569"
-            
-            # Create WebSocket endpoint
-            async with session.post(
-                "https://api.smart.gardena.dev/v2/websocket",
-                headers=headers,
-                json={
-                    "data": {
-                        "type": "WEBSOCKET",
-                        "attributes": {
-                            "locationId": location_id
+        # Retry on 500/502/504. Husqvarna's gateway intermittently returns 504s
+        # — without retry here, every reconnect attempt during such a window
+        # fails permanently and the integration eventually gives up.
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                await self.auth_manager.authenticate()
+                headers = self.auth_manager.get_auth_headers()
+                session = await self.auth_manager._get_session()
+
+                async with session.post(
+                    "https://api.smart.gardena.dev/v2/websocket",
+                    headers=headers,
+                    json={
+                        "data": {
+                            "type": "WEBSOCKET",
+                            "attributes": {"locationId": location_id},
                         }
-                    }
-                },
-            ) as response:
-                if response.status == 201:
-                    data = await response.json()
-                    self.websocket_url = data["data"]["attributes"]["url"]
-                    _LOGGER.debug(f"WebSocket URL obtained: {self.websocket_url}")
-                else:
+                    },
+                ) as response:
+                    if response.status == 201:
+                        data = await response.json()
+                        self.websocket_url = data["data"]["attributes"]["url"]
+                        _LOGGER.debug(f"WebSocket URL obtained: {self.websocket_url}")
+                        return
+                    if response.status in (500, 502, 504) and attempt < max_attempts - 1:
+                        delay = 2 ** attempt
+                        _LOGGER.warning(
+                            "Server error %s getting WebSocket URL, retrying in %ds "
+                            "(attempt %d/%d)",
+                            response.status, delay, attempt + 1, max_attempts,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
                     _LOGGER.error(f"Failed to get WebSocket URL: {response.status}")
                     self.websocket_url = None
-                    
-        except Exception as e:
-            _LOGGER.error(f"Error getting WebSocket URL: {e}")
-            self.websocket_url = None
+                    return
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    delay = 2 ** attempt
+                    _LOGGER.warning(
+                        "Error getting WebSocket URL: %s — retrying in %ds (attempt %d/%d)",
+                        e, delay, attempt + 1, max_attempts,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                _LOGGER.error(f"Error getting WebSocket URL: {e}")
+                self.websocket_url = None
+                return
 
     def _get_websocket_headers(self) -> Dict[str, str]:
         """Get headers for WebSocket connection."""
@@ -196,12 +217,32 @@ class GardenaWebSocketClient:
         }
 
     async def _listen_for_messages(self) -> None:
-        """Listen for WebSocket messages."""
+        """Listen for WebSocket messages with an idle-timeout watchdog.
+
+        Library-level ping/pong (websockets.connect ping_interval) only catches
+        TCP/protocol failures. Half-open connections (Husqvarna load-balancer
+        switch without FIN, network silent-drop) can leave a socket that
+        accepts pongs but delivers no app data — symptom we saw: 12h stale
+        without reconnect trigger. The wait_for here forces reconnect after
+        WEBSOCKET_IDLE_TIMEOUT seconds without any incoming message.
+        """
         try:
-            async for message in self.websocket:
-                if self._shutdown:
+            while not self._shutdown:
+                try:
+                    message = await asyncio.wait_for(
+                        self.websocket.recv(), timeout=WEBSOCKET_IDLE_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    _LOGGER.warning(
+                        "WebSocket idle for %ds without messages — forcing reconnect",
+                        WEBSOCKET_IDLE_TIMEOUT,
+                    )
+                    try:
+                        await self.websocket.close()
+                    except Exception:
+                        pass
                     break
-                
+
                 try:
                     data = json.loads(message)
                     _LOGGER.debug(f"Received WebSocket message: {data}")
@@ -210,7 +251,7 @@ class GardenaWebSocketClient:
                     _LOGGER.error(f"Failed to parse WebSocket message: {e}")
                 except Exception as e:
                     _LOGGER.error(f"Error processing WebSocket message: {e}")
-                    
+
         except ConnectionClosed:
             _LOGGER.info("WebSocket connection closed, will reconnect")
         except WebSocketException as e:
@@ -221,7 +262,7 @@ class GardenaWebSocketClient:
             self.is_connected = False
             if not self._shutdown:
                 await self._schedule_reconnect()
-            
+
             # Notify coordinator of status change
             if self.coordinator:
                 self.coordinator.async_set_updated_data(self.coordinator.locations)
@@ -313,10 +354,17 @@ class GardenaWebSocketClient:
             _LOGGER.error(f"Error sending pong: {e}")
 
     async def _schedule_reconnect(self) -> None:
-        """Schedule reconnection attempt."""
+        """Schedule reconnection attempt with capped exponential backoff.
+
+        Never gives up: the previous behaviour stopped trying after
+        WEBSOCKET_MAX_RECONNECT_ATTEMPTS (10), which left the integration
+        permanently disconnected when Husqvarna's cloud was unresponsive for
+        more than ~10 min. Now retries forever, with delay capped at
+        WEBSOCKET_MAX_RECONNECT_DELAY so we don't hammer the API.
+        """
         if self._shutdown:
             return
-        
+
         # Cancel any existing reconnect task
         if self.reconnect_task and not self.reconnect_task.done():
             self.reconnect_task.cancel()
@@ -324,28 +372,34 @@ class GardenaWebSocketClient:
                 await self.reconnect_task
             except asyncio.CancelledError:
                 pass
-        
+
         self.reconnect_attempts += 1
 
-        if self.reconnect_attempts > WEBSOCKET_MAX_RECONNECT_ATTEMPTS:
-            _LOGGER.error("Max reconnection attempts reached, giving up")
-            return
-
         if self.reconnect_attempts == 4:
-            _LOGGER.warning("WebSocket reconnection taking longer than expected (attempt %d)", self.reconnect_attempts)
-        
-        # Use shorter delays for the first few attempts (likely token renewal)
-        # Then longer delays for potential network issues
+            _LOGGER.warning(
+                "WebSocket reconnection taking longer than expected (attempt %d)",
+                self.reconnect_attempts,
+            )
+        elif self.reconnect_attempts == 20:
+            _LOGGER.error(
+                "WebSocket still disconnected after %d attempts — check Husqvarna API status",
+                self.reconnect_attempts,
+            )
+
+        # Use shorter delays for the first few attempts (likely token renewal),
+        # then exponential backoff capped at WEBSOCKET_MAX_RECONNECT_DELAY.
         if self.reconnect_attempts <= 3:
-            delay = 5  # Quick reconnect for token renewal scenarios
+            delay = 5
         else:
-            delay = WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 4))
-        
-        _LOGGER.debug(f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds")
-        
-        # DON'T notify coordinator of status change here to prevent entity flickering
-        # Only notify when we actually disconnect after max attempts
-        
+            delay = min(
+                WEBSOCKET_RECONNECT_DELAY * (2 ** (self.reconnect_attempts - 4)),
+                WEBSOCKET_MAX_RECONNECT_DELAY,
+            )
+
+        _LOGGER.debug(
+            f"Scheduling reconnection attempt {self.reconnect_attempts} in {delay} seconds"
+        )
+
         self.reconnect_task = asyncio.create_task(self._delayed_reconnect(delay))
 
     async def _delayed_reconnect(self, delay: int) -> None:

@@ -82,8 +82,9 @@ MOWER_ACTIVITY_MAP: Final = {
 }
 
 # WebSocket configuration
-WEBSOCKET_RECONNECT_DELAY: Final = 5  # seconds
-WEBSOCKET_MAX_RECONNECT_ATTEMPTS: Final = 10
+WEBSOCKET_RECONNECT_DELAY: Final = 5  # seconds, base for exponential backoff
+WEBSOCKET_MAX_RECONNECT_DELAY: Final = 300  # seconds, cap on backoff (5 min)
+WEBSOCKET_IDLE_TIMEOUT: Final = 180  # seconds without any message → force reconnect
 
 # Valve duration configuration
 CONF_VALVE_DURATIONS: Final = "valve_durations"
