@@ -34,8 +34,14 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> "GardenaOptionsFlowHandler":
-        """Get the options flow for this handler."""
-        return GardenaOptionsFlowHandler(config_entry)
+        """Get the options flow for this handler.
+
+        Note: do NOT pass `config_entry` to the handler constructor. HA injects
+        it as a read-only property on the OptionsFlow base class. Passing it
+        and storing it as `self.config_entry = ...` raises AttributeError on
+        HA 2024.12+.
+        """
+        return GardenaOptionsFlowHandler()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -105,11 +111,12 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class GardenaOptionsFlowHandler(config_entries.OptionsFlow):
-    """Options flow: choose push transport (WebSocket vs Webhook)."""
+    """Options flow: choose push transport (WebSocket vs Webhook).
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
+    HA 2024.12+ exposes `self.config_entry` as a read-only property that the
+    framework sets automatically — we must NOT assign it ourselves (raises
+    AttributeError: 'property has no setter').
+    """
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
