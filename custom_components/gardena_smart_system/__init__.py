@@ -7,7 +7,12 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import DOMAIN
-from .coordinator import GardenaSmartSystemCoordinator
+from .coordinator import (
+    GardenaSmartSystemCoordinator,
+    OPT_PUSH_MODE,
+    OPT_WEBHOOK_EXTERNAL_URL,
+    PUSH_MODE_WEBSOCKET,
+)
 from .services import GardenaServiceManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,24 +61,42 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         client_secret=entry.data["client_secret"],
         dev_mode=True,  # Enable dev mode to bypass SSL issues on macOS
     )
-    
+
+    # Resolve push transport from options (default: WebSocket — keeps
+    # backwards-compat for existing config entries).
+    push_mode = entry.options.get(OPT_PUSH_MODE, PUSH_MODE_WEBSOCKET)
+    webhook_external_url = entry.options.get(OPT_WEBHOOK_EXTERNAL_URL) or None
+
     # Create coordinator
     coordinator = GardenaSmartSystemCoordinator(
         hass,
         client=client,
+        entry_id=entry.entry_id,
+        push_mode=push_mode,
+        webhook_external_url=webhook_external_url,
     )
-    
+
     # Store coordinator in hass data
     hass.data[DOMAIN][entry.entry_id] = coordinator
-    
+
     # Start the coordinator
     await coordinator.async_config_entry_first_refresh()
-    
+
+    # Reload entry when options change (so push_mode switch takes effect).
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
     # Forward the setup to the platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
-    _LOGGER.info("Gardena Smart System component setup finished")
+
+    _LOGGER.info(
+        "Gardena Smart System component setup finished (push_mode=%s)", push_mode
+    )
     return True
+
+
+async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the integration when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

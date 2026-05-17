@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/py-smart-gardena/hass-gardena-smart-system",
   "issue_tracker": "https://github.com/py-smart-gardena/hass-gardena-smart-system/issues",
-  "dependencies": [],
+  "dependencies": ["webhook"],
   "codeowners": ["@py-smart-gardena"],
   "requirements": ["aiohttp>=3.7.0", "websockets>=10.0"],
   "iot_class": "cloud_polling",

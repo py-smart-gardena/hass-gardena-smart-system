@@ -6,33 +6,55 @@ from datetime import timedelta
 from typing import Any, Dict
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
 from .gardena_client import GardenaSmartSystemClient
 from .models import GardenaLocation
+from .webhook_client import GardenaWebhookClient
 from .websocket_client import GardenaWebSocketClient
 
 _LOGGER = logging.getLogger(__name__)
+
+# Config-entry option keys for push transport selection.
+PUSH_MODE_WEBSOCKET = "websocket"
+PUSH_MODE_WEBHOOK = "webhook"
+OPT_PUSH_MODE = "push_mode"
+OPT_WEBHOOK_EXTERNAL_URL = "webhook_external_url"
 
 
 class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocation]]):
     """Gardena Smart System Data Update Coordinator."""
 
-    def __init__(self, hass: HomeAssistant, client: GardenaSmartSystemClient) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: GardenaSmartSystemClient,
+        entry_id: str = "",
+        push_mode: str = PUSH_MODE_WEBSOCKET,
+        webhook_external_url: str | None = None,
+    ) -> None:
         """Initialize the coordinator."""
         self.client = client
         self.locations: Dict[str, GardenaLocation] = {}
-        self.websocket_client: GardenaWebSocketClient | None = None
+        # `push_client` is the active transport (WebSocket OR Webhook).
+        # `websocket_client` stays as a backwards-compat alias used by the
+        # connectivity sensor and the `reconnect_websocket` service.
+        self.push_client: GardenaWebSocketClient | GardenaWebhookClient | None = None
+        self.websocket_client: GardenaWebSocketClient | GardenaWebhookClient | None = None
+        self.entry_id = entry_id
+        self.push_mode = push_mode
+        self.webhook_external_url = webhook_external_url
         self._initial_data_loaded = False
-        
-        # Set update interval to None to disable periodic updates
-        # All updates will come through WebSocket
+
+        # Set update interval to None to disable periodic updates.
+        # All updates come via push (WebSocket or Webhook).
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=None,  # Disable periodic updates
+            update_interval=None,
         )
 
     async def async_config_entry_first_refresh(self) -> None:
@@ -40,32 +62,66 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
         if not self._initial_data_loaded:
             await super().async_config_entry_first_refresh()
             self._initial_data_loaded = True
-            
-            # Start WebSocket client after first data fetch
-            await self._start_websocket()
+
+            # Start the push client (WebSocket or Webhook) after first data fetch.
+            await self._start_push_client()
         else:
             # For subsequent calls, just return current data
             self.async_set_updated_data(self.locations)
 
-    async def _start_websocket(self) -> None:
-        """Start WebSocket client for real-time events."""
+    async def _start_push_client(self) -> None:
+        """Start the configured push transport (WebSocket or Webhook)."""
         try:
-            if not self.websocket_client:
-                self.websocket_client = GardenaWebSocketClient(
+            if self.push_mode == PUSH_MODE_WEBHOOK:
+                external_url = self.webhook_external_url
+                if not external_url:
+                    try:
+                        external_url = get_url(
+                            self.hass, allow_internal=False, require_ssl=True,
+                        )
+                    except NoURLAvailableError:
+                        _LOGGER.error(
+                            "Webhook push_mode selected but no external_url available — "
+                            "falling back to WebSocket. Configure HA's external URL or "
+                            "set webhook_external_url in entry options."
+                        )
+                        await self._start_websocket_client()
+                        return
+                self.push_client = GardenaWebhookClient(
+                    hass=self.hass,
                     auth_manager=self.client.auth_manager,
                     event_callback=self._handle_websocket_event,
-                    hass=self.hass,
+                    entry_id=self.entry_id,
+                    external_url=external_url,
                     coordinator=self,
                 )
-            
-            await self.websocket_client.start()
-            _LOGGER.info("WebSocket client started successfully")
-            
-            # Notify entities that WebSocket client is now available
+                self.websocket_client = self.push_client  # alias for legacy consumers
+                await self.push_client.start()
+                _LOGGER.info("Gardena webhook client started successfully")
+            else:
+                await self._start_websocket_client()
+
             self.async_set_updated_data(self.locations)
-            
+
         except Exception as e:
-            _LOGGER.error(f"Failed to start WebSocket client: {e}")
+            _LOGGER.error(f"Failed to start push client: {e}")
+
+    async def _start_websocket_client(self) -> None:
+        """Start the WebSocket transport (default push mode)."""
+        self.push_client = GardenaWebSocketClient(
+            auth_manager=self.client.auth_manager,
+            event_callback=self._handle_websocket_event,
+            hass=self.hass,
+            coordinator=self,
+        )
+        self.websocket_client = self.push_client
+        await self.push_client.start()
+        _LOGGER.info("WebSocket client started successfully")
+
+    # Kept as alias for any external caller that still imports the old name.
+    async def _start_websocket(self) -> None:
+        """Deprecated — use _start_push_client."""
+        await self._start_push_client()
 
     async def _handle_websocket_event(self, event: Dict[str, Any]) -> None:
         """Handle WebSocket events."""
@@ -252,12 +308,13 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator."""
         _LOGGER.debug("Shutting down Gardena Smart System coordinator")
-        
-        # Stop WebSocket client
-        if self.websocket_client:
-            await self.websocket_client.stop()
+
+        # Stop the active push client (WebSocket or Webhook).
+        if self.push_client:
+            await self.push_client.stop()
+            self.push_client = None
             self.websocket_client = None
-        
+
         # Close client
         if self.client:
             await self.client.close()

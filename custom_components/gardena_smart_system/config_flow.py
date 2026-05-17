@@ -8,9 +8,16 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN
+from .coordinator import (
+    OPT_PUSH_MODE,
+    OPT_WEBHOOK_EXTERNAL_URL,
+    PUSH_MODE_WEBHOOK,
+    PUSH_MODE_WEBSOCKET,
+)
 from .gardena_client import GardenaAPIError, GardenaSmartSystemClient
 from .auth import GardenaAuthError
 
@@ -21,6 +28,14 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Gardena Smart System."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> "GardenaOptionsFlowHandler":
+        """Get the options flow for this handler."""
+        return GardenaOptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -86,4 +101,35 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
-        ) 
+        )
+
+
+class GardenaOptionsFlowHandler(config_entries.OptionsFlow):
+    """Options flow: choose push transport (WebSocket vs Webhook)."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self.config_entry.options
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    OPT_PUSH_MODE,
+                    default=current.get(OPT_PUSH_MODE, PUSH_MODE_WEBSOCKET),
+                ): vol.In([PUSH_MODE_WEBSOCKET, PUSH_MODE_WEBHOOK]),
+                vol.Optional(
+                    OPT_WEBHOOK_EXTERNAL_URL,
+                    default=current.get(OPT_WEBHOOK_EXTERNAL_URL, ""),
+                ): str,
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=schema)
