@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix lawn mower never showing "Returning" state — `OK_SEARCHING` was incorrectly mapped to `MOWING` instead of `RETURNING` (#363)
+
 ## [3.0.1] - 2026-05-13
 
 ### Fixed
