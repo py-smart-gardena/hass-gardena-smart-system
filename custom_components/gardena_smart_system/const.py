@@ -81,6 +81,26 @@ MOWER_ACTIVITY_MAP: Final = {
     MOWER_ACTIVITY_NONE: LawnMowerActivity.ERROR,
 }
 
+# Mower informational codes — operational states that are NOT errors.
+# The mower_error sensor returns "no_message" when last_error_code is in this set
+# so that user automations trigger only on real actionable errors.
+MOWER_INFORMATIONAL_CODES: Final = frozenset({
+    "no_message",                   # Already "no error"
+    "uninitialised",                # Normal boot state
+    "parked_daily_limit_reached",   # Daily schedule limit reached — normal operation
+    "outside_working_area",         # Mower returned to base outside its zone — normal
+    "off_disabled",                 # Disabled manually by user
+    "off_hatch_open",               # Hatch open for maintenance
+    "off_hatch_closed",             # Hatch closed — normal state
+    "wait_updating",                # Firmware update in progress
+    "wait_power_up",                # Booting up
+    "wait_stop_pressed",            # Stop button held — user-initiated maintenance
+    "wait_for_safety_pin",          # Waiting for safety pin — user-initiated maintenance
+    "guide_calibration_accomplished",  # Calibration completed successfully
+    "connection_changed",           # Network state change — informational
+    "connection_not_changed",       # Network state change — informational
+})
+
 # WebSocket configuration
 WEBSOCKET_RECONNECT_DELAY: Final = 5  # seconds
 WEBSOCKET_MAX_RECONNECT_ATTEMPTS: Final = 10
