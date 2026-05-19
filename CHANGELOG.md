@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix automation hang when valve open command receives a temporary 504 error — retry logic no longer deadlocks on the internal request lock (#366)
+
 ## [3.0.2] - 2026-05-18
 
 ### Fixed
