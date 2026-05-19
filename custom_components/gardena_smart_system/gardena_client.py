@@ -36,6 +36,15 @@ class GardenaCommandError(Exception):
         self.command_id = command_id
 
 
+class _ShouldRetry(Exception):
+    """Internal signal raised by _handle_response to trigger a retry in _make_request."""
+
+    def __init__(self, status_code: int, delay: float) -> None:
+        super().__init__(f"Retryable error {status_code}")
+        self.status_code = status_code
+        self.delay = delay
+
+
 class GardenaSmartSystemClient:
     """Client for Gardena Smart System API."""
 
@@ -59,34 +68,56 @@ class GardenaSmartSystemClient:
         return self._session
 
     async def _make_request(
-        self, 
-        method: str, 
-        endpoint: str, 
+        self,
+        method: str,
+        endpoint: str,
         data: Optional[Dict[str, Any]] = None,
-        retry_count: int = 0,
-        is_command: bool = False
+        is_command: bool = False,
+        max_retries: int = 3,
     ) -> Dict[str, Any]:
-        """Make authenticated request to Gardena API."""
-        async with self._request_lock:
-            # Ensure we have a valid token
-            await self.auth_manager.authenticate()
-            
-            session = await self._get_session()
-            url = f"{SMART_HOST}/v2{endpoint}"
-            headers = self.auth_manager.get_auth_headers()
-            
-            _LOGGER.debug(f"Making {method} request to {url}")
-            
+        """Make authenticated request to Gardena API with retry loop.
+
+        The retry loop lives *outside* the lock so that ``asyncio.sleep``
+        during back-off never holds ``_request_lock``, avoiding a deadlock
+        when ``_handle_response`` previously called ``_make_request``
+        recursively while the lock was still held.
+        """
+        for attempt in range(max_retries + 1):
             try:
-                if data:
-                    json_data = json.dumps(data, ensure_ascii=False)
-                    _LOGGER.debug(f"Request data: {json_data}")
-                    async with session.request(method, url, data=json_data, headers=headers) as response:
-                        return await self._handle_response(response, method, endpoint, data, retry_count, is_command)
+                async with self._request_lock:
+                    # Ensure we have a valid token
+                    await self.auth_manager.authenticate()
+
+                    session = await self._get_session()
+                    url = f"{SMART_HOST}/v2{endpoint}"
+                    headers = self.auth_manager.get_auth_headers()
+
+                    _LOGGER.debug(f"Making {method} request to {url} (attempt {attempt + 1}/{max_retries + 1})")
+
+                    if data:
+                        json_data = json.dumps(data, ensure_ascii=False)
+                        _LOGGER.debug(f"Request data: {json_data}")
+                        async with session.request(method, url, data=json_data, headers=headers) as response:
+                            return await self._handle_response(response, attempt, is_command)
+                    else:
+                        async with session.request(method, url, headers=headers) as response:
+                            return await self._handle_response(response, attempt, is_command)
+
+            except _ShouldRetry as exc:
+                if attempt < max_retries:
+                    _LOGGER.warning(
+                        f"Server error {exc.status_code} for {'command' if is_command else 'request'}, "
+                        f"retrying in {exc.delay:.0f}s (attempt {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(exc.delay)
                 else:
-                    async with session.request(method, url, headers=headers) as response:
-                        return await self._handle_response(response, method, endpoint, data, retry_count, is_command)
-                        
+                    _LOGGER.error(
+                        f"Server error {exc.status_code} after {max_retries} retries — giving up"
+                    )
+                    if is_command:
+                        raise GardenaCommandError(f"Server error: {exc.status_code}", exc.status_code)
+                    raise GardenaAPIError(f"Server error: {exc.status_code}", exc.status_code)
+
             except aiohttp.ClientError as e:
                 _LOGGER.error(f"Network error during API request: {e}")
                 raise GardenaAPIError(f"Network error: {e}")
@@ -94,16 +125,17 @@ class GardenaSmartSystemClient:
     async def _handle_response(
         self,
         response: aiohttp.ClientResponse,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict[str, Any]],
-        retry_count: int,
+        attempt: int,
         is_command: bool = False,
     ) -> Dict[str, Any]:
-        """Handle API response with error checking and retry logic."""
+        """Handle API response with error checking.
+
+        Raises ``_ShouldRetry`` for transient server errors (5xx / 429) so that
+        the caller (``_make_request``) can sleep and retry *outside* the lock.
+        """
         response_text = await response.text()
         _LOGGER.debug(f"Response status: {response.status}, body: {response_text}")
-        
+
         # Handle command-specific responses
         if is_command:
             if response.status == 202:
@@ -122,22 +154,14 @@ class GardenaSmartSystemClient:
                 _LOGGER.error("Command conflict (409) - device busy or invalid state")
                 raise GardenaCommandError("Command conflict - device may be busy", 409)
             elif response.status in (500, 502, 504):
-                # Retry server errors for commands
-                if retry_count < 3:
-                    delay = 2 ** retry_count
-                    _LOGGER.warning(f"Server error {response.status} for command, retrying in {delay}s (attempt {retry_count + 1}/3)")
-                    await asyncio.sleep(delay)
-                    return await self._make_request(method, endpoint, data=data, retry_count=retry_count + 1, is_command=True)
-                else:
-                    _LOGGER.error(f"Server error after {retry_count} retries: {response.status}")
-                    raise GardenaCommandError(f"Server error: {response.status}", response.status)
-        
+                raise _ShouldRetry(response.status, 2 ** attempt)
+
         # Handle standard responses
         if response.status in (200, 201, 202):
             if response_text:
                 return await response.json()
             return {}
-        
+
         # Handle specific error codes
         if response.status == 401:
             _LOGGER.error("Authentication failed (401)")
@@ -150,39 +174,22 @@ class GardenaSmartSystemClient:
             raise GardenaAPIError("Resource not found", 404)
         elif response.status == 429:
             retry_after = response.headers.get("Retry-After")
-            if retry_count < 3:
-                delay = int(retry_after) if retry_after else 2 ** (retry_count + 2)
-                _LOGGER.warning(
-                    f"Rate limited (429), retrying in {delay}s (attempt {retry_count + 1}/3). "
-                    "Consider reducing polling frequency or check API quota on your Husqvarna developer account."
-                )
-                await asyncio.sleep(delay)
-                return await self._make_request(method, endpoint, data=data, retry_count=retry_count + 1, is_command=is_command)
-            else:
-                _LOGGER.error(
-                    "Rate limit exceeded (429) after 3 retries. "
-                    "Your API key may have reached its daily quota. "
-                    "Check your Husqvarna developer account or try a new API key."
-                )
-                raise GardenaAPIError("Rate limit exceeded - API quota reached", 429)
+            delay = int(retry_after) if retry_after else 2 ** (attempt + 2)
+            _LOGGER.warning(
+                f"Rate limited (429), retrying in {delay}s (attempt {attempt + 1}). "
+                "Consider reducing polling frequency or check API quota on your Husqvarna developer account."
+            )
+            raise _ShouldRetry(429, delay)
         elif response.status in (500, 502, 504):
-            # Retry server errors with exponential backoff
-            if retry_count < 3:
-                delay = 2 ** retry_count
-                _LOGGER.warning(f"Server error {response.status}, retrying in {delay}s (attempt {retry_count + 1}/3)")
-                await asyncio.sleep(delay)
-                return await self._make_request(method, endpoint, data=data, retry_count=retry_count + 1, is_command=is_command)
-            else:
-                _LOGGER.error(f"Server error after {retry_count} retries: {response.status}")
-                raise GardenaAPIError(f"Server error: {response.status}", response.status)
-        
+            raise _ShouldRetry(response.status, 2 ** attempt)
+
         # Handle other errors
         try:
             error_data = await response.json()
             error_msg = error_data.get("message", "Unknown error")
-        except:
+        except Exception:
             error_msg = response_text or f"HTTP {response.status}"
-        
+
         _LOGGER.error(f"API error {response.status}: {error_msg}")
         raise GardenaAPIError(f"API error: {error_msg}", response.status)
 
