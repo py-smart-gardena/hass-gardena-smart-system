@@ -16,6 +16,7 @@ from .const import (
     ATTR_BATTERY_STATE,
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
+    MOWER_INFORMATIONAL_CODES,
 )
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
@@ -239,13 +240,16 @@ class GardenaMowerErrorSensor(GardenaEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        """Return the last error code."""
+        """Return the last error code, or 'no_message' for informational states."""
         current_service = self._get_current_mower_service()
         if not current_service:
             return None
         error_code = current_service.last_error_code
         if error_code:
-            return error_code.lower()
+            code = error_code.lower()
+            if code in MOWER_INFORMATIONAL_CODES:
+                return "no_message"
+            return code
         return "no_message"
 
     @property
