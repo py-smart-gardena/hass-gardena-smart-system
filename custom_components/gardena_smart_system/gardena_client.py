@@ -15,6 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 # Constants
 SMART_HOST = "https://api.smart.gardena.dev"
 API_TIMEOUT = 30
+REQUEST_DELAY = 0.5  # Delay between API requests in seconds to avoid rate limiting
 
 
 class GardenaAPIError(Exception):
@@ -54,6 +55,7 @@ class GardenaSmartSystemClient:
         self._dev_mode = dev_mode
         self._session: Optional[aiohttp.ClientSession] = None
         self._request_lock = asyncio.Lock()
+        self._last_request_time: float = 0.0
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create HTTP session."""
@@ -66,6 +68,22 @@ class GardenaSmartSystemClient:
                 connector = aiohttp.TCPConnector(ssl=False)
             self._session = aiohttp.ClientSession(timeout=timeout, connector=connector)
         return self._session
+
+    async def _throttle_request(self) -> None:
+        """Throttle requests to avoid rate limiting.
+        
+        Ensures a minimum delay between consecutive API requests.
+        """
+        import time
+        current_time = time.time()
+        time_since_last_request = current_time - self._last_request_time
+        
+        if time_since_last_request < REQUEST_DELAY:
+            delay_needed = REQUEST_DELAY - time_since_last_request
+            _LOGGER.debug(f"Throttling request: waiting {delay_needed:.2f}s")
+            await asyncio.sleep(delay_needed)
+        
+        self._last_request_time = time.time()
 
     async def _make_request(
         self,
@@ -85,6 +103,9 @@ class GardenaSmartSystemClient:
         for attempt in range(max_retries + 1):
             try:
                 async with self._request_lock:
+                    # Throttle requests to avoid rate limiting
+                    await self._throttle_request()
+                    
                     # Ensure we have a valid token
                     await self.auth_manager.authenticate()
 
@@ -246,4 +267,4 @@ class GardenaSmartSystemClient:
         if self._session and not self._session.closed:
             await self._session.close()
             self._session = None
-        await self.auth_manager.close() 
+        await self.auth_manager.close()
