@@ -17,7 +17,7 @@ from .auth import GardenaAuthError
 _LOGGER = logging.getLogger(__name__)
 
 
-class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Gardena Smart System."""
 
     VERSION = 1
@@ -86,4 +86,4 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
-        ) 
+        )
