@@ -57,14 +57,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         dev_mode=True,  # Enable dev mode to bypass SSL issues on macOS
     )
     
-    # Get polling frequency from config
-    polling_frequency = entry.data.get(CONF_POLLING_FREQUENCY, DEFAULT_POLLING_FREQUENCY)
-    
-    # Create coordinator with polling frequency
+    # Create coordinator
     coordinator = GardenaSmartSystemCoordinator(
         hass,
         client=client,
-        polling_frequency=polling_frequency,
     )
     
     # Store coordinator in hass data
