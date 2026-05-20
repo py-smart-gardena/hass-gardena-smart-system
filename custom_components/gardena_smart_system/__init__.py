@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_POLLING_FREQUENCY, DEFAULT_POLLING_FREQUENCY
 from .coordinator import GardenaSmartSystemCoordinator
 from .services import GardenaServiceManager
 
@@ -57,10 +57,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         dev_mode=True,  # Enable dev mode to bypass SSL issues on macOS
     )
     
-    # Create coordinator
+    # Get polling frequency from config
+    polling_frequency = entry.data.get(CONF_POLLING_FREQUENCY, DEFAULT_POLLING_FREQUENCY)
+    
+    # Create coordinator with polling frequency
     coordinator = GardenaSmartSystemCoordinator(
         hass,
         client=client,
+        polling_frequency=polling_frequency,
     )
     
     # Store coordinator in hass data
