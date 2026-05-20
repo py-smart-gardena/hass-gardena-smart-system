@@ -11,6 +11,8 @@ DOMAIN: Final = "gardena_smart_system"
 # Configuration keys
 CONF_CLIENT_ID: Final = "client_id"
 CONF_CLIENT_SECRET: Final = "client_secret"
+CONF_POLLING_FREQUENCY: Final = "polling_frequency"
+DEFAULT_POLLING_FREQUENCY: Final = 600  # 10 minutes in seconds
 
 # API constants
 API_BASE_URL: Final = "https://api.smart.gardena.dev/v2"
@@ -74,7 +76,7 @@ MOWER_ACTIVITY_MAP: Final = {
     MOWER_ACTIVITY_PARKED_NO_LIGHT: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_PARKED_MOWING_COMPLETED: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_PARKED_RAIN: LawnMowerActivity.DOCKED,
-    MOWER_ACTIVITY_PARKED_DAILY_LIMIT_REACHED: LawnMowerActivity.DOCKED,
+    MOWER_ACTIVITY_DAILY_LIMIT_REACHED: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_STOPPED_IN_GARDEN: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_INITIATE_NEXT_ACTION: LawnMowerActivity.MOWING,
     MOWER_ACTIVITY_SEARCHING_FOR_SATELLITES: LawnMowerActivity.DOCKED,
@@ -112,4 +114,4 @@ DEFAULT_VALVE_DURATION_SECONDS: Final = 3600
 # Attribute names
 ATTR_BATTERY_STATE: Final = "battery_state"
 ATTR_RF_LINK_LEVEL: Final = "rf_link_level"
-ATTR_RF_LINK_STATE: Final = "rf_link_state" 
+ATTR_RF_LINK_STATE: Final = "rf_link_state"
