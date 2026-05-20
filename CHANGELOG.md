@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.4] - 2026-05-19
+
+### Fixed
+
+- `mower_error` sensor now returns `no_message` for informational operational states instead of surfacing them as errors. The following states no longer trigger error-based automations: `parked_daily_limit_reached`, `outside_working_area`, `off_disabled`, `off_hatch_open`, `off_hatch_closed`, `wait_updating`, `wait_power_up`, `wait_stop_pressed`, `wait_for_safety_pin`, `guide_calibration_accomplished`, `connection_changed`, `connection_not_changed`, `uninitialised` (#365)
+
+## [3.0.3] - 2026-05-19
+
+### Fixed
+
+- Fix automation hang when valve open command receives a temporary 504 error — retry logic no longer deadlocks on the internal request lock (#366)
+
+## [3.0.2] - 2026-05-18
+
+### Fixed
+
+- Fix lawn mower never showing "Returning" state — `OK_SEARCHING` was incorrectly mapped to `MOWING` instead of `RETURNING` (#363)
+
 ## [3.0.1] - 2026-05-13
 
 ### Fixed
