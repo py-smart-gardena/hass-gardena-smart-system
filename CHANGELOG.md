@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.5] - 2026-05-24
+
+### Fixed
+
+- Valve entities no longer log their state twice on every update — activity logging moved out of property getters (called multiple times per update cycle by Home Assistant) into the coordinator-update callback, with state-transition deduplication. Resolves HA's internal rate limiter triggering after 200+ messages on installations with several valves (#371)
+
 ## [3.0.4] - 2026-05-19
 
 ### Fixed
