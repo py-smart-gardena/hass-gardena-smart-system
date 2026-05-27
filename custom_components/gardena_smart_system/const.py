@@ -11,6 +11,7 @@ DOMAIN: Final = "gardena_smart_system"
 # Configuration keys
 CONF_CLIENT_ID: Final = "client_id"
 CONF_CLIENT_SECRET: Final = "client_secret"
+CONF_CONFIG_ENTRY_ID: Final = "config_entry_id"
 
 # API constants
 API_BASE_URL: Final = "https://api.smart.gardena.dev/v2"

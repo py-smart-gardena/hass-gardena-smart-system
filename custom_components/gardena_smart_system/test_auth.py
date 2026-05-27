@@ -515,7 +515,7 @@ class TestConfigFlowAuthentication:
     async def test_config_flow_success(self, hass):
         """Test successful config flow authentication."""
         from .config_flow import GardenaSmartSystemConfigFlow
-        from . import config_flow
+        from . import credential_validation
 
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
@@ -526,8 +526,8 @@ class TestConfigFlowAuthentication:
         mock_client.close = AsyncMock()
 
         # Replace the class in the module
-        original_client = config_flow.GardenaSmartSystemClient
-        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        original_client = credential_validation.GardenaSmartSystemClient
+        credential_validation.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
             result = await flow.async_step_user({
@@ -540,7 +540,7 @@ class TestConfigFlowAuthentication:
             assert result["data"]["client_secret"] == "test-client-secret"
 
             # Verify the client was created with correct parameters
-            config_flow.GardenaSmartSystemClient.assert_called_once_with(
+            credential_validation.GardenaSmartSystemClient.assert_called_once_with(
                 client_id="test-client-id",
                 client_secret="test-client-secret",
                 dev_mode=False
@@ -548,14 +548,14 @@ class TestConfigFlowAuthentication:
 
         finally:
             # Restore original class
-            config_flow.GardenaSmartSystemClient = original_client
+            credential_validation.GardenaSmartSystemClient = original_client
 
     @pytest.mark.asyncio
     async def test_config_flow_invalid_auth(self, hass):
         """Test config flow with invalid authentication."""
         from .config_flow import GardenaSmartSystemConfigFlow
         from .auth import GardenaAuthError
-        from . import config_flow
+        from . import credential_validation
 
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
@@ -566,8 +566,8 @@ class TestConfigFlowAuthentication:
         mock_client.close = AsyncMock()
 
         # Replace the class in the module
-        original_client = config_flow.GardenaSmartSystemClient
-        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        original_client = credential_validation.GardenaSmartSystemClient
+        credential_validation.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
             result = await flow.async_step_user({
@@ -581,13 +581,13 @@ class TestConfigFlowAuthentication:
 
         finally:
             # Restore original class
-            config_flow.GardenaSmartSystemClient = original_client
+            credential_validation.GardenaSmartSystemClient = original_client
 
     @pytest.mark.asyncio
     async def test_config_flow_no_locations(self, hass):
         """Test config flow with no locations found."""
         from .config_flow import GardenaSmartSystemConfigFlow
-        from . import config_flow
+        from . import credential_validation
 
         flow = GardenaSmartSystemConfigFlow()
         flow.hass = hass
@@ -598,8 +598,8 @@ class TestConfigFlowAuthentication:
         mock_client.close = AsyncMock()
 
         # Replace the class in the module
-        original_client = config_flow.GardenaSmartSystemClient
-        config_flow.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
+        original_client = credential_validation.GardenaSmartSystemClient
+        credential_validation.GardenaSmartSystemClient = MagicMock(return_value=mock_client)
 
         try:
             result = await flow.async_step_user({
@@ -613,4 +613,4 @@ class TestConfigFlowAuthentication:
 
         finally:
             # Restore original class
-            config_flow.GardenaSmartSystemClient = original_client 
+            credential_validation.GardenaSmartSystemClient = original_client

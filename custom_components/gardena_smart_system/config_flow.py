@@ -11,8 +11,7 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN
-from .gardena_client import GardenaAPIError, GardenaSmartSystemClient
-from .auth import GardenaAuthError
+from .credential_validation import async_validate_gardena_credentials
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,68 +21,82 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def _credentials_schema(self) -> vol.Schema:
+        """Schema for API credential input."""
+        return vol.Schema(
+            {
+                vol.Required(CONF_CLIENT_ID): str,
+                vol.Required(CONF_CLIENT_SECRET): str,
+            }
+        )
+
+    async def _apply_credential_updates(
+        self,
+        entry: config_entries.ConfigEntry,
+        user_input: dict[str, Any],
+    ) -> FlowResult:
+        """Persist credentials; reload only when the config entry is enabled."""
+        self.hass.config_entries.async_update_entry(
+            entry,
+            data={
+                CONF_CLIENT_ID: user_input[CONF_CLIENT_ID],
+                CONF_CLIENT_SECRET: user_input[CONF_CLIENT_SECRET],
+            },
+        )
+        if entry.disabled_by is None:
+            await self.hass.config_entries.async_reload(entry.entry_id)
+        else:
+            _LOGGER.info(
+                "Credentials updated for disabled config entry %s; "
+                "enable the integration to connect",
+                entry.entry_id,
+            )
+        return self.async_abort(reason="reconfigure_successful")
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step."""
-        errors = {}
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            try:
-                _LOGGER.info("Testing Gardena Smart System credentials")
-
-                # Test the credentials
-                import os
-                dev_mode = os.getenv('GARDENA_DEV_MODE', 'false').lower() == 'true'
-                client = GardenaSmartSystemClient(
-                    client_id=user_input[CONF_CLIENT_ID],
-                    client_secret=user_input[CONF_CLIENT_SECRET],
-                    dev_mode=dev_mode,  # Enable dev mode for SSL issues on macOS
+            errors = await async_validate_gardena_credentials(user_input)
+            if not errors:
+                return self.async_create_entry(
+                    title="Gardena Smart System",
+                    data=user_input,
                 )
 
-                # Try to authenticate and get locations
-                locations = await client.get_locations()
-
-                if not locations:
-                    _LOGGER.warning("No locations found for the provided credentials")
-                    errors["base"] = "no_locations"
-                else:
-                    _LOGGER.info("Successfully authenticated and found %d locations", len(locations))
-
-                    # If we get here, the credentials are valid
-                    return self.async_create_entry(
-                        title="Gardena Smart System",
-                        data=user_input,
-                    )
-
-            except GardenaAuthError as ex:
-                _LOGGER.error("Authentication failed: %s", ex)
-                errors["base"] = "invalid_auth"
-            except GardenaAPIError as ex:
-                _LOGGER.error("API error during configuration: %s (status: %s)", ex, ex.status_code)
-                if ex.status_code == 404:
-                    errors["base"] = "no_locations"
-                else:
-                    errors["base"] = "api_error"
-            except Exception as ex:
-                _LOGGER.error("Unexpected error during configuration: %s", ex)
-                errors["base"] = "unknown"
-
-            finally:
-                # Always close the client
-                try:
-                    await client.close()
-                except Exception as ex:
-                    _LOGGER.warning("Error closing client: %s", ex)
-
-        # Show the form
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
+            data_schema=self._credentials_schema(),
+            errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Allow updating API credentials without removing the config entry."""
+        reconfigure_entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            errors = await async_validate_gardena_credentials(user_input)
+            if not errors:
+                return await self._apply_credential_updates(
+                    reconfigure_entry, user_input
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                self._credentials_schema(),
                 {
-                    vol.Required(CONF_CLIENT_ID): str,
-                    vol.Required(CONF_CLIENT_SECRET): str,
-                }
+                    CONF_CLIENT_ID: reconfigure_entry.data.get(CONF_CLIENT_ID, ""),
+                    CONF_CLIENT_SECRET: reconfigure_entry.data.get(
+                        CONF_CLIENT_SECRET, ""
+                    ),
+                },
             ),
             errors=errors,
-        ) 
+        )
