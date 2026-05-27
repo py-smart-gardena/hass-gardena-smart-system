@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.7] - 2026-05-27
+
+### Added
+
+- Reconfigure config flow to update Husqvarna Application Key and Client Secret without removing the integration
+- `gardena_smart_system.update_credentials` service to validate and save new API credentials (works while the integration is disabled)
+- `gardena_smart_system.start_reconfigure` service to open the credential dialog (works while the integration is disabled)
+- Shared credential validation module with clearer 429 rate-limit handling during setup
+
 ## [3.0.5] - 2026-05-24
 
 ### Fixed

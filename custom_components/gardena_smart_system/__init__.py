@@ -1,16 +1,38 @@
 """Support for Gardena Smart System devices."""
 import logging
 
+import voluptuous as vol
+
+from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import DOMAIN
+from .const import CONF_CONFIG_ENTRY_ID, DOMAIN
 from .coordinator import GardenaSmartSystemCoordinator
+from .credential_validation import (
+    SERVICE_ERROR_MESSAGES,
+    async_validate_gardena_credentials,
+)
 from .services import GardenaServiceManager
 
 _LOGGER = logging.getLogger(__name__)
+
+SERVICE_SCHEMA_UPDATE_CREDENTIALS = vol.Schema(
+    {
+        vol.Optional(CONF_CONFIG_ENTRY_ID): str,
+        vol.Required(CONF_CLIENT_ID): str,
+        vol.Required(CONF_CLIENT_SECRET): str,
+    }
+)
+
+SERVICE_SCHEMA_START_RECONFIGURE = vol.Schema(
+    {
+        vol.Optional(CONF_CONFIG_ENTRY_ID): str,
+    }
+)
 
 PLATFORMS = [
     Platform.LAWN_MOWER,
@@ -34,12 +56,78 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         hass.data[DOMAIN]["service_manager"] = service_manager
         _LOGGER.info("Gardena Smart System services initialized")
 
+    def _get_config_entry(config_entry_id: str | None) -> ConfigEntry:
+        """Resolve the Gardena config entry."""
+        if config_entry_id:
+            entry = hass.config_entries.async_get_entry(config_entry_id)
+            if entry is None or entry.domain != DOMAIN:
+                raise ServiceValidationError(
+                    f"Unknown Gardena config entry: {config_entry_id}"
+                )
+            return entry
+
+        entries = hass.config_entries.async_entries(DOMAIN)
+        if not entries:
+            raise ServiceValidationError("Gardena Smart System is not configured")
+        if len(entries) > 1:
+            raise ServiceValidationError(
+                "config_entry_id is required when multiple Gardena entries exist"
+            )
+        return entries[0]
+
     async def _async_reload_service(call: ServiceCall) -> None:
         """Reload all config entries for this integration."""
         for entry in hass.config_entries.async_entries(DOMAIN):
             await hass.config_entries.async_reload(entry.entry_id)
 
+    async def _async_update_credentials_service(call: ServiceCall) -> None:
+        """Validate and store API credentials (works while integration is disabled)."""
+        entry = _get_config_entry(call.data.get(CONF_CONFIG_ENTRY_ID))
+        user_input = {
+            CONF_CLIENT_ID: call.data[CONF_CLIENT_ID],
+            CONF_CLIENT_SECRET: call.data[CONF_CLIENT_SECRET],
+        }
+        errors = await async_validate_gardena_credentials(user_input)
+        if errors:
+            error_key = errors.get("base", "unknown")
+            message = SERVICE_ERROR_MESSAGES.get(error_key, error_key)
+            raise ServiceValidationError(message)
+
+        hass.config_entries.async_update_entry(entry, data=user_input)
+        if entry.disabled_by is None:
+            await hass.config_entries.async_reload(entry.entry_id)
+            _LOGGER.info("Gardena credentials updated and integration reloaded")
+        else:
+            _LOGGER.info(
+                "Gardena credentials updated for disabled entry %s; "
+                "enable the integration to connect",
+                entry.entry_id,
+            )
+
+    async def _async_start_reconfigure_service(call: ServiceCall) -> None:
+        """Open the credential dialog (works while integration is disabled)."""
+        entry = _get_config_entry(call.data.get(CONF_CONFIG_ENTRY_ID))
+        await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_RECONFIGURE,
+                "entry_id": entry.entry_id,
+            },
+        )
+
     hass.services.async_register(DOMAIN, "reload", _async_reload_service)
+    hass.services.async_register(
+        DOMAIN,
+        "update_credentials",
+        _async_update_credentials_service,
+        schema=SERVICE_SCHEMA_UPDATE_CREDENTIALS,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "start_reconfigure",
+        _async_start_reconfigure_service,
+        schema=SERVICE_SCHEMA_START_RECONFIGURE,
+    )
 
     return True
 

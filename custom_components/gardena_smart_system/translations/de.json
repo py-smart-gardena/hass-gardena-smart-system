@@ -157,7 +157,8 @@
   },
   "config": {
     "abort": {
-      "already_configured": "Der Standort ist bereits konfiguriert"
+      "already_configured": "Der Standort ist bereits konfiguriert",
+      "reconfigure_successful": "API-Zugangsdaten aktualisiert. Die Integration wurde neu geladen."
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen, bitte erneut versuchen.",
@@ -179,6 +180,14 @@
           "client_secret": "Application Secret / Client Secret"
         },
         "title": "Gardena Smart System"
+      },
+      "reconfigure": {
+        "description": "Neue Zugangsdaten der Husqvarna-Developer-App eintragen. Den kurzlebigen Access Token (Bearer) holt Home Assistant automatisch — hier kein manuelles Token nötig. Bestehende Entities bleiben erhalten.",
+        "data": {
+          "client_id": "Application Key / Client ID",
+          "client_secret": "Application Secret / Client Secret"
+        },
+        "title": "Gardena API-Zugangsdaten ändern"
       }
     }
   },
@@ -220,6 +229,14 @@
     "reconnect_websocket": {
       "name": "WebSocket neu verbinden",
       "description": "WebSocket-Verbindung für die Gardena Smart System-Integration erzwingen."
+    },
+    "update_credentials": {
+      "name": "API-Zugangsdaten aktualisieren",
+      "description": "Neue Husqvarna-API-Zugangsdaten prüfen und speichern. Funktioniert auch, wenn die Integration deaktiviert ist."
+    },
+    "start_reconfigure": {
+      "name": "API-Zugangsdaten konfigurieren",
+      "description": "Konfigurationsdialog für Zugangsdaten öffnen. Funktioniert auch, wenn die Integration deaktiviert ist."
     },
     "websocket_diagnostics": {
       "name": "WebSocket-Diagnose",
