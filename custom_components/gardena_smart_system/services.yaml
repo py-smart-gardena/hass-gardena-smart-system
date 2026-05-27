@@ -18,34 +18,6 @@ start_override:
 reload:
   description: Reload the Gardena Smart System integration.
 
-update_credentials:
-  description: Validate and save new Husqvarna API credentials. Works while the integration is disabled.
-  fields:
-    client_id:
-      required: true
-      example: "your-application-key"
-      selector:
-        text:
-    client_secret:
-      required: true
-      example: "your-client-secret"
-      selector:
-        text:
-    config_entry_id:
-      required: false
-      example: "01K9TMC3VVS5NHM567EPR75JN3"
-      selector:
-        text:
-
-start_reconfigure:
-  description: Open the credential configuration dialog. Works while the integration is disabled.
-  fields:
-    config_entry_id:
-      required: false
-      example: "01K9TMC3VVS5NHM567EPR75JN3"
-      selector:
-        text:
-
 websocket_diagnostics:
   description: Get WebSocket connection diagnostics and status information.
   response:

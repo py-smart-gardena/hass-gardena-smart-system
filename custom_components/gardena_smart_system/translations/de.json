@@ -230,14 +230,6 @@
       "name": "WebSocket neu verbinden",
       "description": "WebSocket-Verbindung für die Gardena Smart System-Integration erzwingen."
     },
-    "update_credentials": {
-      "name": "API-Zugangsdaten aktualisieren",
-      "description": "Neue Husqvarna-API-Zugangsdaten prüfen und speichern. Funktioniert auch, wenn die Integration deaktiviert ist."
-    },
-    "start_reconfigure": {
-      "name": "API-Zugangsdaten konfigurieren",
-      "description": "Konfigurationsdialog für Zugangsdaten öffnen. Funktioniert auch, wenn die Integration deaktiviert ist."
-    },
     "websocket_diagnostics": {
       "name": "WebSocket-Diagnose",
       "description": "WebSocket-Verbindungsdiagnose und Statusinformationen abrufen.",

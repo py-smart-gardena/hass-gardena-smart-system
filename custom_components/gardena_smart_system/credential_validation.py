@@ -1,4 +1,4 @@
-"""Shared credential validation for config flow and services."""
+"""Shared credential validation for config flow."""
 from __future__ import annotations
 
 import logging
@@ -12,16 +12,8 @@ from .gardena_client import GardenaAPIError, GardenaSmartSystemClient
 
 _LOGGER = logging.getLogger(__name__)
 
-SERVICE_ERROR_MESSAGES: dict[str, str] = {
-    "invalid_auth": "Invalid Application Key or Client Secret",
-    "no_locations": "No Gardena locations found for these credentials",
-    "too_many_requests": "Gardena API rate limit (429) — try again later",
-    "api_error": "Gardena API error while validating credentials",
-    "unknown": "Unexpected error while validating credentials",
-}
 
-
-def dev_mode_enabled() -> bool:
+def _dev_mode_enabled() -> bool:
     """Return whether development mode is enabled."""
     return os.getenv("GARDENA_DEV_MODE", "false").lower() == "true"
 
@@ -38,7 +30,7 @@ async def async_validate_gardena_credentials(
         client = GardenaSmartSystemClient(
             client_id=user_input[CONF_CLIENT_ID],
             client_secret=user_input[CONF_CLIENT_SECRET],
-            dev_mode=dev_mode_enabled(),
+            dev_mode=_dev_mode_enabled(),
         )
         locations = await client.get_locations()
         if not locations:

@@ -105,14 +105,6 @@
       "name": "Reconnect WebSocket",
       "description": "Force WebSocket reconnection for the Gardena Smart System integration."
     },
-    "update_credentials": {
-      "name": "Update API credentials",
-      "description": "Validate and save new Husqvarna API credentials. Works while the integration is disabled."
-    },
-    "start_reconfigure": {
-      "name": "Configure API credentials",
-      "description": "Open the credential configuration dialog. Works while the integration is disabled."
-    },
     "websocket_diagnostics": {
       "name": "WebSocket Diagnostics",
       "description": "Get WebSocket connection diagnostics and status information.",

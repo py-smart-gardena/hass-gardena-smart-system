@@ -4,12 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.6] - 2026-05-27
+
 ### Added
 
-- Reconfigure config flow to update Husqvarna Application Key and Client Secret without removing the integration
-- `gardena_smart_system.update_credentials` service to validate and save new API credentials (works while the integration is disabled)
-- `gardena_smart_system.start_reconfigure` service to open the credential dialog (works while the integration is disabled)
-- Shared credential validation module with clearer 429 rate-limit handling during setup
+- Reconfigure config flow to update Husqvarna Application Key and Client Secret without removing the integration (#372)
+- Clearer 429 rate-limit error handling during credential validation
+
+### Fixed
+
+- WebSocket reconnection now uses conservative exponential backoff (30s, 60s, 120s... up to 15min) instead of aggressive 5s retries that burned through the Gardena API quota of 700 req/week (#370)
+- WebSocket URL request (`POST /v2/websocket`) now handles 429 responses and respects `Retry-After` header instead of blindly retrying (#370)
 
 ## [3.0.5] - 2026-05-24
 
