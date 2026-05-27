@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [3.0.7] - 2026-05-27
-
 ### Added
 
 - Reconfigure config flow to update Husqvarna Application Key and Client Secret without removing the integration
