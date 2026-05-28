@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.0-beta2] - 2026-05-28
+
+### Fixed
+
+- Fix "API Requests (Week)" diagnostic sensor not appearing — `entity_category` was a string literal instead of `EntityCategory.DIAGNOSTIC` and `device_info` was a plain dict instead of a `DeviceInfo` instance, causing silent registration failure on some HA versions (#370)
+
 ## [3.1.0-beta1] - 2026-05-28
 
 ### Added

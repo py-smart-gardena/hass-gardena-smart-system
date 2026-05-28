@@ -9,6 +9,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -498,17 +499,17 @@ class GardenaAPIUsageSensor(SensorEntity):
     _attr_translation_key = "api_requests_week"
     _attr_icon = "mdi:api"
     _attr_state_class = SensorStateClass.TOTAL
-    _attr_entity_category = "diagnostic"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, entry_id: str) -> None:
         """Initialize the API usage sensor."""
         self.coordinator = coordinator
         self._entry_id = entry_id
         self._attr_unique_id = f"gardena_api_usage_{entry_id}"
-        self._attr_name = "Gardena API Requests (Week)"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"websocket_status_{entry_id}")},
-        }
+        self._attr_name = "API Requests (Week)"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"websocket_status_{entry_id}")},
+        )
 
     @property
     def available(self) -> bool:
