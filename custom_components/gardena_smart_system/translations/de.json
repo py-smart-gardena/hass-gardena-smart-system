@@ -1,6 +1,9 @@
 {
   "entity": {
     "sensor": {
+      "api_requests_week": {
+        "name": "API-Anfragen (Woche)"
+      },
       "mower_error": {
         "name": "Fehlercode",
         "state": {

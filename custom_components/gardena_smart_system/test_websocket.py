@@ -24,6 +24,7 @@ class TestGardenaWebSocketClient:
         }
         auth_manager.client_id = "test-api-key"
         auth_manager._dev_mode = False
+        auth_manager._is_token_valid = lambda: True
 
         mock_session = AsyncMock()
         auth_manager._get_session = AsyncMock(return_value=mock_session)

@@ -1,11 +1,16 @@
 """Authentication management for Gardena Smart System API."""
+from __future__ import annotations
+
 import asyncio
 import logging
 import ssl
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import aiohttp
 from aiohttp import ClientTimeout
+
+if TYPE_CHECKING:
+    from .api_tracker import APIRequestTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +40,7 @@ class GardenaAuthenticationManager:
         self._token_expires_at: Optional[float] = None
         self._auth_lock = asyncio.Lock()
         self._session: Optional[aiohttp.ClientSession] = None
+        self.api_tracker: APIRequestTracker | None = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create HTTP session."""
@@ -83,6 +89,7 @@ class GardenaAuthenticationManager:
                 data=data,
                 headers=headers,
             ) as response:
+                self._track_request("POST", "/v1/oauth2/token (refresh)", response.status)
                 if response.status == 200:
                     token_data = await response.json()
                     self._access_token = token_data.get("access_token")
@@ -147,8 +154,9 @@ class GardenaAuthenticationManager:
                     data=data,
                     headers=headers,
                 ) as response:
+                    self._track_request("POST", "/v1/oauth2/token (auth)", response.status)
                     _LOGGER.debug(f"Auth response status: {response.status}, body: {await response.text()}")
-                    
+
                     if response.status == 200:
                         token_data = await response.json()
                         self._access_token = token_data.get("access_token")
@@ -177,6 +185,11 @@ class GardenaAuthenticationManager:
             headers["Authorization"] = f"Bearer {self._access_token}"
         
         return headers
+
+    def _track_request(self, method: str, endpoint: str, status_code: int | None) -> None:
+        """Record an API request in the shared tracker."""
+        if self.api_tracker:
+            self.api_tracker.record(method, endpoint, status_code, source="auth")
 
     async def close(self) -> None:
         """Close the authentication manager."""

@@ -100,6 +100,8 @@ async def async_setup_entry(
                     if sensor_service.light_intensity is not None:
                         entities.append(GardenaLightSensor(coordinator, device, sensor_service))
 
+    # Add API usage diagnostic sensor (one per config entry)
+    entities.append(GardenaAPIUsageSensor(coordinator, entry.entry_id))
 
     _LOGGER.debug(f"Created {len(entities)} sensor entities")
     async_add_entities(entities)
@@ -487,5 +489,51 @@ class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
                 except (ValueError, TypeError):
                     return None
         return None
+
+
+class GardenaAPIUsageSensor(SensorEntity):
+    """Sensor tracking Gardena API usage against the 700 requests/week quota."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "api_requests_week"
+    _attr_icon = "mdi:api"
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_entity_category = "diagnostic"
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, entry_id: str) -> None:
+        """Initialize the API usage sensor."""
+        self.coordinator = coordinator
+        self._entry_id = entry_id
+        self._attr_unique_id = f"gardena_api_usage_{entry_id}"
+        self._attr_name = "Gardena API Requests (Week)"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, f"websocket_status_{entry_id}")},
+        }
+
+    @property
+    def available(self) -> bool:
+        """Always available."""
+        return True
+
+    @property
+    def native_value(self) -> int:
+        """Return the number of API requests this week."""
+        return self.coordinator.client.api_tracker.requests_this_week
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return diagnostic attributes with request breakdown."""
+        tracker = self.coordinator.client.api_tracker
+        attrs: dict[str, Any] = {
+            "requests_today": tracker.requests_today,
+            "requests_this_week": tracker.requests_this_week,
+            "quota_weekly": 700,
+            "requests_by_endpoint": tracker.requests_by_endpoint(),
+            "recent_requests": tracker.recent_requests,
+        }
+        return attrs
+
+    async def async_update(self) -> None:
+        """No-op: value is computed on read from the shared tracker."""
 
 

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- New diagnostic sensor "API Requests (Week)" tracking all outgoing Husqvarna API calls with breakdown by endpoint, daily/weekly counts, and recent request history — helps users monitor quota consumption (700 req/week limit) (#370)
+
+### Fixed
+
+- WebSocket reconnection no longer calls `authenticate()` when the token is still valid, avoiding unnecessary token refresh API calls (#370)
+
 ## [3.0.6] - 2026-05-27
 
 ### Added

@@ -159,7 +159,8 @@ class GardenaWebSocketClient:
             return
 
         try:
-            await self.auth_manager.authenticate()
+            if not self.auth_manager._is_token_valid():
+                await self.auth_manager.authenticate()
 
             headers = self.auth_manager.get_auth_headers()
             session = await self.auth_manager._get_session()
@@ -184,6 +185,7 @@ class GardenaWebSocketClient:
                     }
                 },
             ) as response:
+                self._track_request("POST", "/v2/websocket", response.status)
                 if response.status == 201:
                     data = await response.json()
                     self.websocket_url = data["data"]["attributes"]["url"]
@@ -205,6 +207,13 @@ class GardenaWebSocketClient:
         except Exception as e:
             _LOGGER.error(f"Error getting WebSocket URL: {e}")
             self.websocket_url = None
+
+    def _track_request(self, method: str, endpoint: str, status_code: int | None) -> None:
+        """Record an API request in the shared tracker."""
+        if self.coordinator and hasattr(self.coordinator, "client"):
+            self.coordinator.client.api_tracker.record(
+                method, endpoint, status_code, source="websocket"
+            )
 
     def _get_websocket_headers(self) -> Dict[str, str]:
         """Get headers for WebSocket connection."""

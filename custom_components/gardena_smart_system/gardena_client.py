@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 from aiohttp import ClientTimeout
 
+from .api_tracker import APIRequestTracker
 from .auth import GardenaAuthError, GardenaAuthenticationManager
 from .models import GardenaDataParser, GardenaLocation
 
@@ -51,6 +52,8 @@ class GardenaSmartSystemClient:
     def __init__(self, client_id: str, client_secret: str, api_key: Optional[str] = None, dev_mode: bool = False) -> None:
         """Initialize the client."""
         self.auth_manager = GardenaAuthenticationManager(client_id, client_secret, api_key, dev_mode)
+        self.api_tracker = APIRequestTracker()
+        self.auth_manager.api_tracker = self.api_tracker
         self._dev_mode = dev_mode
         self._session: Optional[aiohttp.ClientSession] = None
         self._request_lock = asyncio.Lock()
@@ -98,9 +101,11 @@ class GardenaSmartSystemClient:
                         json_data = json.dumps(data, ensure_ascii=False)
                         _LOGGER.debug(f"Request data: {json_data}")
                         async with session.request(method, url, data=json_data, headers=headers) as response:
+                            self.api_tracker.record(method, endpoint, response.status, source="command" if is_command else "client")
                             return await self._handle_response(response, attempt, is_command)
                     else:
                         async with session.request(method, url, headers=headers) as response:
+                            self.api_tracker.record(method, endpoint, response.status, source="client")
                             return await self._handle_response(response, attempt, is_command)
 
             except _ShouldRetry as exc:
