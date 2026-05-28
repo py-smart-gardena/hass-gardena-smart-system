@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.0-beta1] - 2026-05-28
+
 ### Added
 
 - New diagnostic sensor "API Requests (Week)" tracking all outgoing Husqvarna API calls with breakdown by endpoint, daily/weekly counts, and recent request history — helps users monitor quota consumption (700 req/week limit) (#370)
