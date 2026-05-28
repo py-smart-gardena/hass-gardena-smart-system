@@ -140,3 +140,19 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Beta fixes and stabilization
+
+## [2.0.0] - 2026-04-25
+
+### Breaking Changes
+
+- **Valve entities migrated from `switch` to `valve` platform** — Water Control and Smart Irrigation Control devices are now exposed as `valve.*` entities instead of `switch.*` entities. This uses the native Home Assistant valve platform (introduced in HA 2023.9) which better represents these devices. Automations using `switch.turn_on`/`switch.turn_off` must be updated to use `valve.open_valve`/`valve.close_valve` with the new entity IDs.
+- **Complete rewrite of the integration** — All entity unique IDs have changed. Existing entities will appear as unavailable and new entities will be created. Dashboards and automations must be updated to reference the new entity IDs.
+
+### Added
+
+- Modern Home Assistant architecture (DataUpdateCoordinator, config flow)
+- WebSocket-based real-time updates instead of polling
+- Native `valve` entities with proper open/close semantics
+- Native `lawn_mower` entities (migrated from `vacuum` in 1.x)
+- Configurable watering duration for valve entities
+- `number` entities for adjusting watering duration per valve
