@@ -41,6 +41,14 @@ SERVICE_SCHEMA_VALVE = vol.Schema({
     ),
 })
 
+SERVICE_SCHEMA_VALVE_PAUSE = vol.Schema({
+    vol.Optional("device_id"): cv.string,
+    vol.Optional("service_id"): cv.string,
+    vol.Optional("duration", default=1800): vol.All(
+        cv.positive_int, vol.Range(min=60)
+    ),
+})
+
 SERVICE_SCHEMA_VALVE_BASE = vol.Schema({
     vol.Optional("device_id"): cv.string,
     vol.Optional("service_id"): cv.string,
@@ -120,6 +128,9 @@ class ValveCommand(GardenaCommand):
         self.attributes["command"] = command
         if seconds and command == "START_SECONDS_TO_OVERRIDE":
             self.attributes["seconds"] = seconds
+        elif seconds and command == "PAUSE":
+            self.attributes["seconds"] = seconds
+
 
 
 class GardenaServiceManager:
@@ -207,7 +218,7 @@ class GardenaServiceManager:
             DOMAIN,
             "valve_pause",
             self._service_valve_pause,
-            schema=SERVICE_SCHEMA_VALVE_BASE,
+            schema=SERVICE_SCHEMA_VALVE_PAUSE,
         )
         self.hass.services.async_register(
             DOMAIN,
@@ -476,7 +487,8 @@ class GardenaServiceManager:
         if not service_id:
             return
 
-        command = ValveCommand(service_id, "PAUSE")
+        duration = call.data["duration"]
+        command = ValveCommand(service_id, "PAUSE", seconds=duration)
         await self._send_command(service_id, command)
 
     async def _service_valve_unpause(self, call: ServiceCall) -> None:
