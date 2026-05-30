@@ -223,9 +223,29 @@ class GardenaSmartSystemCoordinator(DataUpdateCoordinator[Dict[str, GardenaLocat
             _LOGGER.error(f"Error updating service attributes: {e}")
 
     async def _async_update_data(self) -> Dict[str, GardenaLocation]:
-        """Update data from Gardena Smart System - only called once at startup."""
+        """Update data from Gardena Smart System.
+
+        The REST API has a hard quota of 700 requests/week. A full load costs
+        one ``GET /locations`` plus one ``GET /locations/{id}`` per location, so
+        we only ever hit REST once, at startup. Every subsequent state change
+        arrives over the WebSocket and is applied to ``self.locations`` in place
+        (see ``_update_service_attributes``).
+
+        ``async_request_refresh()`` is still called after each device command to
+        push the (already up to date) data to entities. Once the initial load
+        has happened we must NOT re-fetch from REST here, otherwise each valve
+        open/close would silently cost three API requests instead of one and
+        quickly exhaust the weekly quota (see issue #370).
+        """
+        if self._initial_data_loaded:
+            _LOGGER.debug(
+                "Refresh requested after initial load; serving cached data "
+                "(state is kept current via WebSocket, no REST call made)"
+            )
+            return self.locations
+
         _LOGGER.debug("Starting initial data load from Gardena Smart System")
-        
+
         try:
             # Fetch locations only once at startup
             locations_list = await self.client.get_locations()

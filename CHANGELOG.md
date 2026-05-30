@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.0-beta3] - 2026-05-31
+
+### Fixed
+
+- Drastically reduce REST API usage: device commands (valve open/close, mower, power socket, buttons) no longer trigger a full `GET /locations` + `GET /locations/{id}` re-fetch on every action. State is already kept current via the WebSocket, so each command now costs a single `PUT /command` request instead of three. Previously a few watering cycles per day could exhaust the 700 requests/week quota (#370)
+
 ## [3.1.0-beta2] - 2026-05-28
 
 ### Fixed
