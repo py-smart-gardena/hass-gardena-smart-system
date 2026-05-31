@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback, async_get
 from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
-from .const import DOMAIN, MOWER_ACTIVITY_MAP
+from .const import DOMAIN, MOWER_ACTIVITY_MAP, MOWER_ERROR_STATES
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
 
@@ -123,9 +123,22 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             return LawnMowerActivity.ERROR
         
         activity = current_service.activity
-        mapped_activity = MOWER_ACTIVITY_MAP.get(activity, LawnMowerActivity.ERROR)
-        _LOGGER.debug(f"Lawn mower {self._attr_name} activity: {activity} -> {mapped_activity}")
-        return mapped_activity
+        mapped_activity = MOWER_ACTIVITY_MAP.get(activity)
+        if mapped_activity is not None:
+            _LOGGER.debug(f"Lawn mower {self._attr_name} activity: {activity} -> {mapped_activity}")
+            return mapped_activity
+
+        # Unmapped or NONE activity. Only report ERROR if the Gardena service
+        # state actually flags a problem. Otherwise (e.g. the mower stopped in
+        # the garden out of battery with lastErrorCode NO_MESSAGE) fall back to
+        # PAUSED so the entity does not contradict the mower_error sensor. (#375)
+        state = current_service.state
+        fallback = LawnMowerActivity.ERROR if state in MOWER_ERROR_STATES else LawnMowerActivity.PAUSED
+        _LOGGER.debug(
+            f"Lawn mower {self._attr_name} activity: {activity} (unmapped), "
+            f"state: {state} -> {fallback}"
+        )
+        return fallback
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

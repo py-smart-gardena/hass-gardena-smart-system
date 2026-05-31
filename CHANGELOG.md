@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-05-31
+
+### Fixed
+
+- Lawn mower no longer shows state `error` while the `mower_error` sensor reports "no error". When the mower reports activity `NONE` (or an unmapped activity) — e.g. stopped in the garden out of battery on a disconnected area — the entity now falls back to `paused` unless the Gardena service `state` is actually `ERROR`/`WARNING`, so the entity state and the error sensor stay consistent (#375)
+
 ## [3.1.0] - 2026-05-31
 
 ### Added
