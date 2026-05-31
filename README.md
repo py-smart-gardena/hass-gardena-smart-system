@@ -63,12 +63,12 @@ This ensures a clean installation and prevents any conflicts between the old and
 - **Power Socket** (`switch`) : ✅ Fully tested and functional
   - On/off control working
   - Real-time status updates
+- **Smart Water Control** (`valve`) : ✅ Tested and functional
+  - Single valve control working (confirmed on Gardena 19031-20)
+  - Open/close operations and real-time status updates
 
 ### ⚠️ Not Yet Tested
 
-- **Water Control** (`valve`) : ⚠️ Implementation complete but not tested
-  - Single valve control implementation ready
-  - Needs real device testing
 - **Sensors** (`sensor`) : ⚠️ Implementation complete but not tested
   - Temperature, humidity, light sensors
   - Soil sensors implementation ready

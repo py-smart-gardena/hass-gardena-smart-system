@@ -4,26 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [3.1.0-beta3] - 2026-05-31
-
-### Fixed
-
-- Drastically reduce REST API usage: device commands (valve open/close, mower, power socket, buttons) no longer trigger a full `GET /locations` + `GET /locations/{id}` re-fetch on every action. State is already kept current via the WebSocket, so each command now costs a single `PUT /command` request instead of three. Previously a few watering cycles per day could exhaust the 700 requests/week quota (#370)
-
-## [3.1.0-beta2] - 2026-05-28
-
-### Fixed
-
-- Fix "API Requests (Week)" diagnostic sensor not appearing — `entity_category` was a string literal instead of `EntityCategory.DIAGNOSTIC` and `device_info` was a plain dict instead of a `DeviceInfo` instance, causing silent registration failure on some HA versions (#370)
-
-## [3.1.0-beta1] - 2026-05-28
+## [3.1.0] - 2026-05-31
 
 ### Added
 
 - New diagnostic sensor "API Requests (Week)" tracking all outgoing Husqvarna API calls with breakdown by endpoint, daily/weekly counts, and recent request history — helps users monitor quota consumption (700 req/week limit) (#370)
 
+### Changed
+
+- Smart Water Control is now marked as tested and functional in the README — confirmed working on Gardena 19031-20 (#370)
+
 ### Fixed
 
+- Drastically reduce REST API usage: device commands (valve open/close, mower, power socket, buttons) no longer trigger a full `GET /locations` + `GET /locations/{id}` re-fetch on every action. State is already kept current via the WebSocket, so each command now costs a single `PUT /command` request instead of three. Previously a few watering cycles per day could exhaust the 700 requests/week quota (#370)
+- Fix "API Requests (Week)" diagnostic sensor not appearing — `entity_category` was a string literal instead of `EntityCategory.DIAGNOSTIC` and `device_info` was a plain dict instead of a `DeviceInfo` instance, causing silent registration failure on some HA versions (#370)
 - WebSocket reconnection no longer calls `authenticate()` when the token is still valid, avoiding unnecessary token refresh API calls (#370)
 
 ## [3.0.6] - 2026-05-27

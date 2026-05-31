@@ -12,8 +12,11 @@ Release a new version of the integration.
 3. Update the version in `custom_components/gardena_smart_system/manifest.json`.
 
 4. Update `CHANGELOG.md`:
-   - Replace `## [Unreleased]` with `## [<version>] - YYYY-MM-DD` (today's date).
-   - Add a fresh empty `## [Unreleased]` section above it.
+   - **Beta release:** Replace `## [Unreleased]` with `## [<version>] - YYYY-MM-DD` (today's date). Add a fresh empty `## [Unreleased]` section above it.
+   - **Stable release:** A stable version supersedes all the beta versions that led up to it (e.g. `3.1.0` follows `3.1.0-beta1/2/3`). Merge the `[Unreleased]` section **and every `X.Y.Z-betaN` section since the last stable release** into a single `## [<version>] - YYYY-MM-DD` section:
+     - Combine all entries under shared `### Added` / `### Changed` / `### Fixed` / `### Breaking Changes` headings (in that order), de-duplicating any entries that were carried across betas.
+     - Remove the now-merged individual `-betaN` sections so the stable version is the single authoritative entry for the release.
+     - Add a fresh empty `## [Unreleased]` section above it.
 
 5. Commit with message: `chore: bump version to <version>`
 
