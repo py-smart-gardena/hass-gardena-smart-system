@@ -12,7 +12,7 @@ from .models import GardenaDevice, GardenaMowerService
 class TestGardenaLawnMowerActivity:
     """Test the activity mapping of GardenaLawnMower."""
 
-    def _make_entity(self, activity, state):
+    def _make_entity(self, activity, state, last_error_code="NO_MESSAGE"):
         """Build a lawn mower entity wired to a mower service with given values."""
         mower_service = GardenaMowerService(
             id="mower-1",
@@ -20,7 +20,7 @@ class TestGardenaLawnMowerActivity:
             device_id="device-1",
             state=state,
             activity=activity,
-            last_error_code="NO_MESSAGE",
+            last_error_code=last_error_code,
         )
 
         device = Mock(spec=GardenaDevice)
@@ -72,7 +72,24 @@ class TestGardenaLawnMowerActivity:
         assert entity.activity == LawnMowerActivity.PAUSED
 
     @pytest.mark.parametrize("state", ["ERROR", "WARNING"])
-    def test_none_activity_with_error_state_is_error(self, state):
-        """NONE activity is reported as ERROR when the service state flags one."""
-        entity = self._make_entity("NONE", state=state)
+    def test_none_activity_with_actionable_error_is_error(self, state):
+        """NONE activity is ERROR when the state flags one and the code is actionable."""
+        entity = self._make_entity(
+            "NONE", state=state, last_error_code="WHEEL_MOTOR_BLOCKED_LEFT"
+        )
         assert entity.activity == LawnMowerActivity.ERROR
+
+    @pytest.mark.parametrize("state", ["WARNING", "ERROR"])
+    def test_none_activity_with_informational_code_is_not_error(self, state):
+        """Informational last_error_code must not be reported as ERROR.
+
+        Regression test for #375: a mower that has reached its daily operating
+        limit reports activity NONE, state WARNING, last_error_code
+        PARKED_DAILY_LIMIT_REACHED. The mower_error sensor treats that code as
+        "no error", so the entity must not contradict it with ERROR even though
+        the service state is WARNING.
+        """
+        entity = self._make_entity(
+            "NONE", state=state, last_error_code="PARKED_DAILY_LIMIT_REACHED"
+        )
+        assert entity.activity == LawnMowerActivity.PAUSED
