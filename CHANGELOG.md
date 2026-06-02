@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-06-03
+
 ### Fixed
 
 - Lawn mower no longer shows state `error` when it has reached its daily operating limit. Gardena reports this battery-protection state as activity `NONE` with service state `WARNING` and `last_error_code` `PARKED_DAILY_LIMIT_REACHED` — an informational code the `mower_error` sensor already treats as "no error". The entity now suppresses `error` for any informational `last_error_code` (even when the service state is `WARNING`/`ERROR`) and falls back to `paused`, so the entity state and the error sensor stay consistent. Follow-up to the earlier #375 fix, which only checked the service `state` (#375)
