@@ -9,7 +9,11 @@ import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
 
 from .auth import GardenaAuthenticationManager
-from .const import DOMAIN, WEBSOCKET_MAX_RECONNECT_ATTEMPTS
+from .const import (
+    DOMAIN,
+    WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
+    WEBSOCKET_SLOW_RECONNECT_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -345,6 +349,13 @@ class GardenaWebSocketClient:
         The Gardena API has a hard quota of 700 requests/week. Each reconnection
         attempt costs at least one POST to /v2/websocket, so we use long delays
         to avoid burning through the quota during instability.
+
+        The client never permanently gives up: after the fast exponential-backoff
+        attempts are exhausted it keeps retrying at a slow, quota-friendly cadence
+        (``WEBSOCKET_SLOW_RECONNECT_INTERVAL``). Previously it stopped reconnecting
+        entirely, which froze all entity values (battery, mower state, ...) until
+        Home Assistant was restarted — the WebSocket is the only refresh path once
+        the initial REST load has happened (see issue #378).
         """
         import time
 
@@ -361,29 +372,35 @@ class GardenaWebSocketClient:
 
         self.reconnect_attempts += 1
 
-        if self.reconnect_attempts > WEBSOCKET_MAX_RECONNECT_ATTEMPTS:
-            _LOGGER.error("Max reconnection attempts reached, giving up")
-            return
-
         # If we're in a rate-limit backoff, use that as minimum delay
         now = time.monotonic()
         rate_limit_remaining = max(0, self._rate_limited_until - now)
 
-        # Exponential backoff: 30s, 60s, 120s, 240s, 480s, ...
-        # Capped at 900s (15 min) to eventually recover
-        backoff_delay = min(900, 30 * (2 ** (self.reconnect_attempts - 1)))
-        delay = max(backoff_delay, rate_limit_remaining)
-
-        if self.reconnect_attempts == 1:
-            _LOGGER.info(
-                "WebSocket disconnected, reconnecting in %ds (attempt %d/%d)",
-                delay, self.reconnect_attempts, WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
+        if self.reconnect_attempts > WEBSOCKET_MAX_RECONNECT_ATTEMPTS:
+            # Fast attempts exhausted: keep retrying slowly so data recovers
+            # on its own without a restart, while staying within the API quota.
+            delay = max(WEBSOCKET_SLOW_RECONNECT_INTERVAL, rate_limit_remaining)
+            _LOGGER.warning(
+                "WebSocket still down after %d attempts; retrying every %ds "
+                "until it recovers",
+                WEBSOCKET_MAX_RECONNECT_ATTEMPTS, delay,
             )
         else:
-            _LOGGER.warning(
-                "WebSocket reconnection attempt %d/%d in %ds",
-                self.reconnect_attempts, WEBSOCKET_MAX_RECONNECT_ATTEMPTS, delay,
-            )
+            # Exponential backoff: 30s, 60s, 120s, 240s, 480s, ...
+            # Capped at 900s (15 min) to eventually recover
+            backoff_delay = min(900, 30 * (2 ** (self.reconnect_attempts - 1)))
+            delay = max(backoff_delay, rate_limit_remaining)
+
+            if self.reconnect_attempts == 1:
+                _LOGGER.info(
+                    "WebSocket disconnected, reconnecting in %ds (attempt %d/%d)",
+                    delay, self.reconnect_attempts, WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
+                )
+            else:
+                _LOGGER.warning(
+                    "WebSocket reconnection attempt %d/%d in %ds",
+                    self.reconnect_attempts, WEBSOCKET_MAX_RECONNECT_ATTEMPTS, delay,
+                )
 
         self.reconnect_task = asyncio.create_task(self._delayed_reconnect(delay))
 

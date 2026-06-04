@@ -111,7 +111,15 @@ MOWER_INFORMATIONAL_CODES: Final = frozenset({
 
 # WebSocket configuration
 WEBSOCKET_RECONNECT_DELAY: Final = 5  # seconds
+# Number of fast (exponential-backoff) reconnection attempts before falling back
+# to a slow, quota-friendly retry cadence. The client never permanently gives up:
+# after this many attempts it keeps retrying at WEBSOCKET_SLOW_RECONNECT_INTERVAL
+# so stale data eventually recovers without a Home Assistant restart (#378).
 WEBSOCKET_MAX_RECONNECT_ATTEMPTS: Final = 10
+# Slow reconnection cadence (seconds) used once the fast attempts are exhausted.
+# One attempt/hour is ~168 POST /v2/websocket requests/week, well within the
+# 700 requests/week Gardena API quota.
+WEBSOCKET_SLOW_RECONNECT_INTERVAL: Final = 3600
 
 # Valve duration configuration
 CONF_VALVE_DURATIONS: Final = "valve_durations"

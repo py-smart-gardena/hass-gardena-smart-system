@@ -200,15 +200,34 @@ class TestGardenaWebSocketClient:
             pass
 
     @pytest.mark.asyncio
-    async def test_schedule_reconnect_max_attempts(self, websocket_client):
-        """Test max reconnection attempts."""
-        websocket_client.reconnect_attempts = 10
+    async def test_schedule_reconnect_beyond_max_keeps_retrying(self, websocket_client):
+        """After the fast attempts are exhausted, keep retrying slowly (#378).
+
+        The WebSocket is the only refresh path once the initial REST load has
+        happened, so the client must never give up permanently — otherwise all
+        entity values freeze until Home Assistant is restarted.
+        """
+        from .const import (
+            WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
+            WEBSOCKET_SLOW_RECONNECT_INTERVAL,
+        )
+
+        websocket_client.reconnect_attempts = WEBSOCKET_MAX_RECONNECT_ATTEMPTS
         websocket_client._shutdown = False
         websocket_client.reconnect_task = None
 
-        await websocket_client._schedule_reconnect()
+        with patch.object(websocket_client, "_delayed_reconnect", new_callable=AsyncMock) as mock_delayed:
+            await websocket_client._schedule_reconnect()
 
-        assert websocket_client.reconnect_task is None
+        # A reconnection is still scheduled, at the slow cadence.
+        assert websocket_client.reconnect_task is not None
+        mock_delayed.assert_called_once_with(WEBSOCKET_SLOW_RECONNECT_INTERVAL)
+
+        websocket_client.reconnect_task.cancel()
+        try:
+            await websocket_client.reconnect_task
+        except asyncio.CancelledError:
+            pass
 
     @pytest.mark.asyncio
     async def test_start_already_running(self, websocket_client):

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.3] - 2026-06-04
+
+### Fixed
+
+- Entity values (battery level, mower state, sensor readings, ...) no longer freeze indefinitely until a Home Assistant restart. The integration refreshes state only through the Gardena WebSocket after the initial load, and the client used to give up reconnecting permanently after 10 failed attempts — so a transient outage during one of Gardena's routine reconnect cycles left every value stuck. The WebSocket client now keeps retrying at a slow, quota-friendly cadence (once per hour) until it recovers, so data resumes updating on its own (#378)
+
 ## [3.1.2] - 2026-06-03
 
 ### Fixed
