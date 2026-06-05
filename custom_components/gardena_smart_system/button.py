@@ -40,6 +40,8 @@ async def async_setup_entry(
                     entities.append(GardenaStartOverrideButton(coordinator, device, mower_service))
                     # Return to Dock button
                     entities.append(GardenaReturnToDockButton(coordinator, device, mower_service))
+                    # Park button (return to dock without schedule)
+                    entities.append(GardenaParkButton(coordinator, device, mower_service))
 
 
     _LOGGER.info(f"Created {len(entities)} button entities")
@@ -160,4 +162,40 @@ class GardenaReturnToDockButton(GardenaEntity, ButtonEntity):
         else:
             _LOGGER.error(f"No mower service available for {self._attr_name}")
 
+class GardenaParkButton(GardenaEntity, ButtonEntity):
+    """Representation of a Gardena Park button (return to dock without schedule resume)."""
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, mower_service) -> None:
+        """Initialize the Gardena Park Until Further Notice button."""
+        super().__init__(coordinator, device, "MOWER")
+        self._attr_name = f"{device.name} Park Until Further Notice"
+        self._mower_service = mower_service
+        self._attr_unique_id = f"{device.id}_park"
+        self._attr_icon = "mdi:home-lock"
+        _LOGGER.debug(f"Initialized park button: {self._attr_name}")
+
+    async def async_press(self) -> None:
+        """Handle the button press - Park until further notice."""
+        _LOGGER.debug(f"PARK UNTIL FURTHER NOTICE button pressed for {self._attr_name}")
+        _LOGGER.debug(f"Parking {self.device.name}")
+
+        if self._mower_service:
+            command_data = {
+                "data": {
+                    "id": "park_button",
+                    "type": "MOWER_CONTROL",
+                    "attributes": {
+                        "command": "PARK_UNTIL_FURTHER_NOTICE",
+                    },
+                }
+            }
+            _LOGGER.debug(f"Sending park command")
+            try:
+                await self.coordinator.client.send_command(self._mower_service.id, command_data)
+                await self.coordinator.async_request_refresh()
+            except Exception as e:
+                _LOGGER.error(f"Error in park button for {self._attr_name}: {e}")
+                raise
+        else:
+            _LOGGER.error(f"No mower service available for {self._attr_name}")
 
