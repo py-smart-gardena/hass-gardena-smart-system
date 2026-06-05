@@ -82,6 +82,17 @@ valve_pause:
       example: "d8a1faef-2ee3-421d-a3f8-f8ed577c2ad3:2"
       selector:
         text:
+    duration:
+      description: Duration in seconds (must be a multiple of 60).
+      required: false
+      example: "1800"
+      default: "1800"
+      selector:
+        number:
+          min: 60
+          max: 14400
+          unit_of_measurement: seconds
+          mode: box
 
 valve_unpause:
   description: Resume automatic valve operation.
