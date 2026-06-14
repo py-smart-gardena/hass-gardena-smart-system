@@ -18,6 +18,7 @@ from .const import (
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     MOWER_INFORMATIONAL_CODES,
+    VALVE_INFORMATIONAL_CODES,
 )
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
@@ -74,6 +75,8 @@ async def async_setup_entry(
             if "VALVE" in device.services:
                 valve_services = device.services["VALVE"]
                 for valve_service in valve_services:
+                    _LOGGER.debug(f"processing valve service: {valve_service}")
+                    entities.append(GardenaValveErrorSensor(coordinator, device, valve_service))
                     entities.append(GardenaValveRemainingTimeSensor(coordinator, device, valve_service))
 
             # Add sensor entities if available
@@ -490,6 +493,59 @@ class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
                 except (ValueError, TypeError):
                     return None
         return None
+
+class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
+    """Representation of a Gardena valve error code sensor."""
+
+    _attr_translation_key = "mower_error"
+    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENUM
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the valve error sensor."""
+        super().__init__(coordinator, device, "VALVE")
+        self._valve_service = valve_service
+        self._device_id = device.id
+        valve_name = valve_service.name or device.name
+        self._attr_name = valve_name
+        self._attr_unique_id = f"{device.id}_{valve_service.id}_last_error_code"
+        self._attr_icon = "mdi:alert-circle-outline"
+        self._attr_options = [
+            "no_message", "concurrent_limit_reached", "not_connected", "valve_current_max_exceeded", "total_current_max_exceeded", 
+            "watering_canceled", "master_valve", "watering_duration_too_short", "valve_broken", "frost_prevents_starting", 
+            "low_battery_prevents_starting", "valve_power_supply_failed", "unknown"
+        ]
+
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self._valve_service.id:
+                    return service
+        return None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the last error code, or 'no_message' for informational states."""
+        current_service = self._get_current_valve_service()
+        if not current_service:
+            return None
+        error_code = current_service.last_error_code
+        if error_code:
+            code = error_code.lower()
+            if code in VALVE_INFORMATIONAL_CODES:
+                return "no_message"
+            return code
+        return "no_message"
+
+    @property
+    def icon(self) -> str:
+        """Return icon based on error state."""
+        value = self.native_value
+        if value and value != "no_message":
+            return "mdi:alert-circle"
+        return "mdi:check-circle-outline"
 
 
 class GardenaAPIUsageSensor(SensorEntity):
