@@ -75,7 +75,6 @@ async def async_setup_entry(
             if "VALVE" in device.services:
                 valve_services = device.services["VALVE"]
                 for valve_service in valve_services:
-                    _LOGGER.debug(f"processing valve service: {valve_service}")
                     entities.append(GardenaValveErrorSensor(coordinator, device, valve_service))
                     entities.append(GardenaValveRemainingTimeSensor(coordinator, device, valve_service))
 
