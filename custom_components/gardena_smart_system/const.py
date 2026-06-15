@@ -124,6 +124,12 @@ WEBSOCKET_SLOW_RECONNECT_INTERVAL: Final = 3600
 # Valve duration configuration
 CONF_VALVE_DURATIONS: Final = "valve_durations"
 DEFAULT_VALVE_DURATION_SECONDS: Final = 3600
+# Valve informational codes — operational states that are NOT errors.
+# The valve_error sensor returns "no_message" when last_error_code is in this set
+# so that user automations trigger only on real actionable errors.
+VALVE_INFORMATIONAL_CODES: Final = frozenset({
+    "no_message",                   # Already "no error"
+})
 
 # Attribute names
 ATTR_BATTERY_STATE: Final = "battery_state"
