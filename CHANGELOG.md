@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Device command failures now raise `HomeAssistantError`, so automations and scripts can use `continue_on_error: true` after a transient Gardena cloud 5xx. Custom services no longer swallow the error and pretend the command succeeded (#390)
+
 ## [3.1.3] - 2026-06-04
 
 ### Fixed

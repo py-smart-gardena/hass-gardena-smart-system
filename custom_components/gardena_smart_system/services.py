@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 import voluptuous as vol
 
@@ -333,19 +334,26 @@ class GardenaServiceManager:
         return None
 
     async def _send_command(self, service_id: str, command: GardenaCommand) -> bool:
-        """Send command to device."""
+        """Send command to device.
+
+        Command failures raise HomeAssistantError (via GardenaCommandError)
+        so automations can use continue_on_error (issue #390).
+        """
         coordinator = self._get_coordinator(service_id.split(":")[0] if ":" in service_id else service_id)
         if not coordinator:
-            _LOGGER.error("No coordinator found for device")
-            return False
-        
+            raise HomeAssistantError("No coordinator found for device")
+
         try:
             await coordinator.client.send_command(service_id, command.to_dict())
             _LOGGER.debug(f"Command {command.command_type} sent successfully to {service_id}")
             return True
+        except HomeAssistantError:
+            raise
         except Exception as e:
             _LOGGER.error(f"Failed to send command {command.command_type} to {service_id}: {e}")
-            return False
+            raise HomeAssistantError(
+                f"Failed to send command {command.command_type} to {service_id}: {e}"
+            ) from e
 
     # Mower services
     async def _service_mower_start(self, call: ServiceCall) -> None:

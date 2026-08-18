@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 from aiohttp import ClientTimeout
+from homeassistant.exceptions import HomeAssistantError
 
 from .api_tracker import APIRequestTracker
 from .auth import GardenaAuthError, GardenaAuthenticationManager
@@ -27,8 +28,12 @@ class GardenaAPIError(Exception):
         self.status_code = status_code
 
 
-class GardenaCommandError(Exception):
-    """Command-specific error."""
+class GardenaCommandError(HomeAssistantError):
+    """Command-specific error.
+
+    Subclass of HomeAssistantError so automations can use continue_on_error
+    when a device command fails after retries (issue #390).
+    """
 
     def __init__(self, message: str, status_code: Optional[int] = None, command_id: Optional[str] = None):
         """Initialize the exception."""
@@ -243,7 +248,7 @@ class GardenaSmartSystemClient:
             raise
         except Exception as e:
             _LOGGER.error(f"Failed to send command to service {service_id}: {e}")
-            raise
+            raise GardenaCommandError(str(e)) from e
 
     async def close(self) -> None:
         """Close the client."""
