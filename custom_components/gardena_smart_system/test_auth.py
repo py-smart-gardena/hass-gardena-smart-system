@@ -614,3 +614,27 @@ class TestConfigFlowAuthentication:
         finally:
             # Restore original class
             credential_validation.GardenaSmartSystemClient = original_client
+
+
+class TestDevModeEnabled:
+    """SSL verification is on unless GARDENA_DEV_MODE=true."""
+
+    def test_dev_mode_off_by_default(self, monkeypatch):
+        monkeypatch.delenv("GARDENA_DEV_MODE", raising=False)
+        from .credential_validation import dev_mode_enabled
+
+        assert dev_mode_enabled() is False
+
+    def test_dev_mode_on_when_env_set(self, monkeypatch):
+        monkeypatch.setenv("GARDENA_DEV_MODE", "true")
+        from .credential_validation import dev_mode_enabled
+
+        assert dev_mode_enabled() is True
+
+    def test_setup_entry_does_not_hardcode_dev_mode(self):
+        """Regression: async_setup_entry used to pass dev_mode=True for every install."""
+        from pathlib import Path
+
+        source = (Path(__file__).parent / "__init__.py").read_text(encoding="utf-8")
+        assert "dev_mode=True" not in source
+        assert "dev_mode_enabled()" in source

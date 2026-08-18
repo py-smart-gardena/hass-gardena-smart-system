@@ -51,10 +51,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create client
     from .gardena_client import GardenaSmartSystemClient
     
+    from .credential_validation import dev_mode_enabled
+
     client = GardenaSmartSystemClient(
         client_id=entry.data["client_id"],
         client_secret=entry.data["client_secret"],
-        dev_mode=True,  # Enable dev mode to bypass SSL issues on macOS
+        # SSL verification is on unless GARDENA_DEV_MODE=true (local macOS
+        # HA via `make ha-start`). Never hardcode this on for production.
+        dev_mode=dev_mode_enabled(),
     )
     
     # Create coordinator

@@ -61,7 +61,7 @@ All methods in this integration must be `async`. All I/O uses `aiohttp` (REST) o
   X-Api-Key: <client_id>
   Content-Type: application/vnd.api+json
   ```
-- `dev_mode=True` bypasses SSL verification (macOS dev only) — never enable in production
+- `GARDENA_DEV_MODE=true` bypasses SSL verification (macOS dev only via `make ha-start`) — never hardcode `dev_mode=True` in setup
 
 ## Development Commands
 

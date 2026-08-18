@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Stop disabling TLS certificate verification on every install. `dev_mode=True` was hardcoded in setup (a leftover for local macOS SSL issues), so HACS users talked to the Gardena API and WebSocket without checking the server certificate. SSL verification is now on by default. Local development can still opt out with `GARDENA_DEV_MODE=true` (`make ha-start` already sets this)
+
 ## [3.1.3] - 2026-06-04
 
 ### Fixed
