@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Battery sensors no longer force a full-battery icon. Home Assistant now picks the icon from the actual charge level (#386)
+- Manual mower duration can now be up to 24 hours (86400 seconds), matching power sockets. The previous 4-hour cap was only in the service schema — the API already accepted longer runs (#385)
+
 ## [3.1.3] - 2026-06-04
 
 ### Fixed

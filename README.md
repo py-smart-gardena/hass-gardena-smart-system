@@ -137,7 +137,7 @@ Start manual mowing for a specified duration.
 
 **Parameters:**
 - `device_id` (required): The device ID of the lawn mower
-- `duration` (optional): Duration in seconds (60-14400, default: 1800)
+- `duration` (optional): Duration in seconds (60-86400, default: 1800)
 
 **Example:**
 ```yaml

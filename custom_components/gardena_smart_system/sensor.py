@@ -122,7 +122,6 @@ class GardenaBatterySensor(GardenaEntity, SensorEntity):
         self._attr_unique_id = f"{device.id}_{common_service.id}_battery_level"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.BATTERY
-        self._attr_icon = "mdi:battery"
 
     def _get_current_common_service(self):
         """Get current common service from coordinator (fresh data)."""

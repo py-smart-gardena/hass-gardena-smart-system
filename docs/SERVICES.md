@@ -32,7 +32,7 @@ Start manual mowing for a specified duration.
 **Service Data:**
 ```yaml
 device_id: "your-mower-device-id"
-duration: 1800  # Required, 60-14400 seconds (1 minute to 4 hours)
+duration: 1800  # Required, 60-86400 seconds (1 minute to 24 hours)
 ```
 
 **Example:**
