@@ -49,16 +49,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info("Setting up Gardena Smart System component")
     
     # Create client
-    from .gardena_client import GardenaSmartSystemClient
-    
     from .credential_validation import dev_mode_enabled
+    from .gardena_client import GardenaSmartSystemClient
+
+    # SSL verification is on unless GARDENA_DEV_MODE=true (local macOS HA via
+    # `make ha-start`). Never hardcode this on for production.
+    dev_mode = dev_mode_enabled()
+    if dev_mode:
+        _LOGGER.warning(
+            "GARDENA_DEV_MODE is set: TLS certificate verification is DISABLED "
+            "for the Gardena API and WebSocket. Never use this on a production "
+            "Home Assistant instance"
+        )
 
     client = GardenaSmartSystemClient(
         client_id=entry.data["client_id"],
         client_secret=entry.data["client_secret"],
-        # SSL verification is on unless GARDENA_DEV_MODE=true (local macOS
-        # HA via `make ha-start`). Never hardcode this on for production.
-        dev_mode=dev_mode_enabled(),
+        dev_mode=dev_mode,
     )
     
     # Create coordinator

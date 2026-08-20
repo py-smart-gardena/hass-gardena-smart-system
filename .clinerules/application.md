@@ -184,8 +184,9 @@ make test-real      # Real-world authentication test
 ## 🐛 Common Issues & Solutions
 
 ### SSL Certificate Issues (macOS)
-- Enable `dev_mode=True` in client initialization
-- Automatically bypasses SSL verification in development
+- Export `GARDENA_DEV_MODE=true` before starting Home Assistant (`make ha-start` already does)
+- Bypasses SSL verification for local development only
+- Never hardcode `dev_mode=True` at a client call site — that ships to every HACS install
 
 ### Rate Limiting (429 Errors)
 - Caused by too many API calls

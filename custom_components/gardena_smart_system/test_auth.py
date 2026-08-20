@@ -1,6 +1,7 @@
 """Tests for Gardena Smart System authentication."""
 import asyncio
 import logging
+import sys
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -626,15 +627,81 @@ class TestDevModeEnabled:
         assert dev_mode_enabled() is False
 
     def test_dev_mode_on_when_env_set(self, monkeypatch):
-        monkeypatch.setenv("GARDENA_DEV_MODE", "true")
         from .credential_validation import dev_mode_enabled
 
-        assert dev_mode_enabled() is True
+        for value in ("true", "TRUE", "True"):
+            monkeypatch.setenv("GARDENA_DEV_MODE", value)
+            assert dev_mode_enabled() is True, value
 
-    def test_setup_entry_does_not_hardcode_dev_mode(self):
-        """Regression: async_setup_entry used to pass dev_mode=True for every install."""
-        from pathlib import Path
+    def test_dev_mode_off_for_any_other_value(self, monkeypatch):
+        """Only the exact string "true" opts out. Anything else fails safe."""
+        from .credential_validation import dev_mode_enabled
 
-        source = (Path(__file__).parent / "__init__.py").read_text(encoding="utf-8")
-        assert "dev_mode=True" not in source
-        assert "dev_mode_enabled()" in source
+        for value in ("false", "1", "yes", "on", ""):
+            monkeypatch.setenv("GARDENA_DEV_MODE", value)
+            assert dev_mode_enabled() is False, value
+
+
+class TestSetupEntrySslVerification:
+    """Regression: async_setup_entry used to pass dev_mode=True for every install."""
+
+    @staticmethod
+    def _mock_hass():
+        from .const import DOMAIN
+
+        hass = MagicMock()
+        hass.data = {DOMAIN: {}}
+        hass.config_entries.async_forward_entry_setups = AsyncMock()
+        return hass
+
+    @staticmethod
+    def _mock_entry():
+        entry = MagicMock()
+        entry.data = {
+            "client_id": "test-client-id",
+            "client_secret": "test-client-secret",
+        }
+        entry.entry_id = "test-entry-id"
+        return entry
+
+    async def _dev_mode_passed_to_client(self, monkeypatch, env_value):
+        """Run async_setup_entry and return the dev_mode the client was built with."""
+        from . import async_setup_entry
+
+        if env_value is None:
+            monkeypatch.delenv("GARDENA_DEV_MODE", raising=False)
+        else:
+            monkeypatch.setenv("GARDENA_DEV_MODE", env_value)
+
+        # Patch the live module objects rather than dotted-path strings: there is
+        # no custom_components/__init__.py, so under pytest this package is
+        # imported as `gardena_smart_system`, not `custom_components.gardena_smart_system`.
+        integration = sys.modules[__package__]
+        from . import gardena_client
+
+        mock_client_class = MagicMock()
+        with patch.object(
+            gardena_client, "GardenaSmartSystemClient", mock_client_class
+        ), patch.object(
+            integration, "GardenaSmartSystemCoordinator"
+        ) as mock_coordinator_class:
+            mock_coordinator_class.return_value.async_config_entry_first_refresh = (
+                AsyncMock()
+            )
+            assert await async_setup_entry(self._mock_hass(), self._mock_entry()) is True
+
+        return mock_client_class.call_args.kwargs["dev_mode"]
+
+    @pytest.mark.asyncio
+    async def test_setup_entry_verifies_ssl_by_default(self, monkeypatch):
+        """The bug: this used to be True on every HACS install."""
+        assert await self._dev_mode_passed_to_client(monkeypatch, None) is False
+
+    @pytest.mark.asyncio
+    async def test_setup_entry_verifies_ssl_when_env_is_false(self, monkeypatch):
+        assert await self._dev_mode_passed_to_client(monkeypatch, "false") is False
+
+    @pytest.mark.asyncio
+    async def test_setup_entry_honours_dev_mode_env(self, monkeypatch):
+        """`make ha-start` sets GARDENA_DEV_MODE=true for local macOS development."""
+        assert await self._dev_mode_passed_to_client(monkeypatch, "true") is True

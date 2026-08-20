@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Stop disabling TLS certificate verification on every install. `dev_mode=True` was hardcoded in setup (a leftover for local macOS SSL issues), so HACS users talked to the Gardena API and WebSocket without checking the server certificate. SSL verification is now on by default. Local development can still opt out with `GARDENA_DEV_MODE=true` (`make ha-start` already sets this)
+- **Security**: Stop disabling TLS certificate verification on every install. `dev_mode=True` was hardcoded in setup (a leftover for local macOS SSL issues), so HACS users exchanged OAuth credentials and tokens with the Gardena API and WebSocket without checking the server certificate. SSL verification is now on by default. Local development can still opt out with `GARDENA_DEV_MODE=true` (`make ha-start` already sets this)
+
+  **After upgrading**, a host with an incomplete CA store or a TLS-inspecting proxy will now fail to connect instead of silently accepting any certificate. The symptom is a certificate error in the Home Assistant log (`ClientConnectorCertificateError` / `CERTIFICATE_VERIFY_FAILED`) — the fix is to update the host's CA certificates, not to disable verification
 
 ## [3.1.3] - 2026-06-04
 
