@@ -41,6 +41,8 @@ async def async_setup_entry(
 class GardenaOnlineBinarySensor(GardenaOnlineEntity, BinarySensorEntity):
     """Representation of a Gardena device online status sensor."""
 
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
         """Initialize the online status sensor."""
         super().__init__(coordinator, device)

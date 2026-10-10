@@ -239,6 +239,32 @@ class TestGardenaBatteryEntity:
         assert entity.battery_level is None
 
 
+class TestGardenaBatterySensorIcon:
+    """Battery sensors must not hardcode an icon (issue #386)."""
+
+    def test_battery_sensor_has_no_hardcoded_icon(self):
+        """device_class BATTERY already picks a level-based icon."""
+        from .sensor import GardenaBatterySensor
+
+        coordinator = Mock(spec=GardenaSmartSystemCoordinator)
+        coordinator.last_update_success = True
+        coordinator.websocket_client = None
+        coordinator.locations = {}
+
+        device = Mock(spec=GardenaDevice)
+        device.id = "device-1"
+        device.name = "Mower"
+        device.serial = "12345"
+        device.services = {}
+
+        common_service = Mock(spec=GardenaCommonService)
+        common_service.id = "common-1"
+
+        entity = GardenaBatterySensor(coordinator, device, common_service)
+        assert getattr(entity, "_attr_icon", None) is None
+        assert entity._attr_device_class is not None
+
+
 class TestGardenaOnlineEntity:
     """Test GardenaOnlineEntity."""
 
