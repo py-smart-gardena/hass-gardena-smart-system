@@ -4,6 +4,88 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Battery sensors no longer force a full-battery icon. Home Assistant now picks the icon from the actual charge level (#386)
+- Manual mower duration can now be up to 24 hours (86400 seconds), matching power sockets. The previous 4-hour cap was only in the service schema — the API already accepted longer runs (#385)
+
+### Fixed
+
+- Device command failures now raise `HomeAssistantError`, so automations and scripts can use `continue_on_error: true` after a transient Gardena cloud 5xx. Custom services no longer swallow the error and pretend the command succeeded (#390)
+- **Security**: Stop disabling TLS certificate verification on every install. `dev_mode=True` was hardcoded in setup (a leftover for local macOS SSL issues), so HACS users exchanged OAuth credentials and tokens with the Gardena API and WebSocket without checking the server certificate. SSL verification is now on by default. Local development can still opt out with `GARDENA_DEV_MODE=true` (`make ha-start` already sets this)
+
+  **After upgrading**, a host with an incomplete CA store or a TLS-inspecting proxy will now fail to connect instead of silently accepting any certificate. The symptom is a certificate error in the Home Assistant log (`ClientConnectorCertificateError` / `CERTIFICATE_VERIFY_FAILED`) — the fix is to update the host's CA certificates, not to disable verification
+
+## [3.1.3] - 2026-06-04
+
+### Fixed
+
+- Entity values (battery level, mower state, sensor readings, ...) no longer freeze indefinitely until a Home Assistant restart. The integration refreshes state only through the Gardena WebSocket after the initial load, and the client used to give up reconnecting permanently after 10 failed attempts — so a transient outage during one of Gardena's routine reconnect cycles left every value stuck. The WebSocket client now keeps retrying at a slow, quota-friendly cadence (once per hour) until it recovers, so data resumes updating on its own (#378)
+
+## [3.1.2] - 2026-06-03
+
+### Fixed
+
+- Lawn mower no longer shows state `error` when it has reached its daily operating limit. Gardena reports this battery-protection state as activity `NONE` with service state `WARNING` and `last_error_code` `PARKED_DAILY_LIMIT_REACHED` — an informational code the `mower_error` sensor already treats as "no error". The entity now suppresses `error` for any informational `last_error_code` (even when the service state is `WARNING`/`ERROR`) and falls back to `paused`, so the entity state and the error sensor stay consistent. Follow-up to the earlier #375 fix, which only checked the service `state` (#375)
+
+## [3.1.1] - 2026-05-31
+
+### Fixed
+
+- Lawn mower no longer shows state `error` while the `mower_error` sensor reports "no error". When the mower reports activity `NONE` (or an unmapped activity) — e.g. stopped in the garden out of battery on a disconnected area — the entity now falls back to `paused` unless the Gardena service `state` is actually `ERROR`/`WARNING`, so the entity state and the error sensor stay consistent (#375)
+
+## [3.1.0] - 2026-05-31
+
+### Added
+
+- New diagnostic sensor "API Requests (Week)" tracking all outgoing Husqvarna API calls with breakdown by endpoint, daily/weekly counts, and recent request history — helps users monitor quota consumption (700 req/week limit) (#370)
+
+### Changed
+
+- Smart Water Control is now marked as tested and functional in the README — confirmed working on Gardena 19031-20 (#370)
+
+### Fixed
+
+- Drastically reduce REST API usage: device commands (valve open/close, mower, power socket, buttons) no longer trigger a full `GET /locations` + `GET /locations/{id}` re-fetch on every action. State is already kept current via the WebSocket, so each command now costs a single `PUT /command` request instead of three. Previously a few watering cycles per day could exhaust the 700 requests/week quota (#370)
+- Fix "API Requests (Week)" diagnostic sensor not appearing — `entity_category` was a string literal instead of `EntityCategory.DIAGNOSTIC` and `device_info` was a plain dict instead of a `DeviceInfo` instance, causing silent registration failure on some HA versions (#370)
+- WebSocket reconnection no longer calls `authenticate()` when the token is still valid, avoiding unnecessary token refresh API calls (#370)
+
+## [3.0.6] - 2026-05-27
+
+### Added
+
+- Reconfigure config flow to update Husqvarna Application Key and Client Secret without removing the integration (#372)
+- Clearer 429 rate-limit error handling during credential validation
+
+### Fixed
+
+- WebSocket reconnection now uses conservative exponential backoff (30s, 60s, 120s... up to 15min) instead of aggressive 5s retries that burned through the Gardena API quota of 700 req/week (#370)
+- WebSocket URL request (`POST /v2/websocket`) now handles 429 responses and respects `Retry-After` header instead of blindly retrying (#370)
+
+## [3.0.5] - 2026-05-24
+
+### Fixed
+
+- Valve entities no longer log their state twice on every update — activity logging moved out of property getters (called multiple times per update cycle by Home Assistant) into the coordinator-update callback, with state-transition deduplication. Resolves HA's internal rate limiter triggering after 200+ messages on installations with several valves (#371)
+
+## [3.0.4] - 2026-05-19
+
+### Fixed
+
+- `mower_error` sensor now returns `no_message` for informational operational states instead of surfacing them as errors. The following states no longer trigger error-based automations: `parked_daily_limit_reached`, `outside_working_area`, `off_disabled`, `off_hatch_open`, `off_hatch_closed`, `wait_updating`, `wait_power_up`, `wait_stop_pressed`, `wait_for_safety_pin`, `guide_calibration_accomplished`, `connection_changed`, `connection_not_changed`, `uninitialised` (#365)
+
+## [3.0.3] - 2026-05-19
+
+### Fixed
+
+- Fix automation hang when valve open command receives a temporary 504 error — retry logic no longer deadlocks on the internal request lock (#366)
+
+## [3.0.2] - 2026-05-18
+
+### Fixed
+
+- Fix lawn mower never showing "Returning" state — `OK_SEARCHING` was incorrectly mapped to `MOWING` instead of `RETURNING` (#363)
+
 ## [3.0.1] - 2026-05-13
 
 ### Fixed
@@ -94,3 +176,19 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Beta fixes and stabilization
+
+## [2.0.0] - 2026-04-25
+
+### Breaking Changes
+
+- **Valve entities migrated from `switch` to `valve` platform** — Water Control and Smart Irrigation Control devices are now exposed as `valve.*` entities instead of `switch.*` entities. This uses the native Home Assistant valve platform (introduced in HA 2023.9) which better represents these devices. Automations using `switch.turn_on`/`switch.turn_off` must be updated to use `valve.open_valve`/`valve.close_valve` with the new entity IDs.
+- **Complete rewrite of the integration** — All entity unique IDs have changed. Existing entities will appear as unavailable and new entities will be created. Dashboards and automations must be updated to reference the new entity IDs.
+
+### Added
+
+- Modern Home Assistant architecture (DataUpdateCoordinator, config flow)
+- WebSocket-based real-time updates instead of polling
+- Native `valve` entities with proper open/close semantics
+- Native `lawn_mower` entities (migrated from `vacuum` in 1.x)
+- Configurable watering duration for valve entities
+- `number` entities for adjusting watering duration per valve

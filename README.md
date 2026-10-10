@@ -63,12 +63,12 @@ This ensures a clean installation and prevents any conflicts between the old and
 - **Power Socket** (`switch`) : ✅ Fully tested and functional
   - On/off control working
   - Real-time status updates
+- **Smart Water Control** (`valve`) : ✅ Tested and functional
+  - Single valve control working (confirmed on Gardena 19031-20)
+  - Open/close operations and real-time status updates
 
 ### ⚠️ Not Yet Tested
 
-- **Water Control** (`valve`) : ⚠️ Implementation complete but not tested
-  - Single valve control implementation ready
-  - Needs real device testing
 - **Sensors** (`sensor`) : ⚠️ Implementation complete but not tested
   - Temperature, humidity, light sensors
   - Soil sensors implementation ready
@@ -90,6 +90,28 @@ This ensures a clean installation and prevents any conflicts between the old and
 - Pause
 - Return to charging station
 - State and activity monitoring
+
+#### Mower error sensor
+
+The `mower_error` sensor exposes the `last_error_code` field from the Gardena API. To avoid false positives in error-notification automations, **informational operational states are filtered** and reported as `no_message` instead:
+
+| Code filtered | Meaning |
+|---|---|
+| `parked_daily_limit_reached` | Daily mowing limit reached — normal operation |
+| `outside_working_area` | Mower returned outside its zone — normal |
+| `off_disabled` | Disabled manually by user |
+| `off_hatch_open` | Hatch opened for maintenance |
+| `off_hatch_closed` | Hatch closed — normal state |
+| `wait_updating` | Firmware update in progress |
+| `wait_power_up` | Booting up |
+| `wait_stop_pressed` | Stop button held — user maintenance |
+| `wait_for_safety_pin` | Waiting for safety pin — user maintenance |
+| `guide_calibration_accomplished` | Calibration completed successfully |
+| `connection_changed` | Network state change — informational |
+| `connection_not_changed` | Network state change — informational |
+| `uninitialised` | Normal boot state |
+
+This means a simple automation like `state != 'no_message'` reliably catches only real errors that require attention.
 
 ## 🔧 Available Services
 
@@ -115,7 +137,7 @@ Start manual mowing for a specified duration.
 
 **Parameters:**
 - `device_id` (required): The device ID of the lawn mower
-- `duration` (optional): Duration in seconds (60-14400, default: 1800)
+- `duration` (optional): Duration in seconds (60-86400, default: 1800)
 
 **Example:**
 ```yaml

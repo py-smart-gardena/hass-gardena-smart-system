@@ -9,6 +9,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, Sen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -16,6 +17,7 @@ from .const import (
     ATTR_BATTERY_STATE,
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
+    MOWER_INFORMATIONAL_CODES,
 )
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
@@ -99,6 +101,8 @@ async def async_setup_entry(
                     if sensor_service.light_intensity is not None:
                         entities.append(GardenaLightSensor(coordinator, device, sensor_service))
 
+    # Add API usage diagnostic sensor (one per config entry)
+    entities.append(GardenaAPIUsageSensor(coordinator, entry.entry_id))
 
     _LOGGER.debug(f"Created {len(entities)} sensor entities")
     async_add_entities(entities)
@@ -118,7 +122,6 @@ class GardenaBatterySensor(GardenaEntity, SensorEntity):
         self._attr_unique_id = f"{device.id}_{common_service.id}_battery_level"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.BATTERY
-        self._attr_icon = "mdi:battery"
 
     def _get_current_common_service(self):
         """Get current common service from coordinator (fresh data)."""
@@ -239,13 +242,16 @@ class GardenaMowerErrorSensor(GardenaEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        """Return the last error code."""
+        """Return the last error code, or 'no_message' for informational states."""
         current_service = self._get_current_mower_service()
         if not current_service:
             return None
         error_code = current_service.last_error_code
         if error_code:
-            return error_code.lower()
+            code = error_code.lower()
+            if code in MOWER_INFORMATIONAL_CODES:
+                return "no_message"
+            return code
         return "no_message"
 
     @property
@@ -483,5 +489,51 @@ class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
                 except (ValueError, TypeError):
                     return None
         return None
+
+
+class GardenaAPIUsageSensor(SensorEntity):
+    """Sensor tracking Gardena API usage against the 700 requests/week quota."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "api_requests_week"
+    _attr_icon = "mdi:api"
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, entry_id: str) -> None:
+        """Initialize the API usage sensor."""
+        self.coordinator = coordinator
+        self._entry_id = entry_id
+        self._attr_unique_id = f"gardena_api_usage_{entry_id}"
+        self._attr_name = "API Requests (Week)"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"websocket_status_{entry_id}")},
+        )
+
+    @property
+    def available(self) -> bool:
+        """Always available."""
+        return True
+
+    @property
+    def native_value(self) -> int:
+        """Return the number of API requests this week."""
+        return self.coordinator.client.api_tracker.requests_this_week
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return diagnostic attributes with request breakdown."""
+        tracker = self.coordinator.client.api_tracker
+        attrs: dict[str, Any] = {
+            "requests_today": tracker.requests_today,
+            "requests_this_week": tracker.requests_this_week,
+            "quota_weekly": 700,
+            "requests_by_endpoint": tracker.requests_by_endpoint(),
+            "recent_requests": tracker.recent_requests,
+        }
+        return attrs
+
+    async def async_update(self) -> None:
+        """No-op: value is computed on read from the shared tracker."""
 
 

@@ -48,6 +48,14 @@ export GARDENA_CLIENT_SECRET="your-client-secret"
 make test-real
 ```
 
+### SSL verification
+
+Production installs always verify TLS certificates.
+
+`make ha-start` sets `GARDENA_DEV_MODE=true` so a local macOS Home Assistant can skip verification if the system cert store is incomplete. Do not set that variable on a real Home Assistant.
+
+Only the exact value `true` (case-insensitive) opts out — `1`, `yes` and anything else leave verification on. When it is active, setup logs a warning so an accidental production install is visible in the log.
+
 ## 🔧 Environment Variables Configuration
 
 ### Required Variables

@@ -11,7 +11,6 @@ DOMAIN: Final = "gardena_smart_system"
 # Configuration keys
 CONF_CLIENT_ID: Final = "client_id"
 CONF_CLIENT_SECRET: Final = "client_secret"
-
 # API constants
 API_BASE_URL: Final = "https://api.smart.gardena.dev/v2"
 API_TIMEOUT: Final = 30
@@ -34,6 +33,13 @@ MOWER_STATE_OK: Final = "OK"
 MOWER_STATE_WARNING: Final = "WARNING"
 MOWER_STATE_ERROR: Final = "ERROR"
 MOWER_STATE_UNAVAILABLE: Final = "UNAVAILABLE"
+
+# Gardena service states that represent an actual error condition. The lawn
+# mower entity only reports LawnMowerActivity.ERROR when the service state is
+# one of these — otherwise an unmapped/NONE activity (e.g. the mower stopped in
+# the garden out of battery) falls back to PAUSED instead of contradicting the
+# mower_error sensor, which reports "no error". See #375.
+MOWER_ERROR_STATES: Final = frozenset({MOWER_STATE_ERROR, MOWER_STATE_WARNING})
 
 # Mower activities
 MOWER_ACTIVITY_PAUSED: Final = "PAUSED"
@@ -63,7 +69,7 @@ MOWER_ACTIVITY_MAP: Final = {
     MOWER_ACTIVITY_PAUSED_IN_CS: LawnMowerActivity.PAUSED,
     MOWER_ACTIVITY_CUTTING: LawnMowerActivity.MOWING,
     MOWER_ACTIVITY_CUTTING_TIMER_OVERRIDDEN: LawnMowerActivity.MOWING,
-    MOWER_ACTIVITY_SEARCHING: LawnMowerActivity.MOWING,
+    MOWER_ACTIVITY_SEARCHING: LawnMowerActivity.RETURNING,
     MOWER_ACTIVITY_LEAVING: LawnMowerActivity.MOWING,
     MOWER_ACTIVITY_CHARGING: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_PARKED: LawnMowerActivity.DOCKED,
@@ -78,12 +84,42 @@ MOWER_ACTIVITY_MAP: Final = {
     MOWER_ACTIVITY_STOPPED_IN_GARDEN: LawnMowerActivity.DOCKED,
     MOWER_ACTIVITY_INITIATE_NEXT_ACTION: LawnMowerActivity.MOWING,
     MOWER_ACTIVITY_SEARCHING_FOR_SATELLITES: LawnMowerActivity.DOCKED,
-    MOWER_ACTIVITY_NONE: LawnMowerActivity.ERROR,
+    # NONE is intentionally not mapped: the entity decides between ERROR and
+    # PAUSED based on the Gardena service state instead of assuming an error.
+    # See GardenaLawnMower.activity and MOWER_ERROR_STATES (#375).
 }
+
+# Mower informational codes — operational states that are NOT errors.
+# The mower_error sensor returns "no_message" when last_error_code is in this set
+# so that user automations trigger only on real actionable errors.
+MOWER_INFORMATIONAL_CODES: Final = frozenset({
+    "no_message",                   # Already "no error"
+    "uninitialised",                # Normal boot state
+    "parked_daily_limit_reached",   # Daily schedule limit reached — normal operation
+    "outside_working_area",         # Mower returned to base outside its zone — normal
+    "off_disabled",                 # Disabled manually by user
+    "off_hatch_open",               # Hatch open for maintenance
+    "off_hatch_closed",             # Hatch closed — normal state
+    "wait_updating",                # Firmware update in progress
+    "wait_power_up",                # Booting up
+    "wait_stop_pressed",            # Stop button held — user-initiated maintenance
+    "wait_for_safety_pin",          # Waiting for safety pin — user-initiated maintenance
+    "guide_calibration_accomplished",  # Calibration completed successfully
+    "connection_changed",           # Network state change — informational
+    "connection_not_changed",       # Network state change — informational
+})
 
 # WebSocket configuration
 WEBSOCKET_RECONNECT_DELAY: Final = 5  # seconds
+# Number of fast (exponential-backoff) reconnection attempts before falling back
+# to a slow, quota-friendly retry cadence. The client never permanently gives up:
+# after this many attempts it keeps retrying at WEBSOCKET_SLOW_RECONNECT_INTERVAL
+# so stale data eventually recovers without a Home Assistant restart (#378).
 WEBSOCKET_MAX_RECONNECT_ATTEMPTS: Final = 10
+# Slow reconnection cadence (seconds) used once the fast attempts are exhausted.
+# One attempt/hour is ~168 POST /v2/websocket requests/week, well within the
+# 700 requests/week Gardena API quota.
+WEBSOCKET_SLOW_RECONNECT_INTERVAL: Final = 3600
 
 # Valve duration configuration
 CONF_VALVE_DURATIONS: Final = "valve_durations"

@@ -208,3 +208,40 @@ class TestWebSocketIntegration:
 
         ws_client.is_connecting = False
         assert ws_client.connection_status == "disconnected"
+
+    @pytest.mark.asyncio
+    async def test_initial_load_hits_rest_once(self, coordinator):
+        """The first refresh must perform the REST load (locations + per location)."""
+        coordinator.client.get_locations = AsyncMock(return_value=[
+            GardenaLocation(id="loc-1", name="Garden", devices={})
+        ])
+        coordinator.client.get_location = AsyncMock(return_value=GardenaLocation(
+            id="loc-1", name="Garden", devices={}
+        ))
+
+        assert coordinator._initial_data_loaded is False
+        await coordinator._async_update_data()
+
+        coordinator.client.get_locations.assert_awaited_once()
+        coordinator.client.get_location.assert_awaited_once_with("loc-1")
+        assert "loc-1" in coordinator.locations
+
+    @pytest.mark.asyncio
+    async def test_refresh_after_initial_load_makes_no_rest_call(self, coordinator):
+        """Regression for #370.
+
+        After the initial load, command-triggered refreshes must serve cached
+        data without calling the REST API. Otherwise every valve open/close
+        would silently cost a ``GET /locations`` + ``GET /locations/{id}`` and
+        exhaust the 700 requests/week quota.
+        """
+        coordinator._initial_data_loaded = True
+        coordinator.locations = {"loc-1": GardenaLocation(id="loc-1", name="Garden", devices={})}
+        coordinator.client.get_locations = AsyncMock()
+        coordinator.client.get_location = AsyncMock()
+
+        result = await coordinator._async_update_data()
+
+        coordinator.client.get_locations.assert_not_awaited()
+        coordinator.client.get_location.assert_not_awaited()
+        assert result == coordinator.locations

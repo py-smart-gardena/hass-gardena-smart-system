@@ -271,10 +271,11 @@ class TestGardenaServiceManager:
         
         service_manager = GardenaServiceManager(mock_hass)
         command = MowerCommand("test-service", "START_DONT_OVERRIDE")
-        
-        result = await service_manager._send_command("test-service", command)
-        
-        assert result is False
+
+        from homeassistant.exceptions import HomeAssistantError
+
+        with pytest.raises(HomeAssistantError, match="Command failed"):
+            await service_manager._send_command("test-service", command)
 
     @pytest.mark.asyncio
     async def test_mower_start_service(self, mock_hass, mock_coordinator, mock_device):
@@ -498,4 +499,15 @@ class TestGardenaServiceManager:
         await service_manager._service_mower_start(mock_call)
         
         # Verify no command was sent
-        mock_coordinator.client.send_command.assert_not_called() 
+        mock_coordinator.client.send_command.assert_not_called()
+
+
+def test_mower_schema_allows_24_hour_duration():
+    """Manual mower duration matches the power-socket 24h cap (issue #385)."""
+    import voluptuous as vol
+
+    from .services import SERVICE_SCHEMA_MOWER
+
+    SERVICE_SCHEMA_MOWER({"device_id": "mower-1", "duration": 86400})
+    with pytest.raises(vol.Invalid):
+        SERVICE_SCHEMA_MOWER({"device_id": "mower-1", "duration": 86401}) 

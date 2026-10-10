@@ -1,23 +1,196 @@
 {
+  "entity": {
+    "sensor": {
+      "api_requests_week": {
+        "name": "API-verzoeken (week)"
+      },
+      "mower_error": {
+        "name": "Foutcode",
+        "state": {
+          "uninitialised": "Niet geïnitialiseerd",
+          "no_message": "Geen fout",
+          "outside_working_area": "Buiten werkgebied",
+          "no_loop_signal": "Geen lussignaal",
+          "no_charging_station_signal": "Geen signaal van laadstation",
+          "wrong_loop_signal": "Verkeerd lussignaal",
+          "loop_sensor_problem_front": "Voorste lussensor defect",
+          "loop_sensor_problem_rear": "Achterste lussensor defect",
+          "trapped": "Vastgelopen",
+          "upside_down": "Ondersteboven",
+          "low_battery": "Batterij bijna leeg",
+          "empty_battery": "Batterij leeg",
+          "no_drive": "Geen aandrijving",
+          "lifted": "Opgetild",
+          "stuck_in_charging_station": "Vast in laadstation",
+          "charging_station_blocked": "Laadstation geblokkeerd",
+          "collision_sensor_problem_rear": "Achterste botsingssensor defect",
+          "collision_sensor_problem_front": "Voorste botsingssensor defect",
+          "wheel_motor_blocked_right": "Rechter wielmotor geblokkeerd",
+          "wheel_motor_blocked_left": "Linker wielmotor geblokkeerd",
+          "wheel_drive_problem_right": "Probleem met rechter wielaandrijving",
+          "wheel_drive_problem_left": "Probleem met linker wielaandrijving",
+          "cutting_system_blocked": "Maaisysteem geblokkeerd",
+          "invalid_sub_device_combination": "Ongeldige combinatie van subapparaten",
+          "settings_restored": "Instellingen teruggezet naar standaard",
+          "charging_system_problem": "Probleem met laadsysteem",
+          "tilt_sensor_problem": "Probleem met kantelsensor",
+          "mower_tilted": "Maaier gekanteld",
+          "wheel_motor_overloaded_right": "Rechter wielmotor overbelast",
+          "wheel_motor_overloaded_left": "Linker wielmotor overbelast",
+          "charging_current_too_high": "Laadstroom te hoog",
+          "electronic_problem": "Elektronisch probleem",
+          "cutting_height_blocked": "Maaihoogte geblokkeerd",
+          "cutting_height_problem": "Probleem met maaihoogte",
+          "temporary_problem": "Tijdelijk probleem",
+          "guide_1_not_found": "Geleidedraad 1 niet gevonden",
+          "guide_2_not_found": "Geleidedraad 2 niet gevonden",
+          "guide_3_not_found": "Geleidedraad 3 niet gevonden",
+          "gps_tracker_module_error": "Fout in GPS-trackermodule",
+          "weak_gps_signal": "Zwak GPS-signaal",
+          "guide_calibration_failed": "Kalibratie geleidedraad mislukt",
+          "temporary_battery_problem": "Tijdelijk batterijprobleem",
+          "battery_problem": "Batterijprobleem",
+          "alarm_mower_switched_off": "Alarm: maaier uitgeschakeld",
+          "alarm_mower_stopped": "Alarm: maaier gestopt",
+          "alarm_mower_lifted": "Alarm: maaier opgetild",
+          "alarm_mower_tilted": "Alarm: maaier gekanteld",
+          "com_board_not_available": "Communicatiebord niet beschikbaar",
+          "slipped": "Weggegleden",
+          "invalid_battery_combination": "Ongeldige batterijcombinatie",
+          "safety_function_faulty": "Veiligheidsfunctie defect",
+          "invalid_system_conf": "Ongeldige systeemconfiguratie",
+          "lift_sensor_defect": "Optilsensor defect",
+          "mobile_loop_defect": "Mobiele lus defect",
+          "left_loop_sensor": "Linker lussensor defect",
+          "right_loop_sensor": "Rechter lussensor defect",
+          "wrong_pin": "Verkeerde pincode",
+          "temporary_lift": "Tijdelijk opgetild",
+          "cutting_drive": "Maaiaandrijving defect",
+          "steep_slope": "Helling te steil",
+          "stop_button_fail": "Storing stopknop",
+          "angle_cutting_means_off": "Maaimes uitgeschakeld op helling",
+          "slave_mcu_lost": "Verbinding met secundaire MCU verloren",
+          "cutting_overload": "Maaisysteem overbelast",
+          "cutting_height_range": "Fout in maaihoogtebereik",
+          "cutting_height_drift": "Maaihoogte verloopt",
+          "cutting_height_limited": "Maaihoogte beperkt",
+          "cutting_height_drive": "Probleem met maaihoogteaandrijving",
+          "cutting_height_current": "Stroom maaihoogteverstelling te hoog",
+          "cutting_height_direction": "Maaihoogteverstelling in verkeerde richting",
+          "mower_to_cs_com": "Communicatie met laadstation mislukt",
+          "ultrasonic_error": "Fout in ultrasone sensor",
+          "high_low_bat_temp_a": "Temperatuur batterij A buiten bereik",
+          "high_low_bat_temp_b": "Temperatuur batterij B buiten bereik",
+          "too_low_voltage_bat_a": "Spanning batterij A te laag",
+          "too_low_voltage_bat_b": "Spanning batterij B te laag",
+          "alarm_motion": "Alarm: beweging gedetecteerd",
+          "alarm_geofence": "Alarm: buiten geofence",
+          "rr_wheel_blocked": "Rechterachterwiel geblokkeerd",
+          "rl_wheel_blocked": "Linkerachterwiel geblokkeerd",
+          "rr_wheel_drive": "Probleem met aandrijving rechterachterwiel",
+          "rl_wheel_drive": "Probleem met aandrijving linkerachterwiel",
+          "rear_right_wheel_overloaded": "Rechterachterwiel overbelast",
+          "rear_left_wheel_overloaded": "Linkerachterwiel overbelast",
+          "angular_sensor_defect": "Hoeksensor defect",
+          "no_power_in_cs": "Geen stroom in laadstation",
+          "switch_cord_sensor_defect": "Sensor van schakelsnoer defect",
+          "map_not_valid": "Kaart ongeldig",
+          "no_position": "Geen positie beschikbaar",
+          "no_rs_communication": "Communicatie met referentiestation verloren",
+          "folding_sensor_activated": "Vouwsensor geactiveerd",
+          "ultrasonic_sensor_1_defect": "Ultrasone sensor 1 defect",
+          "ultrasonic_sensor_2_defect": "Ultrasone sensor 2 defect",
+          "ultrasonic_sensor_3_defect": "Ultrasone sensor 3 defect",
+          "ultrasonic_sensor_4_defect": "Ultrasone sensor 4 defect",
+          "cutting_drive_motor_1_defect": "Maaimotor 1 defect",
+          "cutting_drive_motor_2_defect": "Maaimotor 2 defect",
+          "cutting_drive_motor_3_defect": "Maaimotor 3 defect",
+          "collision_sensor_defect": "Botsingssensor defect",
+          "docking_sensor_defect": "Dockingsensor defect",
+          "folding_cutting_deck_sensor_defect": "Sensor van opklapbaar maaidek defect",
+          "loop_sensor_defect": "Lussensor defect",
+          "collision_sensor_error": "Fout in botsingssensor",
+          "no_confirmed_position": "Geen bevestigde positie",
+          "major_cutting_disk_imbalance": "Ernstige onbalans in maaischijf",
+          "complex_working_area": "Werkgebied te complex",
+          "invalid_sw_configuration": "Ongeldige softwareconfiguratie",
+          "radar_error": "Radarfout",
+          "work_area_tampered": "Er is met het werkgebied geknoeid",
+          "destination_not_reachable": "Bestemming niet bereikbaar",
+          "wait_stop_pressed": "Stopknop ingedrukt",
+          "wait_for_safety_pin": "Wacht op veiligheidspincode",
+          "destination_not_reachable_warning": "Bestemming niet bereikbaar (waarschuwing)",
+          "battery_near_end_of_life": "Batterij bijna aan einde levensduur",
+          "edgemotor_blocked": "Randmotor geblokkeerd",
+          "no_correction_data": "Geen correctiegegevens beschikbaar",
+          "invalid_correction_data": "Ongeldige correctiegegevens",
+          "wait_updating": "Firmware wordt bijgewerkt",
+          "wait_power_up": "Bezig met opstarten",
+          "off_disabled": "Uitgeschakeld met hoofdschakelaar",
+          "off_hatch_open": "Klep open",
+          "off_hatch_closed": "Klep gesloten",
+          "parked_daily_limit_reached": "Daglimiet bereikt",
+          "vision_system_malfunction": "Storing in visiesysteem",
+          "poor_vision_system_performance": "Slechte prestaties visiesysteem",
+          "vision_processing_failed": "Beeldverwerking mislukt",
+          "loop_sensor_problem_left": "Probleem met linker lussensor",
+          "loop_sensor_problem_right": "Probleem met rechter lussensor",
+          "wrong_pin_code": "Verkeerde pincode",
+          "lost_wheel_brush": "Wielborstel verloren",
+          "accessory_power_anomaly": "Afwijking in stroomvoorziening accessoire",
+          "loop_wire_broken": "Begrenzingsdraad gebroken",
+          "battery_fet_error": "Batterij-FET-fout",
+          "imbalanced_cutting_disc": "Maaischijf in onbalans",
+          "cutting_motor_problem": "Probleem met maaimotor",
+          "limited_cutting_height_range": "Beperkt maaihoogtebereik",
+          "cutting_motor_drive_defect": "Aandrijving maaimotor defect",
+          "memory_circuit_problem": "Probleem met geheugencircuit",
+          "stop_button_problem": "Probleem met stopknop",
+          "difficult_finding_home": "Moeite met terugvinden laadstation",
+          "guide_calibration_accomplished": "Kalibratie geleidedraad voltooid",
+          "too_many_batteries": "Te veel batterijen",
+          "alarm_mower_in_motion": "Alarm: maaier in beweging",
+          "alarm_outside_geofence": "Alarm: buiten geofence",
+          "connection_changed": "Verbinding gewijzigd",
+          "connection_not_changed": "Verbinding niet gewijzigd",
+          "unknown": "Onbekende fout"
+        }
+      }
+    }
+  },
   "config": {
     "abort": {
-      "already_configured": "Locatie is reeds geconfigureerd."
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]",
+      "reconfigure_successful": "API-gegevens bijgewerkt. De integratie is opnieuw geladen."
     },
     "error": {
-      "cannot_connect": "Probleem tijdens connecteren, probeer het later opnieuw.",
-      "invalid_auth": "Foutieve inloggegevens.",
-      "too_many_requests": "Te veel aanvragen, probeer het later opnieuw.",
+      "cannot_connect": "Kan geen verbinding maken, probeer het opnieuw.",
+      "invalid_auth": "Ongeldige authenticatiegegevens. Controleer je Client ID en Client Secret.",
+      "insufficient_permissions": "Onvoldoende rechten. Controleer je API-sleutel en rechten.",
+      "no_locations": "Geen locaties gevonden. Stel eerst je Gardena smart Gateway in via de officiële Gardena-app en probeer het daarna opnieuw.",
+      "server_error": "Er is een serverfout opgetreden. Probeer het later opnieuw.",
+      "auth_error": "Er is een authenticatiefout opgetreden. Controleer je gegevens.",
+      "unknown_error": "Er is een onverwachte fout opgetreden. Probeer het opnieuw.",
+      "too_many_requests": "Te veel verzoeken, probeer het later opnieuw.",
+      "api_error": "Kan geen verbinding maken met de Gardena API. Controleer je gegevens en probeer het opnieuw.",
       "unknown": "Onverwachte fout."
     },
     "step": {
       "user": {
-        "description": "Gelieve aan te melden.",
+        "description": "Voer je API-gegevens voor het Gardena Smart System in. Deze kun je verkrijgen via het Gardena Developer Portal.",
         "data": {
-          "email": "E-mail",
-          "password": "Wachtwoord",
-          "client_id": "Application Key / Client ID"
+          "client_id": "Application Key / Client ID",
+          "client_secret": "Application secret / Client secret"
         },
         "title": "Gardena Smart System"
+      },
+      "reconfigure": {
+        "description": "Werk de gegevens van je Husqvarna-ontwikkelaarsapplicatie bij. Home Assistant haalt automatisch kortlevende toegangstokens op — je hoeft niet handmatig een Bearer-token in te voeren. Bestaande entiteiten blijven behouden.",
+        "data": {
+          "client_id": "Application Key / Client ID",
+          "client_secret": "Application secret / Client secret"
+        },
+        "title": "Gardena API-gegevens bijwerken"
       }
     }
   },
@@ -25,9 +198,9 @@
     "step": {
       "user": {
         "data": {
-          "mower_duration": "Maaitijd (minuten)",
-          "smart_irrigation_control_duration": "Smart Irrigation Control tijd (minuten)",
-          "smart_watering_duration": "Smart Watering tijd (minuten)"
+          "mower_duration": "Maaiduur (minuten)",
+          "smart_irrigation_control_duration": "Duur Smart Irrigation Control (minuten)",
+          "smart_watering_duration": "Duur Smart Watering (minuten)"
         },
         "title": "Gardena Smart System - Opties"
       }
@@ -35,9 +208,8 @@
   },
   "services": {
     "start_override": {
-      "name": "Start overschrijving",
-      "description": "Start de maaier onmiddellijk voor een specifieke duur en overschrijf het schema.",
-      "icon": "mdi:mower-on",
+      "name": "Handmatig starten",
+      "description": "Start de maaier direct voor een bepaalde duur en negeer het schema.",
       "fields": {
         "duration": {
           "name": "Duur",
@@ -46,8 +218,8 @@
       }
     },
     "start_automatic": {
-      "name": "Start automatisch",
-      "description": "Start de maaier met het automatische schema."
+      "name": "Automatisch starten",
+      "description": "Start de maaier volgens het automatische schema."
     },
     "park_until_next_task": {
       "name": "Parkeren tot volgende taak",
@@ -59,7 +231,17 @@
     },
     "reconnect_websocket": {
       "name": "WebSocket opnieuw verbinden",
-      "description": "WebSocket-verbinding forceren voor de Gardena Smart System-integratie."
+      "description": "Forceer een nieuwe WebSocket-verbinding voor de Gardena Smart System-integratie."
+    },
+    "websocket_diagnostics": {
+      "name": "WebSocket-diagnostiek",
+      "description": "Haal diagnostiek en statusinformatie van de WebSocket-verbinding op.",
+      "fields": {
+        "detailed": {
+          "name": "Gedetailleerd",
+          "description": "Voeg gedetailleerde verbindingsinformatie toe."
+        }
+      }
     }
   }
 }

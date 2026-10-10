@@ -1,6 +1,9 @@
 {
   "entity": {
     "sensor": {
+      "api_requests_week": {
+        "name": "API Requests (Week)"
+      },
       "mower_error": {
         "name": "Error code",
         "state": {
@@ -157,7 +160,8 @@
   },
   "config": {
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]",
+      "reconfigure_successful": "API credentials updated. The integration was reloaded."
     },
     "error": {
       "cannot_connect": "Failed to connect, please try again.",
@@ -179,6 +183,14 @@
           "client_secret": "Application secret / Client secret"
         },
         "title": "Gardena Smart System"
+      },
+      "reconfigure": {
+        "description": "Update your Husqvarna developer application credentials. Home Assistant obtains short-lived access tokens automatically — you do not enter a Bearer token manually. Existing entities are kept.",
+        "data": {
+          "client_id": "Application Key / Client ID",
+          "client_secret": "Application secret / Client secret"
+        },
+        "title": "Update Gardena API credentials"
       }
     }
   },
