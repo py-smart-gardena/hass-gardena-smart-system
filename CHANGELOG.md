@@ -6,10 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Valve error sensor. Each valve exposes its Gardena `last_error_code` (frost, broken valve, current limit, and the other `ValveError` values) so a missed watering can be told apart from a healthy schedule (#382)
+- Optional `duration` on `valve_pause` (multiple of 60 seconds, up to 4 hours). Leaving it out keeps the device's own pause length (#374, #388)
+- Integration option for the lawn mower Start button: keep resuming the schedule, or mow immediately for a chosen duration. The `start_automatic` service still resumes the schedule (#399)
 - Lawn mower button "Park Until Further Notice". It sends `PARK_UNTIL_FURTHER_NOTICE`, so the mower returns to the dock and stays there until it is started again, instead of resuming the schedule at the next task (#387)
 
 ### Changed
 
+- `valve_pause`, `valve_unpause` and `valve_close` sent with a controller `device_id` now apply to every valve on that device. `valve_open` on a multi-valve controller still needs a `service_id`, and a valve command that cannot find its target fails the service call instead of reporting success (#396, #388)
 - Battery sensors no longer force a full-battery icon. Home Assistant now picks the icon from the actual charge level (#386)
 - Manual mower duration can now be up to 24 hours (86400 seconds), matching power sockets. The previous 4-hour cap was only in the service schema — the API already accepted longer runs (#385)
 

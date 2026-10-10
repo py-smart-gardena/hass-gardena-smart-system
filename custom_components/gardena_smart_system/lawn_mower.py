@@ -12,10 +12,14 @@ from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
 from .const import (
+    CONF_MOW_NOW_DURATION,
+    CONF_START_MOWING_BEHAVIOR,
+    DEFAULT_MOW_NOW_DURATION,
     DOMAIN,
     MOWER_ACTIVITY_MAP,
     MOWER_ERROR_STATES,
     MOWER_INFORMATIONAL_CODES,
+    START_MOWING_MOW_NOW,
 )
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
@@ -179,6 +183,25 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
         """Start mowing - synchronous wrapper."""
         raise NotImplementedError("Use async_start_mowing instead")
 
+    def _start_mowing_attributes(self) -> dict[str, Any]:
+        """Attributes for the Start button.
+
+        Default is START_DONT_OVERRIDE (resume the schedule). The integration
+        options can switch Start to mow immediately (#399). start_automatic
+        stays on START_DONT_OVERRIDE either way.
+        """
+        options: dict[str, Any] = {}
+        entry_id = getattr(self.coordinator, "config_entry_id", None)
+        hass = getattr(self, "hass", None)
+        if entry_id and hass is not None:
+            entry = hass.config_entries.async_get_entry(entry_id)
+            if entry is not None:
+                options = dict(entry.options)
+        if options.get(CONF_START_MOWING_BEHAVIOR) == START_MOWING_MOW_NOW:
+            seconds = int(options.get(CONF_MOW_NOW_DURATION, DEFAULT_MOW_NOW_DURATION))
+            return {"command": "START_SECONDS_TO_OVERRIDE", "seconds": seconds}
+        return {"command": "START_DONT_OVERRIDE"}
+
     async def async_start_mowing(self) -> None:
         """Start mowing."""
         _LOGGER.info(f"=== START_MOWING called for {self._attr_name} ===")
@@ -188,9 +211,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
                 "data": {
                     "id": "start_mowing",
                     "type": "MOWER_CONTROL",
-                    "attributes": {
-                        "command": "START_DONT_OVERRIDE",
-                    },
+                    "attributes": self._start_mowing_attributes(),
                 }
             }
             _LOGGER.info(f"Sending command: {command_data}")

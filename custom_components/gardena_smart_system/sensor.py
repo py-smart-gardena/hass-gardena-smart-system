@@ -18,6 +18,7 @@ from .const import (
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     MOWER_INFORMATIONAL_CODES,
+    VALVE_ERROR_CODES,
 )
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
@@ -74,6 +75,7 @@ async def async_setup_entry(
             if "VALVE" in device.services:
                 valve_services = device.services["VALVE"]
                 for valve_service in valve_services:
+                    entities.append(GardenaValveErrorSensor(coordinator, device, valve_service))
                     entities.append(GardenaValveRemainingTimeSensor(coordinator, device, valve_service))
 
             # Add sensor entities if available
@@ -446,6 +448,52 @@ class GardenaLightSensor(GardenaEntity, SensorEntity):
         """Return the light intensity value."""
         current_service = self._get_current_sensor_service()
         return current_service.light_intensity if current_service else None
+
+
+class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
+    """Representation of a Gardena valve error code sensor."""
+
+    _attr_translation_key = "valve_error"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(VALVE_ERROR_CODES)
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the valve error sensor."""
+        super().__init__(coordinator, device, "VALVE")
+        self._valve_service = valve_service
+        self._device_id = device.id
+        valve_name = valve_service.name or device.name
+        self._attr_name = f"{valve_name} Error"
+        self._attr_unique_id = f"{device.id}_{valve_service.id}_last_error_code"
+        self._attr_icon = "mdi:alert-circle-outline"
+
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self._valve_service.id:
+                    return service
+        return None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the last error code."""
+        current_service = self._get_current_valve_service()
+        if not current_service:
+            return None
+        error_code = current_service.last_error_code
+        if error_code:
+            return error_code.lower()
+        return "no_message"
+
+    @property
+    def icon(self) -> str:
+        """Return icon based on error state."""
+        value = self.native_value
+        if value and value != "no_message":
+            return "mdi:alert-circle"
+        return "mdi:check-circle-outline"
 
 
 class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
