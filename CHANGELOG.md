@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-11
+
 ### Added
 
 - Valve error sensor. Each valve exposes its Gardena `last_error_code` (frost, broken valve, current limit, and the other `ValveError` values) so a missed watering can be told apart from a healthy schedule (#382)
