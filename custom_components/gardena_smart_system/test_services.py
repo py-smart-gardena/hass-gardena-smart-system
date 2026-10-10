@@ -271,10 +271,11 @@ class TestGardenaServiceManager:
         
         service_manager = GardenaServiceManager(mock_hass)
         command = MowerCommand("test-service", "START_DONT_OVERRIDE")
-        
-        result = await service_manager._send_command("test-service", command)
-        
-        assert result is False
+
+        from homeassistant.exceptions import HomeAssistantError
+
+        with pytest.raises(HomeAssistantError, match="Command failed"):
+            await service_manager._send_command("test-service", command)
 
     @pytest.mark.asyncio
     async def test_mower_start_service(self, mock_hass, mock_coordinator, mock_device):

@@ -411,6 +411,31 @@ class TestGardenaSmartSystemClient:
             assert mock_request.call_count == 1
 
     @pytest.mark.asyncio
+    def test_command_error_is_home_assistant_error(self):
+        """GardenaCommandError must be a HomeAssistantError (issue #390)."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        from .gardena_client import GardenaCommandError
+
+        err = GardenaCommandError("Server error: 504", 504)
+        assert isinstance(err, HomeAssistantError)
+        assert err.status_code == 504
+
+    @pytest.mark.asyncio
+    async def test_send_command_wraps_unexpected_errors(self, client):
+        """Network/API failures on a command become GardenaCommandError."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        from .gardena_client import GardenaAPIError, GardenaCommandError
+
+        with patch.object(client, "_make_request", new_callable=AsyncMock) as mock_request:
+            mock_request.side_effect = GardenaAPIError("Server error: 504", 504)
+            with pytest.raises(GardenaCommandError) as exc_info:
+                await client.send_command("valve-service", {"data": {}})
+            assert isinstance(exc_info.value, HomeAssistantError)
+            assert "504" in str(exc_info.value)
+
+    @pytest.mark.asyncio
     async def test_send_command_500_max_retries(self, client):
         """Test command with 500 error exceeding max retries."""
         from .gardena_client import GardenaCommandError
