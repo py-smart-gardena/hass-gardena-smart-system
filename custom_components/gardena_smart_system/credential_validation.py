@@ -13,8 +13,12 @@ from .gardena_client import GardenaAPIError, GardenaSmartSystemClient
 _LOGGER = logging.getLogger(__name__)
 
 
-def _dev_mode_enabled() -> bool:
-    """Return whether development mode is enabled."""
+def dev_mode_enabled() -> bool:
+    """Return whether SSL verification should be skipped.
+
+    Opt-in via GARDENA_DEV_MODE=true for local macOS development only.
+    Production / HACS installs must keep verification on.
+    """
     return os.getenv("GARDENA_DEV_MODE", "false").lower() == "true"
 
 
@@ -30,7 +34,7 @@ async def async_validate_gardena_credentials(
         client = GardenaSmartSystemClient(
             client_id=user_input[CONF_CLIENT_ID],
             client_secret=user_input[CONF_CLIENT_SECRET],
-            dev_mode=_dev_mode_enabled(),
+            dev_mode=dev_mode_enabled(),
         )
         locations = await client.get_locations()
         if not locations:
