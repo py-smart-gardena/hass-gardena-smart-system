@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Lawn mower button "Park Until Further Notice". It sends `PARK_UNTIL_FURTHER_NOTICE`, so the mower returns to the dock and stays there until it is started again, instead of resuming the schedule at the next task (#387)
+
 ### Changed
 
 - Battery sensors no longer force a full-battery icon. Home Assistant now picks the icon from the actual charge level (#386)
