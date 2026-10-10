@@ -1,6 +1,6 @@
 """Tests for the Gardena lawn mower entity."""
 import pytest
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 from homeassistant.components.lawn_mower import LawnMowerActivity
 
@@ -93,3 +93,61 @@ class TestGardenaLawnMowerActivity:
             "NONE", state=state, last_error_code="PARKED_DAILY_LIMIT_REACHED"
         )
         assert entity.activity == LawnMowerActivity.PAUSED
+
+
+class TestGardenaLawnMowerStart:
+    """Start button behaviour (#399)."""
+
+    def _entity(self):
+        activity = TestGardenaLawnMowerActivity()
+        entity = activity._make_entity("PARKED_TIMER", state="OK")
+        entity.coordinator.client = Mock()
+        entity.coordinator.client.send_command = AsyncMock()
+        entity.coordinator.async_request_refresh = AsyncMock()
+        entity.coordinator.config_entry_id = "entry-1"
+        entity.hass = Mock()
+        return entity
+
+    @pytest.mark.asyncio
+    async def test_start_mowing_resumes_schedule_by_default(self):
+        """The Start button keeps START_DONT_OVERRIDE unless options say otherwise."""
+        entity = self._entity()
+        entity.hass.config_entries.async_get_entry.return_value = None
+
+        await entity.async_start_mowing()
+
+        payload = entity.coordinator.client.send_command.await_args.args[1]
+        attributes = payload["data"]["attributes"]
+        assert attributes["command"] == "START_DONT_OVERRIDE"
+        assert "seconds" not in attributes
+
+    @pytest.mark.asyncio
+    async def test_start_mowing_mow_now_uses_configured_duration(self):
+        """Options can make Start mow immediately for a chosen duration (#399)."""
+        entity = self._entity()
+        entry = Mock()
+        entry.options = {
+            "start_mowing_behavior": "mow_now",
+            "mow_now_duration": 7200,
+        }
+        entity.hass.config_entries.async_get_entry.return_value = entry
+
+        await entity.async_start_mowing()
+
+        payload = entity.coordinator.client.send_command.await_args.args[1]
+        attributes = payload["data"]["attributes"]
+        assert attributes["command"] == "START_SECONDS_TO_OVERRIDE"
+        assert attributes["seconds"] == 7200
+
+    @pytest.mark.asyncio
+    async def test_start_automatic_still_resumes_schedule(self):
+        """The start_automatic service stays available when Start means mow now."""
+        entity = self._entity()
+        entry = Mock()
+        entry.options = {"start_mowing_behavior": "mow_now", "mow_now_duration": 7200}
+        entity.hass.config_entries.async_get_entry.return_value = entry
+
+        await entity.async_start_automatic()
+
+        payload = entity.coordinator.client.send_command.await_args.args[1]
+        assert payload["data"]["attributes"]["command"] == "START_DONT_OVERRIDE"

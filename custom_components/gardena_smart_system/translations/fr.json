@@ -30,6 +30,24 @@
           "parked_daily_limit_reached": "Limite quotidienne atteinte",
           "unknown": "Erreur inconnue"
         }
+      },
+      "valve_error": {
+        "name": "Erreur",
+        "state": {
+          "no_message": "Aucune erreur",
+          "concurrent_limit_reached": "Trop de vannes ouvertes",
+          "not_connected": "Vanne non connectée",
+          "valve_current_max_exceeded": "Courant de la vanne trop élevé",
+          "total_current_max_exceeded": "Courant total trop élevé",
+          "watering_canceled": "Arrosage annulé",
+          "master_valve": "Vanne maîtresse non connectée",
+          "watering_duration_too_short": "Durée d'arrosage trop courte",
+          "valve_broken": "Vanne défectueuse",
+          "frost_prevents_starting": "Le gel empêche le démarrage",
+          "low_battery_prevents_starting": "Batterie faible : démarrage impossible",
+          "valve_power_supply_failed": "Alimentation de la vanne en défaut",
+          "unknown": "Erreur inconnue"
+        }
       }
     }
   },
@@ -60,8 +78,28 @@
       }
     }
   },
+  "selector": {
+    "start_mowing_behavior": {
+      "options": {
+        "resume_schedule": "Reprendre le planning",
+        "mow_now": "Tondre maintenant"
+      }
+    }
+  },
   "options": {
     "step": {
+      "init": {
+        "title": "Options Gardena Smart System",
+        "description": "Bouton Démarrer de la tondeuse. Reprendre le planning conserve le comportement actuel. Tondre maintenant démarre tout de suite pour la durée ci-dessous. La reprise du planning reste disponible via le service start_automatic.",
+        "data": {
+          "start_mowing_behavior": "Bouton Démarrer",
+          "mow_now_duration": "Durée de tonte immédiate"
+        },
+        "data_description": {
+          "start_mowing_behavior": "Reprendre le planning ne fait rien hors calendrier. Tondre maintenant lance la tondeuse immédiatement.",
+          "mow_now_duration": "Secondes, multiple de 60. Utilisé seulement si Démarrer est réglé sur tondre maintenant. Défaut : 10800 (3 heures)."
+        }
+      },
       "user": {
         "data": {
           "mower_duration": "Durée de tonte (minutes)",

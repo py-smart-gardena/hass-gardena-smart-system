@@ -30,6 +30,24 @@
           "parked_daily_limit_reached": "Daily limit reached",
           "unknown": "Unknown error"
         }
+      },
+      "valve_error": {
+        "name": "Error",
+        "state": {
+          "no_message": "No error",
+          "concurrent_limit_reached": "Too many valves open",
+          "not_connected": "Valve not connected",
+          "valve_current_max_exceeded": "Valve current too high",
+          "total_current_max_exceeded": "Total current too high",
+          "watering_canceled": "Watering canceled",
+          "master_valve": "Master valve not connected",
+          "watering_duration_too_short": "Watering duration too short",
+          "valve_broken": "Valve broken",
+          "frost_prevents_starting": "Frost prevents starting",
+          "low_battery_prevents_starting": "Low battery prevents starting",
+          "valve_power_supply_failed": "Valve power supply failed",
+          "unknown": "Unknown error"
+        }
       }
     }
   },
@@ -69,8 +87,28 @@
       }
     }
   },
+  "selector": {
+    "start_mowing_behavior": {
+      "options": {
+        "resume_schedule": "Resume schedule",
+        "mow_now": "Mow now"
+      }
+    }
+  },
   "options": {
     "step": {
+      "init": {
+        "title": "Gardena Smart System options",
+        "description": "The Start button on the lawn mower entity. Resume schedule keeps the current behaviour. Mow now starts immediately for the duration below. Resuming the schedule stays available with the start_automatic service.",
+        "data": {
+          "start_mowing_behavior": "Start button",
+          "mow_now_duration": "Mow now duration"
+        },
+        "data_description": {
+          "start_mowing_behavior": "Resume schedule does nothing outside the mowing calendar. Mow now starts the mower immediately.",
+          "mow_now_duration": "Seconds, multiple of 60. Used only when Start is set to mow now. Default is 10800 (3 hours)."
+        }
+      },
       "user": {
         "data": {
           "mower_duration": "Mower Duration (minutes)",

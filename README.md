@@ -86,7 +86,7 @@ This ensures a clean installation and prevents any conflicts between the old and
 
 ### Lawn Mower Features
 
-- Start mowing
+- Start mowing. By default this resumes the schedule. In the integration options, Start can instead mow immediately for a chosen duration. The start_automatic service always resumes the schedule.
 - Pause
 - Return to charging station
 - State and activity monitoring
@@ -260,10 +260,10 @@ data:
 ```
 
 #### `gardena_smart_system.valve_close`
-Close the valve immediately.
+Close the valve immediately. On a controller with several valves, `device_id` alone closes every valve. Pass `service_id` to close one valve.
 
 **Parameters:**
-- `device_id` (required): The device ID of the valve
+- `device_id` (required if `service_id` is omitted): The device ID of the valve or controller
 
 **Example:**
 ```yaml
@@ -273,10 +273,11 @@ data:
 ```
 
 #### `gardena_smart_system.valve_pause`
-Pause automatic operation of the valve.
+Pause automatic operation of the valve. On a controller with several valves, `device_id` alone pauses every valve.
 
 **Parameters:**
-- `device_id` (required): The device ID of the valve
+- `device_id` (required if `service_id` is omitted): The device ID of the valve or controller
+- `duration` (optional): Seconds to skip the schedule, a multiple of 60 between 60 and 14400. Omit it to keep the device's own pause length.
 
 **Example:**
 ```yaml

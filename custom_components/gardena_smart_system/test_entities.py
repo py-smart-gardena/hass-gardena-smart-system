@@ -338,4 +338,49 @@ class TestGardenaOnlineEntity:
 
         entity = GardenaOnlineEntity(mock_coordinator, mock_device)
 
-        assert entity.is_on is False 
+        assert entity.is_on is False
+
+
+class TestGardenaValveErrorSensor:
+    """Valve last_error_code sensor (#382)."""
+
+    def _entity(self, last_error_code="NO_MESSAGE", name="Zone 1"):
+        from .models import GardenaValveService
+        from .sensor import GardenaValveErrorSensor
+
+        valve_service = GardenaValveService(
+            id="device-1:1",
+            type="VALVE",
+            device_id="device-1",
+            name=name,
+            last_error_code=last_error_code,
+        )
+        device = Mock(spec=GardenaDevice)
+        device.id = "device-1"
+        device.name = "Irrigation"
+        device.serial = "12345"
+        device.services = {"VALVE": [valve_service]}
+
+        coordinator = Mock(spec=GardenaSmartSystemCoordinator)
+        coordinator.last_update_success = True
+        coordinator.websocket_client = None
+        coordinator.locations = {}
+        coordinator.get_device_by_id.return_value = device
+
+        return GardenaValveErrorSensor(coordinator, device, valve_service)
+
+    def test_name_identifies_the_valve(self):
+        """Each valve on a controller gets its own error sensor name."""
+        entity = self._entity()
+        assert entity.name == "Zone 1 Error"
+        assert entity.translation_key == "valve_error"
+        assert "valve_broken" in entity.options
+        assert "wheel_motor_blocked_left" not in entity.options
+
+    def test_error_code_is_lowercased(self):
+        entity = self._entity(last_error_code="VALVE_BROKEN")
+        assert entity.native_value == "valve_broken"
+
+    def test_missing_code_is_no_message(self):
+        entity = self._entity(last_error_code=None)
+        assert entity.native_value == "no_message" 

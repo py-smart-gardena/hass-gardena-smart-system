@@ -138,6 +138,20 @@ class TestValveCommand:
         assert command.attributes["command"] == "STOP_UNTIL_NEXT_TASK"
         assert "seconds" not in command.attributes
 
+    def test_valve_pause_includes_seconds_when_duration_given(self):
+        """PAUSE accepts an optional duration (#374)."""
+        command = ValveCommand("valve-service", "PAUSE", seconds=3600)
+
+        assert command.attributes["command"] == "PAUSE"
+        assert command.attributes["seconds"] == 3600
+
+    def test_valve_pause_omits_seconds_without_duration(self):
+        """Omitting duration keeps the device's own pause length (#374)."""
+        command = ValveCommand("valve-service", "PAUSE")
+
+        assert command.attributes["command"] == "PAUSE"
+        assert "seconds" not in command.attributes
+
     def test_valve_commands_available(self):
         """Test that all valve commands are available."""
         expected_commands = {
@@ -448,9 +462,11 @@ class TestGardenaServiceManager:
         mock_call = Mock()
         mock_call.data = {"device_id": "test-device-1", "duration": 1800}
 
-        await service_manager._service_valve_open(mock_call)
+        from homeassistant.exceptions import HomeAssistantError
 
-        # No command should be sent (ambiguous target)
+        with pytest.raises(HomeAssistantError, match="service_id"):
+            await service_manager._service_valve_open(mock_call)
+
         mock_coordinator.client.send_command.assert_not_called()
 
     @pytest.mark.asyncio
@@ -500,6 +516,132 @@ class TestGardenaServiceManager:
         
         # Verify no command was sent
         mock_coordinator.client.send_command.assert_not_called()
+
+
+def _multi_valve_manager():
+    """Service manager whose device exposes two VALVE services."""
+    mock_hass = Mock()
+    mock_hass.services = Mock()
+    mock_hass.services.async_register = Mock()
+
+    mock_coordinator = Mock(spec=GardenaSmartSystemCoordinator)
+    mock_coordinator.client = Mock()
+    mock_coordinator.client.send_command = AsyncMock(return_value={"status": "accepted"})
+
+    device = Mock(spec=GardenaDevice)
+    device.id = "controller-1"
+    valve1 = Mock(spec=GardenaValveService)
+    valve1.id = "controller-1:1"
+    valve2 = Mock(spec=GardenaValveService)
+    valve2.id = "controller-1:2"
+    device.services = {"VALVE": [valve1, valve2]}
+
+    mock_hass.data = {"gardena_smart_system": {"entry-1": mock_coordinator}}
+    mock_coordinator.get_device_by_id.return_value = device
+    return GardenaServiceManager(mock_hass), mock_coordinator
+
+
+class TestMultiValveCommands:
+    """Device-level valve commands on a multi-valve controller (#396, #388)."""
+
+    @pytest.mark.asyncio
+    async def test_valve_pause_fans_out_to_every_valve(self):
+        """Pausing a controller pauses every VALVE service, not none of them."""
+        service_manager, mock_coordinator = _multi_valve_manager()
+        mock_call = Mock()
+        mock_call.data = {"device_id": "controller-1"}
+
+        await service_manager._service_valve_pause(mock_call)
+
+        sent = [
+            call.args[0]
+            for call in mock_coordinator.client.send_command.await_args_list
+        ]
+        commands = [
+            call.args[1]["data"]["attributes"]["command"]
+            for call in mock_coordinator.client.send_command.await_args_list
+        ]
+        assert sent == ["controller-1:1", "controller-1:2"]
+        assert commands == ["PAUSE", "PAUSE"]
+        for call in mock_coordinator.client.send_command.await_args_list:
+            assert "seconds" not in call.args[1]["data"]["attributes"]
+
+    @pytest.mark.asyncio
+    async def test_valve_close_fans_out_to_every_valve(self):
+        """Closing a controller closes every VALVE service (#396)."""
+        service_manager, mock_coordinator = _multi_valve_manager()
+        mock_call = Mock()
+        mock_call.data = {"device_id": "controller-1"}
+
+        await service_manager._service_valve_close(mock_call)
+
+        sent = [
+            call.args[0]
+            for call in mock_coordinator.client.send_command.await_args_list
+        ]
+        commands = [
+            call.args[1]["data"]["attributes"]["command"]
+            for call in mock_coordinator.client.send_command.await_args_list
+        ]
+        assert sent == ["controller-1:1", "controller-1:2"]
+        assert commands == ["STOP_UNTIL_NEXT_TASK", "STOP_UNTIL_NEXT_TASK"]
+
+    @pytest.mark.asyncio
+    async def test_valve_pause_service_id_targets_one_valve(self):
+        """An explicit service_id still pauses only that valve."""
+        service_manager, mock_coordinator = _multi_valve_manager()
+        mock_call = Mock()
+        mock_call.data = {"service_id": "controller-1:2", "duration": 7200}
+
+        await service_manager._service_valve_pause(mock_call)
+
+        mock_coordinator.client.send_command.assert_awaited_once()
+        service_id, payload = mock_coordinator.client.send_command.await_args.args
+        assert service_id == "controller-1:2"
+        assert payload["data"]["attributes"]["command"] == "PAUSE"
+        assert payload["data"]["attributes"]["seconds"] == 7200
+
+    @pytest.mark.asyncio
+    async def test_valve_pause_without_target_raises(self):
+        """A pause that cannot find a valve fails the service call (#396)."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        mock_hass = Mock()
+        mock_hass.services = Mock()
+        mock_hass.services.async_register = Mock()
+        mock_coordinator = Mock(spec=GardenaSmartSystemCoordinator)
+        mock_coordinator.client = Mock()
+        mock_coordinator.client.send_command = AsyncMock()
+        mock_hass.data = {"gardena_smart_system": {"entry-1": mock_coordinator}}
+        mock_coordinator.get_device_by_id.return_value = None
+        service_manager = GardenaServiceManager(mock_hass)
+        mock_call = Mock()
+        mock_call.data = {"device_id": "missing"}
+
+        with pytest.raises(HomeAssistantError):
+            await service_manager._service_valve_pause(mock_call)
+
+        mock_coordinator.client.send_command.assert_not_called()
+
+
+def test_valve_pause_schema_duration_is_optional_multiple_of_60():
+    """Pause duration is optional and must be a multiple of 60, max 4 hours (#374)."""
+    import voluptuous as vol
+
+    from .services import SERVICE_SCHEMA_VALVE_PAUSE
+
+    without_duration = SERVICE_SCHEMA_VALVE_PAUSE({"device_id": "controller-1"})
+    assert "duration" not in without_duration
+
+    with_duration = SERVICE_SCHEMA_VALVE_PAUSE(
+        {"service_id": "controller-1:1", "duration": 1800}
+    )
+    assert with_duration["duration"] == 1800
+
+    with pytest.raises(vol.Invalid):
+        SERVICE_SCHEMA_VALVE_PAUSE({"device_id": "controller-1", "duration": 90})
+    with pytest.raises(vol.Invalid):
+        SERVICE_SCHEMA_VALVE_PAUSE({"device_id": "controller-1", "duration": 14401})
 
 
 def test_mower_schema_allows_24_hour_duration():

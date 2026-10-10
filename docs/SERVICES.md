@@ -187,11 +187,12 @@ data:
 ```
 
 #### `gardena_smart_system.valve_pause`
-Pause automatic operation of a valve.
+Pause automatic operation of a valve. On a controller with several valves, `device_id` alone pauses every valve. `duration` is optional (seconds, multiple of 60, 60–14400). Omit it to keep the device's own pause length.
 
 **Service Data:**
 ```yaml
 device_id: "your-valve-device-id"
+duration: 3600  # optional
 ```
 
 **Example:**

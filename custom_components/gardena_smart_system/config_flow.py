@@ -8,9 +8,25 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
-from .const import DOMAIN
+from .const import (
+    CONF_MOW_NOW_DURATION,
+    CONF_START_MOWING_BEHAVIOR,
+    DEFAULT_MOW_NOW_DURATION,
+    DOMAIN,
+    START_MOWING_MOW_NOW,
+    START_MOWING_RESUME_SCHEDULE,
+)
 from .credential_validation import async_validate_gardena_credentials
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,6 +36,14 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Gardena Smart System."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Create the options flow."""
+        return GardenaOptionsFlowHandler()
 
     def _credentials_schema(self) -> vol.Schema:
         """Schema for API credential input."""
@@ -99,4 +123,53 @@ class GardenaSmartSystemConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 },
             ),
             errors=errors,
+        )
+
+
+class GardenaOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle Gardena Smart System options."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Choose what the lawn mower Start button does (#399)."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        options = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_START_MOWING_BEHAVIOR): SelectSelector(
+                            SelectSelectorConfig(
+                                options=[
+                                    START_MOWING_RESUME_SCHEDULE,
+                                    START_MOWING_MOW_NOW,
+                                ],
+                                translation_key="start_mowing_behavior",
+                                mode=SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Required(CONF_MOW_NOW_DURATION): NumberSelector(
+                            NumberSelectorConfig(
+                                min=60,
+                                max=86400,
+                                step=60,
+                                unit_of_measurement="s",
+                                mode=NumberSelectorMode.BOX,
+                            )
+                        ),
+                    }
+                ),
+                {
+                    CONF_START_MOWING_BEHAVIOR: options.get(
+                        CONF_START_MOWING_BEHAVIOR, START_MOWING_RESUME_SCHEDULE
+                    ),
+                    CONF_MOW_NOW_DURATION: options.get(
+                        CONF_MOW_NOW_DURATION, DEFAULT_MOW_NOW_DURATION
+                    ),
+                },
+            ),
         )
