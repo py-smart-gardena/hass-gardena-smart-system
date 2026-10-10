@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Battery sensors no longer force a full-battery icon. Home Assistant now picks the icon from the actual charge level (#386)
+- Manual mower duration can now be up to 24 hours (86400 seconds), matching power sockets. The previous 4-hour cap was only in the service schema — the API already accepted longer runs (#385)
+
 ### Fixed
 
 - **Security**: Stop disabling TLS certificate verification on every install. `dev_mode=True` was hardcoded in setup (a leftover for local macOS SSL issues), so HACS users exchanged OAuth credentials and tokens with the Gardena API and WebSocket without checking the server certificate. SSL verification is now on by default. Local development can still opt out with `GARDENA_DEV_MODE=true` (`make ha-start` already sets this)
