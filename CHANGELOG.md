@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- WebSocket connects again on Home Assistant 2026.10. Since 3.2.0 it failed on every attempt with `ssl=None is incompatible with a wss:// URI`, so no live updates arrived. Certificate verification stays enabled (#404, #405)
+
 ## [3.2.0] - 2026-10-11
 
 ### Added

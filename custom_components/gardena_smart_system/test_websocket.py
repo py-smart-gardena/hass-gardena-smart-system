@@ -136,6 +136,46 @@ class TestGardenaWebSocketClient:
             except asyncio.CancelledError:
                 pass
 
+    async def _ssl_passed_to_connect(self, websocket_client):
+        """Run _connect and return the ssl argument given to websockets.connect."""
+        websocket_client.coordinator = MagicMock()
+
+        async def set_url():
+            websocket_client.websocket_url = "wss://test-websocket-url.com"
+
+        with patch.object(websocket_client, '_get_websocket_url', side_effect=set_url), \
+                patch.object(websocket_client, '_listen_for_messages', new_callable=AsyncMock), \
+                patch("custom_components.gardena_smart_system.websocket_client.websockets.connect",
+                      new_callable=AsyncMock, return_value=AsyncMock()) as mock_connect:
+            await websocket_client._connect()
+
+        assert websocket_client.is_connected is True
+        return mock_connect.call_args.kwargs["ssl"]
+
+    @pytest.mark.asyncio
+    async def test_connect_verifies_tls_by_default(self, websocket_client):
+        """Regression #404/#405: ssl=None is rejected by websockets >= 14 for wss://."""
+        import ssl
+
+        ssl_arg = await self._ssl_passed_to_connect(websocket_client)
+
+        assert isinstance(ssl_arg, ssl.SSLContext)
+        assert ssl_arg.verify_mode == ssl.CERT_REQUIRED
+        assert ssl_arg.check_hostname is True
+
+    @pytest.mark.asyncio
+    async def test_connect_skips_tls_verification_in_dev_mode(self, websocket_client, mock_auth_manager):
+        """GARDENA_DEV_MODE still disables certificate verification."""
+        import ssl
+
+        mock_auth_manager._dev_mode = True
+
+        ssl_arg = await self._ssl_passed_to_connect(websocket_client)
+
+        assert isinstance(ssl_arg, ssl.SSLContext)
+        assert ssl_arg.verify_mode == ssl.CERT_NONE
+        assert ssl_arg.check_hostname is False
+
     @pytest.mark.asyncio
     async def test_connect_failure(self, websocket_client, mock_auth_manager):
         """Test failed WebSocket connection."""

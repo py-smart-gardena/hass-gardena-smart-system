@@ -112,13 +112,13 @@ class GardenaWebSocketClient:
             # Connect to WebSocket
             _LOGGER.debug(f"Connecting to WebSocket: {self.websocket_url}")
             
-            # Handle SSL issues on macOS in development
-            ssl_context = None
+            # websockets >= 14 rejects ssl=None for wss://, and letting it build
+            # the default context itself loads CA certs on the event loop.
+            import ssl
+            ssl_context = await asyncio.get_event_loop().run_in_executor(
+                None, ssl.create_default_context
+            )
             if self.auth_manager._dev_mode:
-                import ssl
-                ssl_context = await asyncio.get_event_loop().run_in_executor(
-                    None, ssl.create_default_context
-                )
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
             
