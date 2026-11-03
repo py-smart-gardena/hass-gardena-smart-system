@@ -101,6 +101,20 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
         return None
 
     @property
+    def available(self) -> bool:
+        """Return False when no valve is connected to this output.
+
+        The API reports an output with nothing connected as a VALVE service in
+        state UNAVAILABLE. Before V2 the valve entities took that from the valve
+        service; since the V2 rewrite (#293) only the device is checked, so
+        every output of a Smart Irrigation Control stays available (#409).
+        """
+        if not super().available:
+            return False
+        current_service = self._get_current_valve_service()
+        return not (current_service and current_service.state == "UNAVAILABLE")
+
+    @property
     def is_closed(self) -> bool:
         """Return true if valve is closed."""
         current_service = self._get_current_valve_service()
