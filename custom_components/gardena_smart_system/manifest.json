@@ -1,6 +1,7 @@
 {
   "domain": "gardena_smart_system",
   "name": "Gardena Smart System integration",
+  "categories": ["garden_plants", "plugs_switches"],
   "codeowners": ["@py-smart-gardena"],
   "config_flow": true,
   "dependencies": [],
