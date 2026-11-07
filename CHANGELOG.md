@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.2.3] - 2026-11-07
+
 ### Added
 
 - The Gardena icon and logo ship with the integration, so Home Assistant shows them without the brands repository
