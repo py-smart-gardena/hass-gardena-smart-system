@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- A valve shows "opening" or "closing" while an open or close command is on its way, until the valve reports the new state, refuses with an error code, or a minute has passed. Until now it kept showing the old state for those seconds, so a pending command could not be told from a failed one (#408)
+
 ## [3.2.2] - 2026-11-07
 
 ### Fixed

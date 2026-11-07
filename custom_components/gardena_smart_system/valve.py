@@ -6,10 +6,16 @@ from typing import Any
 
 from homeassistant.components.valve import ValveEntity, ValveEntityFeature, ValveDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
-from .const import DOMAIN, CONF_VALVE_DURATIONS, DEFAULT_VALVE_DURATION_SECONDS
+from .const import (
+    CONF_VALVE_DURATIONS,
+    DEFAULT_VALVE_DURATION_SECONDS,
+    DOMAIN,
+    VALVE_COMMAND_PENDING_SECONDS,
+)
 from .coordinator import GardenaSmartSystemCoordinator
 from .entities import GardenaEntity
 
@@ -86,6 +92,12 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
         super().__init__(coordinator, device, "VALVE")
         self.valve_service = valve_service
         self._last_logged_activity: str | None = None
+        # A command sent and not yet seen through (#408): "opening" or
+        # "closing", the error code when it was sent, and the timer that
+        # gives up on it.
+        self._pending: str | None = None
+        self._pending_error_code: str | None = None
+        self._pending_timeout: CALLBACK_TYPE | None = None
 
         # Set required attributes for valve entities
         self._attr_reports_position = False
@@ -132,15 +144,91 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
 
     @property
     def is_opening(self) -> bool:
-        """Return true if valve is opening."""
-        # API doesn't provide intermediate opening state
-        return False
+        """Return true while an open command is on its way.
+
+        The API has no opening state: the valve reports its new activity only
+        once it has acted, seconds after the command. Until then the entity
+        showed the old state, so a caller could not tell a pending command
+        from a failed one, and some sent it again (#408).
+        """
+        return self._pending == "opening" and not self.is_open
 
     @property
     def is_closing(self) -> bool:
-        """Return true if valve is closing."""
-        # API doesn't provide intermediate closing state
-        return False
+        """Return true while a close command is on its way."""
+        return self._pending == "closing" and not self.is_closed
+
+    def _start_pending(self, pending: str) -> None:
+        """Show the command as on its way, until the valve reports it."""
+        self._cancel_pending_timeout()
+        current_service = self._get_current_valve_service()
+        self._pending = pending
+        self._pending_error_code = (
+            current_service.last_error_code if current_service else None
+        )
+        self._pending_timeout = async_call_later(
+            self.coordinator.hass,
+            VALVE_COMMAND_PENDING_SECONDS,
+            self._pending_timed_out,
+        )
+        self._write_state()
+
+    def _clear_pending(self) -> None:
+        """Stop showing a command as on its way."""
+        self._cancel_pending_timeout()
+        if self._pending is not None:
+            self._pending = None
+            self._write_state()
+
+    def _cancel_pending_timeout(self) -> None:
+        if self._pending_timeout is not None:
+            self._pending_timeout()
+            self._pending_timeout = None
+
+    @callback
+    def _pending_timed_out(self, _now) -> None:
+        """No update reported the valve open or closed in time: give up."""
+        self._pending_timeout = None
+        if self._pending is not None:
+            _LOGGER.warning(
+                "%s %s did not report %s within %s s",
+                self._log_label,
+                self._attr_name,
+                "open" if self._pending == "opening" else "closed",
+                VALVE_COMMAND_PENDING_SECONDS,
+            )
+        self._clear_pending()
+
+    def _pending_resolved(self) -> bool:
+        """Whether the valve has done what the command asked, or refused it."""
+        if self._pending == "opening" and self.is_open:
+            return True
+        if self._pending == "closing" and self.is_closed:
+            return True
+        # A new error code, such as CONCURRENT_LIMIT_REACHED or NOT_CONNECTED,
+        # is the valve's answer that it will not.
+        current_service = self._get_current_valve_service()
+        error_code = current_service.last_error_code if current_service else None
+        return error_code not in (None, "NO_MESSAGE", self._pending_error_code)
+
+    def _write_state(self) -> None:
+        if self.hass is not None:
+            self.async_write_ha_state()
+
+    async def _async_send_valve_command(self, command_data: dict, pending: str) -> None:
+        """Send a command, showing it as on its way until the valve reports it."""
+        self._start_pending(pending)
+        try:
+            await self.coordinator.client.send_command(self.valve_service.id, command_data)
+            await self.coordinator.async_request_refresh()
+        except Exception:
+            self._clear_pending()
+            raise
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel a pending command's timer."""
+        self._cancel_pending_timeout()
+        await super().async_will_remove_from_hass()
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -179,6 +267,9 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
                     activity,
                 )
             self._last_logged_activity = activity
+        if self._pending is not None and self._pending_resolved():
+            self._cancel_pending_timeout()
+            self._pending = None
         super()._handle_coordinator_update()
 
 
@@ -212,8 +303,7 @@ class GardenaWaterControl(_GardenaValveBase):
             }
         }
         try:
-            await self.coordinator.client.send_command(self.valve_service.id, command_data)
-            await self.coordinator.async_request_refresh()
+            await self._async_send_valve_command(command_data, "opening")
         except Exception as e:
             _LOGGER.error(f"Error opening Water Control {self.device.name}: {e}")
             raise
@@ -234,8 +324,7 @@ class GardenaWaterControl(_GardenaValveBase):
             }
         }
         try:
-            await self.coordinator.client.send_command(self.valve_service.id, command_data)
-            await self.coordinator.async_request_refresh()
+            await self._async_send_valve_command(command_data, "closing")
         except Exception as e:
             _LOGGER.error(f"Error closing Water Control {self.device.name}: {e}")
             raise
@@ -271,8 +360,7 @@ class GardenaSmartIrrigationControl(_GardenaValveBase):
             }
         }
         try:
-            await self.coordinator.client.send_command(self.valve_service.id, command_data)
-            await self.coordinator.async_request_refresh()
+            await self._async_send_valve_command(command_data, "opening")
         except Exception as e:
             _LOGGER.error(f"Error opening Smart Irrigation Control valve {self._attr_name}: {e}")
             raise
@@ -293,8 +381,7 @@ class GardenaSmartIrrigationControl(_GardenaValveBase):
             }
         }
         try:
-            await self.coordinator.client.send_command(self.valve_service.id, command_data)
-            await self.coordinator.async_request_refresh()
+            await self._async_send_valve_command(command_data, "closing")
         except Exception as e:
             _LOGGER.error(f"Error closing Smart Irrigation Control valve {self._attr_name}: {e}")
             raise
@@ -327,8 +414,7 @@ class GardenaValve(_GardenaValveBase):
                 },
             }
         }
-        await self.coordinator.client.send_command(self.valve_service.id, command_data)
-        await self.coordinator.async_request_refresh()
+        await self._async_send_valve_command(command_data, "opening")
 
     async def async_close_valve(self, **kwargs: Any) -> None:
         """Close the valve."""
@@ -346,8 +432,7 @@ class GardenaValve(_GardenaValveBase):
             }
         }
         try:
-            await self.coordinator.client.send_command(self.valve_service.id, command_data)
-            await self.coordinator.async_request_refresh()
+            await self._async_send_valve_command(command_data, "closing")
         except Exception as e:
             _LOGGER.error(f"Error closing valve {self.valve_service.name}: {e}")
             raise
