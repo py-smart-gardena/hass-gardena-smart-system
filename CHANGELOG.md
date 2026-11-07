@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- A problem binary sensor per valve, on when the valve reports WARNING or ERROR, with the state and the error code as attributes. Automations and dashboards can use one standard signal; the error sensor still says which. An output with no valve connected is unavailable, as the valve itself (#408)
+
 ## [3.2.2] - 2026-11-07
 
 ### Fixed

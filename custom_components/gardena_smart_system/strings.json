@@ -49,6 +49,11 @@
           "unknown": "Unknown error"
         }
       }
+    },
+    "binary_sensor": {
+      "valve_problem": {
+        "name": "Problem"
+      }
     }
   },
   "config": {
