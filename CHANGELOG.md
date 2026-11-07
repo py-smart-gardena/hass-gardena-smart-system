@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.2.2] - 2026-11-07
+
 ### Fixed
 
 - A Smart Irrigation Control output with no valve connected is unavailable again, as it was before V2. Since V2 every output stayed available, so a connected valve could not be told from an empty output (#409)
