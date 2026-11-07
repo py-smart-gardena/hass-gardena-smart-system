@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- An activity sensor per valve: closed, watering (manual) or watering (schedule). The valve itself only shows open or closed, so a schedule from the Gardena app running alongside an automation could not be seen (#408)
+
 ## [3.2.2] - 2026-11-07
 
 ### Fixed
