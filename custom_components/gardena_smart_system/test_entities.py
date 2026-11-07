@@ -384,3 +384,58 @@ class TestGardenaValveErrorSensor:
     def test_missing_code_is_no_message(self):
         entity = self._entity(last_error_code=None)
         assert entity.native_value == "no_message" 
+
+class TestGardenaValveAvailability:
+    """A Smart Irrigation Control output with no valve connected (#409)."""
+
+    def _entity(self, valve_state, rf_link_state="ONLINE", found=True):
+        from .models import GardenaValveService
+        from .valve import GardenaValve
+
+        valve_service = GardenaValveService(
+            id="device-1:1",
+            type="VALVE",
+            device_id="device-1",
+            name="Valve 1",
+            state=valve_state,
+            activity="CLOSED",
+        )
+        common = GardenaCommonService(
+            id="device-1",
+            type="COMMON",
+            device_id="device-1",
+            rf_link_state=rf_link_state,
+        )
+        device = Mock(spec=GardenaDevice)
+        device.id = "device-1"
+        device.name = "Irrigation"
+        device.serial = "12345"
+        device.model_type = "Smart Irrigation Control"
+        device.services = {"VALVE": [valve_service], "COMMON": [common]}
+
+        location = Mock()
+        location.devices = {device.id: device}
+        coordinator = Mock(spec=GardenaSmartSystemCoordinator)
+        coordinator.last_update_success = True
+        coordinator.websocket_client = None
+        coordinator.locations = {"location-1": location}
+        coordinator.get_device_by_id.return_value = device if found else None
+
+        return GardenaValve(coordinator, device, valve_service)
+
+    def test_connected_valve_is_available(self):
+        assert self._entity("OK").available is True
+
+    def test_output_without_valve_is_unavailable(self):
+        """The API reports such an output in state UNAVAILABLE."""
+        assert self._entity("UNAVAILABLE").available is False
+
+    def test_offline_controller_stays_unavailable(self):
+        assert self._entity("OK", rf_link_state="OFFLINE").available is False
+
+    def test_valve_with_a_warning_stays_available(self):
+        """A warning is reported by the error sensor, not by hiding the valve."""
+        assert self._entity("WARNING").available is True
+
+    def test_service_missing_from_fresh_data_falls_back_to_the_device(self):
+        assert self._entity("UNAVAILABLE", found=False).available is True
