@@ -157,6 +157,14 @@ VALVE_ERROR_CODES: Final = (
     "unknown",
 )
 
+# What a valve is doing, as its activity sensor reports it (#408): the API's
+# ValveActivity values, lowercased.
+VALVE_ACTIVITIES: Final = (
+    "closed",
+    "manual_watering",
+    "scheduled_watering",
+)
+
 # Attribute names
 ATTR_BATTERY_STATE: Final = "battery_state"
 ATTR_RF_LINK_LEVEL: Final = "rf_link_level"

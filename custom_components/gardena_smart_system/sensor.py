@@ -18,6 +18,7 @@ from .const import (
     ATTR_RF_LINK_LEVEL,
     ATTR_RF_LINK_STATE,
     MOWER_INFORMATIONAL_CODES,
+    VALVE_ACTIVITIES,
     VALVE_ERROR_CODES,
 )
 from .coordinator import GardenaSmartSystemCoordinator
@@ -77,6 +78,7 @@ async def async_setup_entry(
                 for valve_service in valve_services:
                     entities.append(GardenaValveErrorSensor(coordinator, device, valve_service))
                     entities.append(GardenaValveRemainingTimeSensor(coordinator, device, valve_service))
+                    entities.append(GardenaValveActivitySensor(coordinator, device, valve_service))
 
             # Add sensor entities if available
             if "SENSOR" in device.services:
@@ -537,6 +539,57 @@ class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
                 except (ValueError, TypeError):
                     return None
         return None
+
+
+class GardenaValveActivitySensor(GardenaEntity, SensorEntity):
+    """What a valve is doing: closed, watering by hand, or on a schedule.
+
+    The valve entity only says open or closed. Whether a run comes from a
+    command (the app, an automation) or from a schedule in the Gardena app is
+    in the valve's activity, which the WebSocket already delivers; this makes
+    it visible, so a schedule running alongside an automation shows (#408).
+    """
+
+    _attr_translation_key = "valve_activity"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(VALVE_ACTIVITIES)
+
+    def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
+        """Initialize the valve activity sensor."""
+        super().__init__(coordinator, device, "VALVE")
+        self._valve_service = valve_service
+        self._device_id = device.id
+        valve_name = valve_service.name or device.name
+        self._attr_name = f"{valve_name} Activity"
+        self._attr_unique_id = f"{device.id}_{valve_service.id}_activity"
+
+    def _get_current_valve_service(self):
+        """Get current valve service from coordinator (fresh data)."""
+        device = self.coordinator.get_device_by_id(self._device_id)
+        if device and "VALVE" in device.services:
+            for service in device.services["VALVE"]:
+                if service.id == self._valve_service.id:
+                    return service
+        return None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the activity, or None for one the API added since."""
+        current_service = self._get_current_valve_service()
+        if not current_service or not current_service.activity:
+            return None
+        activity = current_service.activity.lower()
+        return activity if activity in VALVE_ACTIVITIES else None
+
+    @property
+    def icon(self) -> str:
+        """Return an icon for the activity."""
+        value = self.native_value
+        if value == "scheduled_watering":
+            return "mdi:calendar-clock"
+        if value == "manual_watering":
+            return "mdi:gesture-tap"
+        return "mdi:water-off-outline"
 
 
 class GardenaAPIUsageSensor(SensorEntity):

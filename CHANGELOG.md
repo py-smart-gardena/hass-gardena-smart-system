@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Download diagnostics: the settings, every device and service as reported, the WebSocket's state and the API usage, with the client ID and secret, serial numbers, the WebSocket URL and the garden's name redacted. A file to attach to an issue instead of logs (#408)
 - The valve actions (`valve_open`, `valve_close`, `valve_pause`, `valve_unpause`) take `entity_id`: one or more valve entities of this integration, picked in the UI. A single valve no longer needs its `service_id` looked up in the attributes; `service_id` and `device_id` work as before (#408)
 - A valve shows "opening" or "closing" while an open or close command is on its way, until the valve reports the new state, refuses with an error code, or a minute has passed. Until now it kept showing the old state for those seconds, so a pending command could not be told from a failed one (#408)
+- An activity sensor per valve: closed, watering (manual) or watering (schedule). The valve itself only shows open or closed, so a schedule from the Gardena app running alongside an automation could not be seen (#408)
 
 ## [3.2.3] - 2026-11-07
 

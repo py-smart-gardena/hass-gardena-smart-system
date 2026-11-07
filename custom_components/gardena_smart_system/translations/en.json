@@ -173,6 +173,14 @@
           "valve_power_supply_failed": "Valve power supply failed",
           "unknown": "Unknown error"
         }
+      },
+      "valve_activity": {
+        "name": "Activity",
+        "state": {
+          "closed": "Closed",
+          "manual_watering": "Watering (manual)",
+          "scheduled_watering": "Watering (schedule)"
+        }
       }
     }
   },
