@@ -154,6 +154,17 @@ data:
 
 ### Valve Services
 
+Every valve action takes `entity_id`: one or more valve entities of this integration, the easiest target in an automation. It takes precedence over `service_id` and `device_id`, which work as before.
+
+```yaml
+service: gardena_smart_system.valve_pause
+data:
+  entity_id:
+    - valve.irrigation_lawn
+    - valve.irrigation_hedge
+  duration: 3600
+```
+
 #### `gardena_smart_system.valve_open`
 Open a valve for a specified duration.
 

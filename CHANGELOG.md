@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Download diagnostics: the settings, every device and service as reported, the WebSocket's state and the API usage, with the client ID and secret, serial numbers, the WebSocket URL and the garden's name redacted. A file to attach to an issue instead of logs (#408)
+- The valve actions (`valve_open`, `valve_close`, `valve_pause`, `valve_unpause`) take `entity_id`: one or more valve entities of this integration, picked in the UI. A single valve no longer needs its `service_id` looked up in the attributes; `service_id` and `device_id` work as before (#408)
 
 ## [3.2.3] - 2026-11-07
 
