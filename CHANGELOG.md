@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-07
+
 ### Added
 
 - Download diagnostics: the settings, every device and service as reported, the WebSocket's state and the API usage, with the client ID and secret, serial numbers, the WebSocket URL and the garden's name redacted. A file to attach to an issue instead of logs (#408)
