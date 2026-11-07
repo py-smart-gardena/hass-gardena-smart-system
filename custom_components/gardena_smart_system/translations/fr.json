@@ -48,6 +48,19 @@
           "valve_power_supply_failed": "Alimentation de la vanne en défaut",
           "unknown": "Erreur inconnue"
         }
+      },
+      "valve_activity": {
+        "name": "Activité",
+        "state": {
+          "closed": "Fermée",
+          "manual_watering": "Arrosage (manuel)",
+          "scheduled_watering": "Arrosage (programmé)"
+        }
+      }
+    },
+    "binary_sensor": {
+      "valve_problem": {
+        "name": "Problème"
       }
     }
   },
