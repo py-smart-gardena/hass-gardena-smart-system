@@ -6,7 +6,11 @@ from typing import Any, Dict, Optional
 
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
 import voluptuous as vol
 
 from .const import DOMAIN
@@ -35,6 +39,8 @@ SERVICE_SCHEMA_MOWER = vol.Schema({
 })
 
 SERVICE_SCHEMA_VALVE = vol.Schema({
+    # A valve entity of this integration: the easiest target in automations (#408).
+    vol.Optional("entity_id"): cv.entity_ids,
     vol.Optional("device_id"): cv.string,
     vol.Optional("service_id"): cv.string,
     vol.Optional("duration", default=3600): vol.All(
@@ -50,6 +56,8 @@ def _duration_multiple_of_60(value: int) -> int:
 
 
 SERVICE_SCHEMA_VALVE_PAUSE = vol.Schema({
+    # A valve entity of this integration: the easiest target in automations (#408).
+    vol.Optional("entity_id"): cv.entity_ids,
     vol.Optional("device_id"): cv.string,
     vol.Optional("service_id"): cv.string,
     # No default: omitting duration leaves the device's own pause length.
@@ -61,6 +69,8 @@ SERVICE_SCHEMA_VALVE_PAUSE = vol.Schema({
 })
 
 SERVICE_SCHEMA_VALVE_BASE = vol.Schema({
+    # A valve entity of this integration: the easiest target in automations (#408).
+    vol.Optional("entity_id"): cv.entity_ids,
     vol.Optional("device_id"): cv.string,
     vol.Optional("service_id"): cv.string,
 })
@@ -314,19 +324,27 @@ class GardenaServiceManager:
     def _resolve_valve_service_ids(self, call: ServiceCall, *, fan_out: bool) -> list[str]:
         """Resolve the VALVE service ids targeted by a service call.
 
-        ``service_id`` always targets that one valve. ``device_id`` targets the
+        ``entity_id`` targets those valve entities (#408). ``service_id``
+        always targets that one valve. ``device_id`` targets the
         only valve on the device. When the device has several valves, schedule
         commands (pause, unpause, close) apply to every valve (#396, #388).
         Opening still requires ``service_id``, because a controller can only
         water a couple of zones at once. A call that matches nothing raises
         HomeAssistantError instead of reporting success.
         """
+        if (entity_ids := call.data.get("entity_id")):
+            if isinstance(entity_ids, str):
+                entity_ids = [entity_ids]
+            return [self._valve_service_id_for_entity(eid) for eid in entity_ids]
+
         if (sid := call.data.get("service_id")):
             return [sid]
 
         device_id = call.data.get("device_id")
         if not device_id:
-            raise HomeAssistantError("Either device_id or service_id must be provided")
+            raise HomeAssistantError(
+                "One of entity_id, service_id or device_id must be provided"
+            )
 
         device_id = self._resolve_device_id(device_id)
         coordinator = self._get_coordinator(device_id)
@@ -346,6 +364,33 @@ class GardenaServiceManager:
             f"Device {device_id} has {len(services)} VALVE services; "
             f"pass service_id to choose one (available: {available})"
         )
+
+    def _valve_service_id_for_entity(self, entity_id: str) -> str:
+        """The VALVE service id behind a valve entity of this integration.
+
+        Read from the entity registry and the coordinators, not from the
+        entity's state, so an entity that is unavailable at the moment still
+        resolves. The unique ids are ``<device>_<service>`` for a Smart
+        Irrigation Control output or a generic valve, and
+        ``<device>_water_control`` for a Water Control (valve.py).
+        """
+        entry = er.async_get(self.hass).async_get(entity_id)
+        if entry is None or entry.platform != DOMAIN or entry.domain != "valve":
+            raise HomeAssistantError(f"{entity_id} is not a Gardena valve")
+
+        for entry_id, coordinator in self.hass.data[DOMAIN].items():
+            if entry_id == "service_manager" or not hasattr(coordinator, "locations"):
+                continue
+            for location in coordinator.locations.values():
+                for device in location.devices.values():
+                    valves = device.services.get("VALVE") or []
+                    for valve in valves:
+                        if entry.unique_id == f"{device.id}_{valve.id}":
+                            return valve.id
+                    if valves and entry.unique_id == f"{device.id}_water_control":
+                        return valves[0].id
+
+        raise HomeAssistantError(f"No Gardena valve found for {entity_id}")
 
     async def _send_command(self, service_id: str, command: GardenaCommand) -> bool:
         """Send command to device.

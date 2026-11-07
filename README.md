@@ -244,11 +244,23 @@ data:
 
 ### 🚰 Valve Services
 
+Every valve action takes `entity_id`: one or more valve entities of this integration, the easiest target in an automation. It takes precedence over `service_id` and `device_id`, which work as before.
+
+```yaml
+service: gardena_smart_system.valve_pause
+data:
+  entity_id:
+    - valve.irrigation_lawn
+    - valve.irrigation_hedge
+  duration: 3600
+```
+
 #### `gardena_smart_system.valve_open`
 Open the valve for a specified duration.
 
 **Parameters:**
-- `device_id` (required): The device ID of the valve
+- `entity_id` (optional): One or more valve entities, instead of `device_id` or `service_id`
+- `device_id` (required if neither `entity_id` nor `service_id` is given): The device ID of the valve
 - `duration` (optional): Duration in seconds (60-14400, default: 3600)
 
 **Example:**
@@ -263,7 +275,8 @@ data:
 Close the valve immediately. On a controller with several valves, `device_id` alone closes every valve. Pass `service_id` to close one valve.
 
 **Parameters:**
-- `device_id` (required if `service_id` is omitted): The device ID of the valve or controller
+- `entity_id` (optional): One or more valve entities, instead of `device_id` or `service_id`
+- `device_id` (required if neither `entity_id` nor `service_id` is given): The device ID of the valve or controller
 
 **Example:**
 ```yaml
@@ -276,7 +289,8 @@ data:
 Pause automatic operation of the valve. On a controller with several valves, `device_id` alone pauses every valve.
 
 **Parameters:**
-- `device_id` (required if `service_id` is omitted): The device ID of the valve or controller
+- `entity_id` (optional): One or more valve entities, instead of `device_id` or `service_id`
+- `device_id` (required if neither `entity_id` nor `service_id` is given): The device ID of the valve or controller
 - `duration` (optional): Seconds to skip the schedule, a multiple of 60 between 60 and 14400. Omit it to keep the device's own pause length.
 
 **Example:**
@@ -290,7 +304,8 @@ data:
 Resume automatic operation of the valve.
 
 **Parameters:**
-- `device_id` (required): The device ID of the valve
+- `entity_id` (optional): One or more valve entities, instead of `device_id` or `service_id`
+- `device_id` (required if neither `entity_id` nor `service_id` is given): The device ID of the valve
 
 **Example:**
 ```yaml
