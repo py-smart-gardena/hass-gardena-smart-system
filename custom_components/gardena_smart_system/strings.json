@@ -57,6 +57,11 @@
           "scheduled_watering": "Watering (schedule)"
         }
       }
+    },
+    "binary_sensor": {
+      "valve_problem": {
+        "name": "Problem"
+      }
     }
   },
   "config": {

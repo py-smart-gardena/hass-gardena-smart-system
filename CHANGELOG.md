@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - The valve actions (`valve_open`, `valve_close`, `valve_pause`, `valve_unpause`) take `entity_id`: one or more valve entities of this integration, picked in the UI. A single valve no longer needs its `service_id` looked up in the attributes; `service_id` and `device_id` work as before (#408)
 - A valve shows "opening" or "closing" while an open or close command is on its way, until the valve reports the new state, refuses with an error code, or a minute has passed. Until now it kept showing the old state for those seconds, so a pending command could not be told from a failed one (#408)
 - An activity sensor per valve: closed, watering (manual) or watering (schedule). The valve itself only shows open or closed, so a schedule from the Gardena app running alongside an automation could not be seen (#408)
+- A problem binary sensor per valve, on when the valve reports WARNING or ERROR, with the state and the error code as attributes. Automations and dashboards can use one standard signal; the error sensor still says which. An output with no valve connected is unavailable, as the valve itself (#408)
 
 ## [3.2.3] - 2026-11-07
 
