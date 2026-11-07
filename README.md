@@ -487,6 +487,10 @@ This is a **complete reimplementation** and requires a full migration:
 - Remove the integration completely and restart Home Assistant
 - Re-add the integration fresh
 
+### Diagnostics
+
+**Settings › Devices & services › Gardena Smart System › ⋮ › Download diagnostics** gives a file to attach to an issue: the integration's settings, every device and service as the API and the WebSocket reported them, the WebSocket's connection state and the API requests of the week. The client ID and secret, serial numbers, the WebSocket URL and the garden's name are redacted.
+
 ### Logs
 
 Enable detailed logs in `configuration.yaml`:
