@@ -16,7 +16,9 @@ concurrency:
 jobs:
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    # ubuntu-latest is Ubuntu 26.04, and actions/python-versions has no 3.14.2 build for it.
+    # pytest-homeassistant==2026.11.0 requires Python >=3.14.2, which .python-version pins.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout

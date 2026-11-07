@@ -1,6 +1,5 @@
 {
   "name": "Gardena Smart System",
-  "domains": ["sensor", "binary_sensor", "switch", "valve", "lawn_mower", "button", "number"],
   "render_readme": true,
   "homeassistant": "2023.1.5"
 }

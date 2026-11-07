@@ -20,8 +20,6 @@ reload:
 
 websocket_diagnostics:
   description: Get WebSocket connection diagnostics and status information.
-  response:
-    optional: true
   fields:
     detailed:
       description: Include detailed connection information.

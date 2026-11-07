@@ -1,9 +1,11 @@
 """Support for Gardena Smart System devices."""
+
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import DOMAIN
@@ -21,6 +23,8 @@ PLATFORMS = [
     Platform.VALVE,
     Platform.BUTTON,
 ]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -47,7 +51,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Gardena Smart System from a config entry."""
     _LOGGER.info("Setting up Gardena Smart System component")
-    
+
     # Create client
     from .credential_validation import dev_mode_enabled
     from .gardena_client import GardenaSmartSystemClient
@@ -67,24 +71,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         client_secret=entry.data["client_secret"],
         dev_mode=dev_mode,
     )
-    
+
     # Create coordinator
     coordinator = GardenaSmartSystemCoordinator(
         hass,
         client=client,
     )
     coordinator.config_entry_id = entry.entry_id
-    
+
     # Store coordinator in hass data
     hass.data[DOMAIN][entry.entry_id] = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-    
+
     # Start the coordinator
     await coordinator.async_config_entry_first_refresh()
-    
+
     # Forward the setup to the platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
+
     _LOGGER.info("Gardena Smart System component setup finished")
     return True
 
