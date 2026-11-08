@@ -128,6 +128,10 @@ class GardenaDeviceEntity(GardenaEntity):
         """Initialize the device entity."""
         super().__init__(coordinator, device, service_type)
         self._attr_has_entity_name = True
+        # With has_entity_name, Home Assistant puts the device name in front:
+        # the entity's own name is the service alone, or the device name came
+        # twice ("Pump Pump Power Socket").
+        self._attr_name = self._get_service_display_name()
 
     @property
     def device_info(self) -> DeviceInfo:

@@ -50,7 +50,6 @@ class GardenaPowerSocketSwitch(GardenaDeviceEntity, SwitchEntity):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, power_service) -> None:
         """Initialize the power socket switch."""
         super().__init__(coordinator, device, "POWER_SOCKET")
-        self._attr_name = f"{device.name} Power Socket"
         self._power_service = power_service
         self._device_id = device.id
 

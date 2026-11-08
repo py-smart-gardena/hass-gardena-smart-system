@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- A power socket's name no longer carries the device name twice ("Pump Pump Power Socket"). The entity ID of an existing install stays as it is; the name shown is corrected (found while looking at the entity names of #408)
+
 ## [3.3.0] - 2026-11-07
 
 ### Added
