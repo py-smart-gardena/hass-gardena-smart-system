@@ -157,7 +157,7 @@
         }
       },
       "valve_error": {
-        "name": "Error",
+        "name": "Chyba",
         "state": {
           "no_message": "Žiadna chyba",
           "concurrent_limit_reached": "Príliš veľa otvorených ventilov",
@@ -181,11 +181,97 @@
           "manual_watering": "Polievanie (manuálne)",
           "scheduled_watering": "Polievanie (harmonogram)"
         }
+      },
+      "battery_level": {
+        "name": "Úroveň batérie"
+      },
+      "operating_hours": {
+        "name": "Prevádzkové hodiny"
+      },
+      "rf_link_quality": {
+        "name": "Kvalita RF spojenia"
+      },
+      "soil_temperature": {
+        "name": "Teplota pôdy"
+      },
+      "ambient_temperature": {
+        "name": "Okolitá teplota"
+      },
+      "soil_humidity": {
+        "name": "Vlhkosť pôdy"
+      },
+      "light_intensity": {
+        "name": "Intenzita svetla"
+      },
+      "watering_end": {
+        "name": "Koniec polievania"
+      },
+      "watering_end_of": {
+        "name": "{valve} koniec polievania"
+      },
+      "valve_error_of": {
+        "name": "{valve} chyba",
+        "state": {
+          "no_message": "Žiadna chyba",
+          "concurrent_limit_reached": "Príliš veľa otvorených ventilov",
+          "not_connected": "Ventil nie je pripojený",
+          "valve_current_max_exceeded": "Prúd ventilu je príliš vysoký",
+          "total_current_max_exceeded": "Celkový prúd je príliš vysoký",
+          "watering_canceled": "Polievanie zrušené",
+          "master_valve": "Hlavný ventil nie je pripojený",
+          "watering_duration_too_short": "Príliš krátky čas zavlažovania",
+          "valve_broken": "Pokazený ventil",
+          "frost_prevents_starting": "Mráz bráni naštartovaniu",
+          "low_battery_prevents_starting": "Slabá batéria bráni naštartovaniu",
+          "valve_power_supply_failed": "Zlyhalo napájanie ventilu",
+          "unknown": "Neznáma chyba"
+        }
+      },
+      "valve_activity_of": {
+        "name": "{valve} aktivita",
+        "state": {
+          "closed": "Zatvorený",
+          "manual_watering": "Polievanie (manuálne)",
+          "scheduled_watering": "Polievanie (harmonogram)"
+        }
       }
     },
     "binary_sensor": {
       "valve_problem": {
         "name": "Problém"
+      },
+      "online": {
+        "name": "Pripojené"
+      },
+      "websocket_connected": {
+        "name": "Pripojené"
+      },
+      "valve_problem_of": {
+        "name": "{valve} problém"
+      }
+    },
+    "button": {
+      "start_mowing_now": {
+        "name": "Kosiť teraz"
+      },
+      "return_to_dock": {
+        "name": "Návrat do stanice"
+      },
+      "park_until_further_notice": {
+        "name": "Zaparkovať do ďalšieho upozornenia"
+      }
+    },
+    "number": {
+      "watering_duration": {
+        "name": "Trvanie zavlažovania"
+      },
+      "watering_duration_of": {
+        "name": "{valve} trvanie zavlažovania"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Zásuvka"
       }
     }
   },

@@ -57,7 +57,35 @@
           "scheduled_watering": "Arrosage (programmé)"
         }
       },
+      "battery_level": {
+        "name": "Niveau de batterie"
+      },
+      "operating_hours": {
+        "name": "Heures de fonctionnement"
+      },
+      "rf_link_quality": {
+        "name": "Qualité de la liaison RF"
+      },
+      "soil_temperature": {
+        "name": "Température du sol"
+      },
+      "ambient_temperature": {
+        "name": "Température ambiante"
+      },
+      "soil_humidity": {
+        "name": "Humidité du sol"
+      },
+      "light_intensity": {
+        "name": "Intensité lumineuse"
+      },
+      "watering_end": {
+        "name": "Fin d'arrosage"
+      },
+      "watering_end_of": {
+        "name": "{valve} fin d'arrosage"
+      },
       "valve_error_of": {
+        "name": "{valve} erreur",
         "state": {
           "no_message": "Aucune erreur",
           "concurrent_limit_reached": "Trop de vannes ouvertes",
@@ -75,6 +103,7 @@
         }
       },
       "valve_activity_of": {
+        "name": "{valve} activité",
         "state": {
           "closed": "Fermée",
           "manual_watering": "Arrosage (manuel)",
@@ -85,6 +114,39 @@
     "binary_sensor": {
       "valve_problem": {
         "name": "Problème"
+      },
+      "online": {
+        "name": "En ligne"
+      },
+      "websocket_connected": {
+        "name": "Connecté"
+      },
+      "valve_problem_of": {
+        "name": "{valve} problème"
+      }
+    },
+    "button": {
+      "start_mowing_now": {
+        "name": "Tondre maintenant"
+      },
+      "return_to_dock": {
+        "name": "Retour à la station"
+      },
+      "park_until_further_notice": {
+        "name": "Ranger jusqu'à nouvel ordre"
+      }
+    },
+    "number": {
+      "watering_duration": {
+        "name": "Durée d'arrosage"
+      },
+      "watering_duration_of": {
+        "name": "{valve} durée d'arrosage"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Prise"
       }
     }
   },
