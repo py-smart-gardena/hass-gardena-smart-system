@@ -8,6 +8,7 @@ from typing import Any, Optional
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .const import DOMAIN
 from .coordinator import GardenaSmartSystemCoordinator
@@ -17,7 +18,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class GardenaEntity(CoordinatorEntity, ABC):
-    """Base class for Gardena entities."""
+    """Base class for Gardena entities.
+
+    Names come from the translations (#408): Home Assistant puts the device
+    name in front of the entity's own, translated, name. They were fixed
+    English strings with the device name typed in. The entity IDs of an
+    existing install are kept by the entity registry.
+    """
+
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -30,7 +39,8 @@ class GardenaEntity(CoordinatorEntity, ABC):
         self.device = device
         self.service_type = service_type
         self._attr_unique_id = f"{device.id}_{service_type}"
-        self._attr_name = self._get_entity_name()
+        # For the log only: the name shown is translated, and known once added.
+        self._log_name = self._get_entity_name()
         self._attr_device_info = self._get_device_info()
 
     @property
@@ -68,6 +78,33 @@ class GardenaEntity(CoordinatorEntity, ABC):
         device_name = self.device.name or "Unknown Device"
         service_name = self._get_service_display_name()
         return f"{device_name} {service_name}"
+
+    def _keep_entity_id(self, domain: str, legacy_name: str) -> None:
+        """Suggest the entity ID the English name gave before (#408).
+
+        Home Assistant builds a new entity's ID from its name in the
+        installation's language, for most languages including German: a new
+        install in German would get sensor.pump_batteriestand where the same
+        device used to get sensor.pump_battery_level. The ID is suggested
+        from the name the entity had, so it stays the same in every language.
+        The entity registry keeps the ID of an entity it already has.
+        """
+        self.entity_id = f"{domain}.{slugify(legacy_name)}"
+        self._log_name = legacy_name
+
+    def _name_per_valve(self, key: str, valve_service) -> None:
+        """Name an entity of one valve.
+
+        On a device with several valves, a Smart Irrigation Control, the
+        valve's own name leads ("Lawn error"), behind the device name. On a
+        device with one, the device name says which valve it is.
+        """
+        valves = self.device.services.get("VALVE", [])
+        if len(valves) > 1 and valve_service.name:
+            self._attr_translation_key = f"{key}_of"
+            self._attr_translation_placeholders = {"valve": valve_service.name}
+        else:
+            self._attr_translation_key = key
 
     def _get_service_display_name(self) -> str:
         """Get display name for the service type."""
@@ -127,11 +164,6 @@ class GardenaDeviceEntity(GardenaEntity):
     ) -> None:
         """Initialize the device entity."""
         super().__init__(coordinator, device, service_type)
-        self._attr_has_entity_name = True
-        # With has_entity_name, Home Assistant puts the device name in front:
-        # the entity's own name is the service alone, or the device name came
-        # twice ("Pump Pump Power Socket").
-        self._attr_name = self._get_service_display_name()
 
     @property
     def device_info(self) -> DeviceInfo:

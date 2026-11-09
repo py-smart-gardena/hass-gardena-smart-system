@@ -163,11 +163,115 @@
           "manual_watering": "Bewässert (manuell)",
           "scheduled_watering": "Bewässert (Zeitplan)"
         }
+      },
+      "battery_level": {
+        "name": "Batteriestand"
+      },
+      "operating_hours": {
+        "name": "Betriebsstunden"
+      },
+      "rf_link_quality": {
+        "name": "Funkqualität"
+      },
+      "soil_temperature": {
+        "name": "Bodentemperatur"
+      },
+      "ambient_temperature": {
+        "name": "Umgebungstemperatur"
+      },
+      "soil_humidity": {
+        "name": "Bodenfeuchte"
+      },
+      "light_intensity": {
+        "name": "Lichtstärke"
+      },
+      "watering_end": {
+        "name": "Bewässerungsende"
+      },
+      "watering_end_of": {
+        "name": "{valve} Bewässerungsende"
+      },
+      "valve_error_of": {
+        "name": "{valve} Fehler",
+        "state": {
+          "no_message": "Kein Fehler",
+          "concurrent_limit_reached": "Zu viele Ventile offen",
+          "not_connected": "Ventil nicht angeschlossen",
+          "valve_current_max_exceeded": "Ventilstrom zu hoch",
+          "total_current_max_exceeded": "Gesamtstrom zu hoch",
+          "watering_canceled": "Bewässerung abgebrochen",
+          "master_valve": "Hauptventil nicht angeschlossen",
+          "watering_duration_too_short": "Bewässerungsdauer zu kurz",
+          "valve_broken": "Ventil defekt",
+          "frost_prevents_starting": "Frost verhindert den Start",
+          "low_battery_prevents_starting": "Schwache Batterie verhindert den Start",
+          "valve_power_supply_failed": "Stromversorgung des Ventils ausgefallen",
+          "unknown": "Unbekannter Fehler"
+        }
+      },
+      "valve_activity_of": {
+        "name": "{valve} Aktivität",
+        "state": {
+          "closed": "Geschlossen",
+          "manual_watering": "Bewässert (manuell)",
+          "scheduled_watering": "Bewässert (Zeitplan)"
+        }
+      },
+      "valve_error": {
+        "name": "Fehler",
+        "state": {
+          "no_message": "Kein Fehler",
+          "concurrent_limit_reached": "Zu viele Ventile offen",
+          "not_connected": "Ventil nicht angeschlossen",
+          "valve_current_max_exceeded": "Ventilstrom zu hoch",
+          "total_current_max_exceeded": "Gesamtstrom zu hoch",
+          "watering_canceled": "Bewässerung abgebrochen",
+          "master_valve": "Hauptventil nicht angeschlossen",
+          "watering_duration_too_short": "Bewässerungsdauer zu kurz",
+          "valve_broken": "Ventil defekt",
+          "frost_prevents_starting": "Frost verhindert den Start",
+          "low_battery_prevents_starting": "Schwache Batterie verhindert den Start",
+          "valve_power_supply_failed": "Stromversorgung des Ventils ausgefallen",
+          "unknown": "Unbekannter Fehler"
+        }
       }
     },
     "binary_sensor": {
       "valve_problem": {
         "name": "Problem"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "websocket_connected": {
+        "name": "Verbunden"
+      },
+      "valve_problem_of": {
+        "name": "{valve} Problem"
+      }
+    },
+    "button": {
+      "start_mowing_now": {
+        "name": "Jetzt mähen"
+      },
+      "return_to_dock": {
+        "name": "Zur Ladestation"
+      },
+      "park_until_further_notice": {
+        "name": "Bis auf Weiteres parken"
+      }
+    },
+    "number": {
+      "watering_duration": {
+        "name": "Bewässerungsdauer"
+      },
+      "watering_duration_of": {
+        "name": "{valve} Bewässerungsdauer"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Steckdose"
       }
     }
   },

@@ -181,11 +181,97 @@
           "manual_watering": "Watering (manual)",
           "scheduled_watering": "Watering (schedule)"
         }
+      },
+      "battery_level": {
+        "name": "Battery level"
+      },
+      "operating_hours": {
+        "name": "Operating hours"
+      },
+      "rf_link_quality": {
+        "name": "RF link quality"
+      },
+      "soil_temperature": {
+        "name": "Soil temperature"
+      },
+      "ambient_temperature": {
+        "name": "Ambient temperature"
+      },
+      "soil_humidity": {
+        "name": "Soil humidity"
+      },
+      "light_intensity": {
+        "name": "Light intensity"
+      },
+      "watering_end": {
+        "name": "Watering end"
+      },
+      "watering_end_of": {
+        "name": "{valve} watering end"
+      },
+      "valve_error_of": {
+        "name": "{valve} error",
+        "state": {
+          "no_message": "No error",
+          "concurrent_limit_reached": "Too many valves open",
+          "not_connected": "Valve not connected",
+          "valve_current_max_exceeded": "Valve current too high",
+          "total_current_max_exceeded": "Total current too high",
+          "watering_canceled": "Watering canceled",
+          "master_valve": "Master valve not connected",
+          "watering_duration_too_short": "Watering duration too short",
+          "valve_broken": "Valve broken",
+          "frost_prevents_starting": "Frost prevents starting",
+          "low_battery_prevents_starting": "Low battery prevents starting",
+          "valve_power_supply_failed": "Valve power supply failed",
+          "unknown": "Unknown error"
+        }
+      },
+      "valve_activity_of": {
+        "name": "{valve} activity",
+        "state": {
+          "closed": "Closed",
+          "manual_watering": "Watering (manual)",
+          "scheduled_watering": "Watering (schedule)"
+        }
       }
     },
     "binary_sensor": {
       "valve_problem": {
         "name": "Problem"
+      },
+      "online": {
+        "name": "Online"
+      },
+      "websocket_connected": {
+        "name": "Connected"
+      },
+      "valve_problem_of": {
+        "name": "{valve} problem"
+      }
+    },
+    "button": {
+      "start_mowing_now": {
+        "name": "Start mowing now"
+      },
+      "return_to_dock": {
+        "name": "Return to dock"
+      },
+      "park_until_further_notice": {
+        "name": "Park until further notice"
+      }
+    },
+    "number": {
+      "watering_duration": {
+        "name": "Watering duration"
+      },
+      "watering_duration_of": {
+        "name": "{valve} watering duration"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Power socket"
       }
     }
   },

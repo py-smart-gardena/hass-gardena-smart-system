@@ -42,7 +42,9 @@ class TestGardenaEntity:
         assert entity.device == mock_device
         assert entity.service_type == "MOWER"
         assert entity._attr_unique_id == "test-device-1_MOWER"
-        assert entity._attr_name == "Test Device Lawn Mower"
+        # The name shown is translated; the log keeps the plain one.
+        assert entity._log_name == "Test Device Lawn Mower"
+        assert entity.has_entity_name is True
 
     def _make_location(self, device):
         """Create a mock location containing the device."""
@@ -344,7 +346,7 @@ class TestGardenaOnlineEntity:
 class TestGardenaValveErrorSensor:
     """Valve last_error_code sensor (#382)."""
 
-    def _entity(self, last_error_code="NO_MESSAGE", name="Zone 1"):
+    def _entity(self, last_error_code="NO_MESSAGE", name="Zone 1", valves=1):
         from .models import GardenaValveService
         from .sensor import GardenaValveErrorSensor
 
@@ -359,7 +361,11 @@ class TestGardenaValveErrorSensor:
         device.id = "device-1"
         device.name = "Irrigation"
         device.serial = "12345"
-        device.services = {"VALVE": [valve_service]}
+        others = [
+            GardenaValveService(id=f"device-1:{n}", type="VALVE", device_id="device-1", name=f"Zone {n}")
+            for n in range(2, valves + 1)
+        ]
+        device.services = {"VALVE": [valve_service, *others]}
 
         coordinator = Mock(spec=GardenaSmartSystemCoordinator)
         coordinator.last_update_success = True
@@ -370,10 +376,15 @@ class TestGardenaValveErrorSensor:
         return GardenaValveErrorSensor(coordinator, device, valve_service)
 
     def test_name_identifies_the_valve(self):
-        """Each valve on a controller gets its own error sensor name."""
+        """Each valve on a controller gets its own error sensor name (#408)."""
+        entity = self._entity(valves=2)
+        assert entity.translation_key == "valve_error_of"
+        assert entity.translation_placeholders == {"valve": "Zone 1"}
+
+    def test_a_single_valve_goes_by_its_device(self):
         entity = self._entity()
-        assert entity.name == "Zone 1 Error"
         assert entity.translation_key == "valve_error"
+        assert not entity.translation_placeholders
         assert "valve_broken" in entity.options
         assert "wheel_motor_blocked_left" not in entity.options
 

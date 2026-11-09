@@ -54,11 +54,13 @@ class GardenaValveDurationNumber(GardenaEntity, NumberEntity, RestoreEntity):
         super().__init__(coordinator, device, "VALVE")
         self._valve_service = valve_service
         self._device_id = device.id
-        valve_name = valve_service.name or ""
-        if valve_name:
-            self._attr_name = f"{device.name} {valve_name} Watering Duration"
-        else:
-            self._attr_name = f"{device.name} Watering Duration"
+        self._name_per_valve("watering_duration", valve_service)
+        self._keep_entity_id(
+            "number",
+            f"{device.name} {valve_service.name} Watering Duration"
+            if valve_service.name
+            else f"{device.name} Watering Duration",
+        )
         self._attr_unique_id = f"{device.id}_{valve_service.id}_watering_duration"
         self._attr_native_unit_of_measurement = UnitOfTime.MINUTES
         self._attr_native_min_value = MIN_DURATION_MINUTES

@@ -96,7 +96,9 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, mower_service) -> None:
         """Initialize the lawn mower."""
         super().__init__(coordinator, device, "MOWER")
-        self._attr_name = f"{device.name} Lawn Mower"
+        # The mower is what the device is: it takes the device's name.
+        self._attr_name = None
+        self._keep_entity_id("lawn_mower", f"{device.name} Lawn Mower")
         self._mower_service = mower_service
         self._device_id = device.id
         self._attr_unique_id = f"{device.id}_mower"
@@ -105,7 +107,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             LawnMowerEntityFeature.PAUSE |
             LawnMowerEntityFeature.DOCK
         )
-        _LOGGER.debug(f"Initialized lawn mower entity: {self._attr_name} with unique_id: {self._attr_unique_id} and features: {self._attr_supported_features}")
+        _LOGGER.debug(f"Initialized lawn mower entity: {self._log_name} with unique_id: {self._attr_unique_id} and features: {self._attr_supported_features}")
         _LOGGER.debug(f"Mower service ID: {mower_service.id}, Device ID: {device.id}")
         _LOGGER.debug(f"Supported features: START_MOWING={bool(self._attr_supported_features & LawnMowerEntityFeature.START_MOWING)}, PAUSE={bool(self._attr_supported_features & LawnMowerEntityFeature.PAUSE)}, DOCK={bool(self._attr_supported_features & LawnMowerEntityFeature.DOCK)}")
 
@@ -122,19 +124,19 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
     def activity(self) -> LawnMowerActivity:
         """Return the current activity of the lawn mower."""
         if not self.available:
-            _LOGGER.debug(f"Lawn mower {self._attr_name} not available")
+            _LOGGER.debug(f"Lawn mower {self._log_name} not available")
             return LawnMowerActivity.ERROR
         
         # Get fresh data from coordinator
         current_service = self._get_current_mower_service()
         if not current_service:
-            _LOGGER.debug(f"Lawn mower {self._attr_name} has no current mower service")
+            _LOGGER.debug(f"Lawn mower {self._log_name} has no current mower service")
             return LawnMowerActivity.ERROR
         
         activity = current_service.activity
         mapped_activity = MOWER_ACTIVITY_MAP.get(activity)
         if mapped_activity is not None:
-            _LOGGER.debug(f"Lawn mower {self._attr_name} activity: {activity} -> {mapped_activity}")
+            _LOGGER.debug(f"Lawn mower {self._log_name} activity: {activity} -> {mapped_activity}")
             return mapped_activity
 
         # Unmapped or NONE activity. Only report ERROR when the service state
@@ -155,7 +157,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
         )
         fallback = LawnMowerActivity.ERROR if is_actionable_error else LawnMowerActivity.PAUSED
         _LOGGER.debug(
-            f"Lawn mower {self._attr_name} activity: {activity} (unmapped), "
+            f"Lawn mower {self._log_name} activity: {activity} (unmapped), "
             f"state: {state}, last_error_code: {error_code or None} -> {fallback}"
         )
         return fallback
@@ -204,7 +206,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
 
     async def async_start_mowing(self) -> None:
         """Start mowing."""
-        _LOGGER.info(f"=== START_MOWING called for {self._attr_name} ===")
+        _LOGGER.info(f"=== START_MOWING called for {self._log_name} ===")
         _LOGGER.info(f"Starting mowing for {self.device.name} ({self._mower_service.id})")
         if self._mower_service:
             command_data = {
@@ -218,12 +220,12 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             try:
                 await self.coordinator.client.send_command(self._mower_service.id, command_data)
                 await self.coordinator.async_request_refresh()
-                _LOGGER.info(f"=== START_MOWING completed for {self._attr_name} ===")
+                _LOGGER.info(f"=== START_MOWING completed for {self._log_name} ===")
             except Exception as e:
-                _LOGGER.error(f"Error in start_mowing for {self._attr_name}: {e}")
+                _LOGGER.error(f"Error in start_mowing for {self._log_name}: {e}")
                 raise
         else:
-            _LOGGER.error(f"No mower service available for {self._attr_name}")
+            _LOGGER.error(f"No mower service available for {self._log_name}")
 
     def pause(self) -> None:
         """Pause mowing - synchronous wrapper."""
@@ -231,7 +233,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
 
     async def async_pause(self) -> None:
         """Pause mowing."""
-        _LOGGER.info(f"=== PAUSE called for {self._attr_name} ===")
+        _LOGGER.info(f"=== PAUSE called for {self._log_name} ===")
         _LOGGER.info(f"Pausing mowing for {self.device.name} ({self._mower_service.id})")
         if self._mower_service:
             command_data = {
@@ -247,12 +249,12 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             try:
                 await self.coordinator.client.send_command(self._mower_service.id, command_data)
                 await self.coordinator.async_request_refresh()
-                _LOGGER.info(f"=== PAUSE completed for {self._attr_name} ===")
+                _LOGGER.info(f"=== PAUSE completed for {self._log_name} ===")
             except Exception as e:
-                _LOGGER.error(f"Error in pause for {self._attr_name}: {e}")
+                _LOGGER.error(f"Error in pause for {self._log_name}: {e}")
                 raise
         else:
-            _LOGGER.error(f"No mower service available for {self._attr_name}")
+            _LOGGER.error(f"No mower service available for {self._log_name}")
 
     def dock(self) -> None:
         """Dock the mower - synchronous wrapper."""
@@ -260,7 +262,7 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
 
     async def async_dock(self) -> None:
         """Dock the mower."""
-        _LOGGER.info(f"=== DOCK called for {self._attr_name} ===")
+        _LOGGER.info(f"=== DOCK called for {self._log_name} ===")
         _LOGGER.info(f"Docking mower {self.device.name} ({self._mower_service.id})")
         if self._mower_service:
             command_data = {
@@ -276,12 +278,12 @@ class GardenaLawnMower(GardenaEntity, LawnMowerEntity):
             try:
                 await self.coordinator.client.send_command(self._mower_service.id, command_data)
                 await self.coordinator.async_request_refresh()
-                _LOGGER.info(f"=== DOCK completed for {self._attr_name} ===")
+                _LOGGER.info(f"=== DOCK completed for {self._log_name} ===")
             except Exception as e:
-                _LOGGER.error(f"Error in dock for {self._attr_name}: {e}")
+                _LOGGER.error(f"Error in dock for {self._log_name}: {e}")
                 raise
         else:
-            _LOGGER.error(f"No mower service available for {self._attr_name}")
+            _LOGGER.error(f"No mower service available for {self._log_name}")
 
     async def async_start_override(self, duration: int) -> None:
         """Start mowing for a specific duration."""

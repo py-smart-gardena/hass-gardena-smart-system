@@ -47,9 +47,12 @@ async def async_setup_entry(
 class GardenaPowerSocketSwitch(GardenaDeviceEntity, SwitchEntity):
     """Representation of a Gardena power socket switch."""
 
+    _attr_translation_key = "power_socket"
+
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, power_service) -> None:
         """Initialize the power socket switch."""
         super().__init__(coordinator, device, "POWER_SOCKET")
+        self._keep_entity_id("switch", f"{device.name} Power Socket")
         self._power_service = power_service
         self._device_id = device.id
 

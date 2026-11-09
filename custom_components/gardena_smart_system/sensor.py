@@ -122,7 +122,8 @@ class GardenaBatterySensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "COMMON")
         self._common_service = common_service
         self._device_id = device.id
-        self._attr_name = f"{device.name} Battery Level"
+        self._attr_translation_key = "battery_level"
+        self._keep_entity_id("sensor", f"{device.name} Battery Level")
         self._attr_unique_id = f"{device.id}_{common_service.id}_battery_level"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.BATTERY
@@ -168,8 +169,9 @@ class GardenaMowerErrorSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "MOWER")
         self._mower_service = mower_service
         self._device_id = device.id
-        self._attr_name = None
         self._attr_unique_id = f"{device.id}_{mower_service.id}_last_error_code"
+        # Its name was None, so its ID was the device's alone.
+        self._keep_entity_id("sensor", device.name)
         self._attr_icon = "mdi:alert-circle-outline"
         self._attr_options = [
             "uninitialised", "no_message", "outside_working_area", "no_loop_signal",
@@ -278,7 +280,8 @@ class GardenaMowerOperatingHoursSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "MOWER")
         self._mower_service = mower_service
         self._device_id = device.id
-        self._attr_name = f"{device.name} Operating Hours"
+        self._attr_translation_key = "operating_hours"
+        self._keep_entity_id("sensor", f"{device.name} Operating Hours")
         self._attr_unique_id = f"{device.id}_{mower_service.id}_operating_hours"
         self._attr_native_unit_of_measurement = UnitOfTime.HOURS
         self._attr_icon = "mdi:clock-outline"
@@ -309,7 +312,8 @@ class GardenaRFLinkLevelSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "COMMON")
         self._common_service = common_service
         self._device_id = device.id
-        self._attr_name = f"{device.name} RF Link Quality"
+        self._attr_translation_key = "rf_link_quality"
+        self._keep_entity_id("sensor", f"{device.name} RF Link Quality")
         self._attr_unique_id = f"{device.id}_{common_service.id}_rf_link_level"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_icon = "mdi:signal"
@@ -352,15 +356,17 @@ class GardenaTemperatureSensor(GardenaEntity, SensorEntity):
         self._temp_attr = temp_attr
         
         if temp_attr == "soil_temperature":
-            self._attr_name = f"{device.name} Soil Temperature"
+            self._attr_translation_key = "soil_temperature"
             self._attr_unique_id = f"{device.id}_{sensor_service.id}_soil_temperature"
+            self._keep_entity_id(
+                "sensor",
+                f"{device.name} Soil Temperature"
+                + (" (Soil Sensor)" if is_soil_sensor else ""),
+            )
         else:
-            self._attr_name = f"{device.name} Ambient Temperature"
+            self._attr_translation_key = "ambient_temperature"
             self._attr_unique_id = f"{device.id}_{sensor_service.id}_ambient_temperature"
-        
-        # Add soil sensor indicator to name if it's a soil sensor
-        if is_soil_sensor and temp_attr == "soil_temperature":
-            self._attr_name = f"{device.name} Soil Temperature (Soil Sensor)"
+            self._keep_entity_id("sensor", f"{device.name} Ambient Temperature")
         
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
@@ -398,7 +404,8 @@ class GardenaHumiditySensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "SENSOR")
         self._sensor_service = sensor_service
         self._device_id = device.id
-        self._attr_name = f"{device.name} Soil Humidity"
+        self._attr_translation_key = "soil_humidity"
+        self._keep_entity_id("sensor", f"{device.name} Soil Humidity")
         self._attr_unique_id = f"{device.id}_{sensor_service.id}_soil_humidity"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_device_class = SensorDeviceClass.MOISTURE
@@ -430,7 +437,8 @@ class GardenaLightSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "SENSOR")
         self._sensor_service = sensor_service
         self._device_id = device.id
-        self._attr_name = f"{device.name} Light Intensity"
+        self._attr_translation_key = "light_intensity"
+        self._keep_entity_id("sensor", f"{device.name} Light Intensity")
         self._attr_unique_id = f"{device.id}_{sensor_service.id}_light_intensity"
         self._attr_native_unit_of_measurement = "lx"
         self._attr_device_class = SensorDeviceClass.ILLUMINANCE
@@ -455,7 +463,6 @@ class GardenaLightSensor(GardenaEntity, SensorEntity):
 class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
     """Representation of a Gardena valve error code sensor."""
 
-    _attr_translation_key = "valve_error"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(VALVE_ERROR_CODES)
 
@@ -464,8 +471,8 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "VALVE")
         self._valve_service = valve_service
         self._device_id = device.id
-        valve_name = valve_service.name or device.name
-        self._attr_name = f"{valve_name} Error"
+        self._name_per_valve("valve_error", valve_service)
+        self._keep_entity_id("sensor", f"{valve_service.name or device.name} Error")
         self._attr_unique_id = f"{device.id}_{valve_service.id}_last_error_code"
         self._attr_icon = "mdi:alert-circle-outline"
 
@@ -508,8 +515,10 @@ class GardenaValveRemainingTimeSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "VALVE")
         self._valve_service = valve_service
         self._device_id = device.id
-        valve_name = valve_service.name or device.name
-        self._attr_name = f"{valve_name} Watering End"
+        self._name_per_valve("watering_end", valve_service)
+        self._keep_entity_id(
+            "sensor", f"{valve_service.name or device.name} Watering End"
+        )
         self._attr_unique_id = f"{device.id}_{valve_service.id}_watering_end"
         self._attr_icon = "mdi:timer-sand"
 
@@ -550,7 +559,6 @@ class GardenaValveActivitySensor(GardenaEntity, SensorEntity):
     it visible, so a schedule running alongside an automation shows (#408).
     """
 
-    _attr_translation_key = "valve_activity"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(VALVE_ACTIVITIES)
 
@@ -559,8 +567,10 @@ class GardenaValveActivitySensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, "VALVE")
         self._valve_service = valve_service
         self._device_id = device.id
-        valve_name = valve_service.name or device.name
-        self._attr_name = f"{valve_name} Activity"
+        self._name_per_valve("valve_activity", valve_service)
+        self._keep_entity_id(
+            "sensor", f"{valve_service.name or device.name} Activity"
+        )
         self._attr_unique_id = f"{device.id}_{valve_service.id}_activity"
 
     def _get_current_valve_service(self):
@@ -606,7 +616,8 @@ class GardenaAPIUsageSensor(SensorEntity):
         self.coordinator = coordinator
         self._entry_id = entry_id
         self._attr_unique_id = f"gardena_api_usage_{entry_id}"
-        self._attr_name = "API Requests (Week)"
+        # The ID it had in English, in every language (see _keep_entity_id).
+        self.entity_id = "sensor.websocket_status_api_requests_week"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"websocket_status_{entry_id}")},
         )

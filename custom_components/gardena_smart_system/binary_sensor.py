@@ -44,17 +44,19 @@ class GardenaOnlineBinarySensor(GardenaOnlineEntity, BinarySensorEntity):
     """Representation of a Gardena device online status sensor."""
 
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "online"
 
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device) -> None:
         """Initialize the online status sensor."""
         super().__init__(coordinator, device)
-        self._attr_name = f"{device.name} Online"
+        self._keep_entity_id("binary_sensor", f"{device.name} Online")
 
 
 class GardenaWebSocketConnectedSensor(GardenaEntity, BinarySensorEntity):
     """Binary sensor indicating whether the Gardena WebSocket is connected."""
 
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "websocket_connected"
 
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, entry_id: str) -> None:
         """Initialize the WebSocket connectivity sensor."""
@@ -68,8 +70,8 @@ class GardenaWebSocketConnectedSensor(GardenaEntity, BinarySensorEntity):
             location_id=""
         )
         super().__init__(coordinator, dummy_device, "WEBSOCKET")
-        self._attr_name = "Gardena WebSocket Connected"
         self._attr_unique_id = f"gardena_websocket_connected_{entry_id}"
+        self._keep_entity_id("binary_sensor", "Gardena WebSocket Connected")
 
     @property
     def available(self) -> bool:
@@ -111,15 +113,16 @@ class GardenaValveProblemSensor(GardenaEntity, BinarySensorEntity):
     """
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
-    _attr_translation_key = "valve_problem"
 
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
         """Initialize the valve problem sensor."""
         super().__init__(coordinator, device, "VALVE")
         self._valve_service = valve_service
         self._device_id = device.id
-        valve_name = valve_service.name or device.name
-        self._attr_name = f"{valve_name} Problem"
+        self._name_per_valve("valve_problem", valve_service)
+        self._keep_entity_id(
+            "binary_sensor", f"{valve_service.name or device.name} Problem"
+        )
         self._attr_unique_id = f"{device.id}_{valve_service.id}_problem"
 
     def _get_current_valve_service(self):

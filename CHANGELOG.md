@@ -4,8 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Entity names are translated: Home Assistant shows them in the installation's language, behind the device name ("Garden Lawn error", in German "Garden Lawn Fehler"). On a controller with several valves the valve's name leads. Names were fixed English strings until now. English and German are included; other languages fall back to English until translated (#408)
+- Entity IDs stay as they were. An existing install keeps its IDs, and a new install gets the IDs the English names gave before, in every language: Home Assistant would otherwise build a German install's IDs from the German names (`sensor.balcony_batteriestand`) (#408)
+- The mower and a Water Control's valve show the device's name alone, as Home Assistant does for a device's main entity (#408)
+
 ### Fixed
 
+- The mower's error code sensor showed only the device's name, and the API usage sensor a fixed English name, instead of their translated names (#408)
 - A power socket's name no longer carries the device name twice ("Pump Pump Power Socket"). The entity ID of an existing install stays as it is; the name shown is corrected (found while looking at the entity names of #408)
 
 ## [3.3.0] - 2026-11-07

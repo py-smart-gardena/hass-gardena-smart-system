@@ -193,7 +193,7 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
             _LOGGER.warning(
                 "%s %s did not report %s within %s s",
                 self._log_label,
-                self._attr_name,
+                self._log_name,
                 "open" if self._pending == "opening" else "closed",
                 VALVE_COMMAND_PENDING_SECONDS,
             )
@@ -255,14 +255,14 @@ class _GardenaValveBase(GardenaEntity, ValveEntity):
                 _LOGGER.debug(
                     "%s %s initial activity: %s",
                     self._log_label,
-                    self._attr_name,
+                    self._log_name,
                     activity,
                 )
             else:
                 _LOGGER.info(
                     "%s %s activity: %s -> %s",
                     self._log_label,
-                    self._attr_name,
+                    self._log_name,
                     self._last_logged_activity,
                     activity,
                 )
@@ -281,7 +281,9 @@ class GardenaWaterControl(_GardenaValveBase):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
         """Initialize the Water Control."""
         super().__init__(coordinator, device, valve_service)
-        self._attr_name = device.name  # Use device name, not service name
+        # The valve is what the device is: it takes the device's name.
+        self._attr_name = None
+        self._keep_entity_id("valve", device.name)
         self._attr_unique_id = f"{device.id}_water_control"
         self._attr_device_class = ValveDeviceClass.WATER
 
@@ -338,15 +340,17 @@ class GardenaSmartIrrigationControl(_GardenaValveBase):
     def __init__(self, coordinator: GardenaSmartSystemCoordinator, device, valve_service) -> None:
         """Initialize the Smart Irrigation Control valve."""
         super().__init__(coordinator, device, valve_service)
-        self._attr_name = f"{device.name} - {valve_service.name}"
+        # The valve's own name, behind the device's.
+        self._attr_name = valve_service.name
+        self._keep_entity_id("valve", f"{device.name} - {valve_service.name}")
         self._attr_unique_id = f"{device.id}_{valve_service.id}"
         self._attr_device_class = ValveDeviceClass.WATER
 
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve."""
-        _LOGGER.info(f"Opening Smart Irrigation Control valve {self._attr_name} ({self.valve_service.id})")
+        _LOGGER.info(f"Opening Smart Irrigation Control valve {self._log_name} ({self.valve_service.id})")
         if not self.valve_service:
-            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._attr_name}")
+            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._log_name}")
             return
         seconds = self._get_configured_duration_seconds()
         command_data = {
@@ -362,14 +366,14 @@ class GardenaSmartIrrigationControl(_GardenaValveBase):
         try:
             await self._async_send_valve_command(command_data, "opening")
         except Exception as e:
-            _LOGGER.error(f"Error opening Smart Irrigation Control valve {self._attr_name}: {e}")
+            _LOGGER.error(f"Error opening Smart Irrigation Control valve {self._log_name}: {e}")
             raise
 
     async def async_close_valve(self, **kwargs: Any) -> None:
         """Close the valve."""
-        _LOGGER.info(f"Closing Smart Irrigation Control valve {self._attr_name} ({self.valve_service.id})")
+        _LOGGER.info(f"Closing Smart Irrigation Control valve {self._log_name} ({self.valve_service.id})")
         if not self.valve_service:
-            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._attr_name}")
+            _LOGGER.error(f"No valve service available for Smart Irrigation Control valve {self._log_name}")
             return
         command_data = {
             "data": {
@@ -383,7 +387,7 @@ class GardenaSmartIrrigationControl(_GardenaValveBase):
         try:
             await self._async_send_valve_command(command_data, "closing")
         except Exception as e:
-            _LOGGER.error(f"Error closing Smart Irrigation Control valve {self._attr_name}: {e}")
+            _LOGGER.error(f"Error closing Smart Irrigation Control valve {self._log_name}: {e}")
             raise
 
 
@@ -397,6 +401,8 @@ class GardenaValve(_GardenaValveBase):
         super().__init__(coordinator, device, valve_service)
         self._attr_name = valve_service.name
         self._attr_unique_id = f"{device.id}_{valve_service.id}"
+        # Its ID came from the valve's name alone.
+        self._keep_entity_id("valve", valve_service.name or device.name)
 
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve."""
