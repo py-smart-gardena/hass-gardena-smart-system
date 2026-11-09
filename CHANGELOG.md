@@ -4,9 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-09
+
+### Added
+
+- Slovak translations for the valve error, activity and problem sensors, and for the mower start options
+
 ### Changed
 
-- Entity names are translated: Home Assistant shows them in the installation's language, behind the device name ("Garden Lawn error", in German "Garden Lawn Fehler"). On a controller with several valves the valve's name leads. Names were fixed English strings until now. English and German are included; other languages fall back to English until translated (#408)
+- Entity names are translated: Home Assistant shows them in the installation's language, behind the device name ("Garden Lawn error", in German "Garden Lawn Fehler", in French "Garden Lawn erreur"). On a controller with several valves the valve's name leads. Names were fixed English strings until now. English, German, French and Slovak are included; other languages fall back to English until translated (#408)
 - Entity IDs stay as they were. An existing install keeps its IDs, and a new install gets the IDs the English names gave before, in every language: Home Assistant would otherwise build a German install's IDs from the German names (`sensor.balcony_batteriestand`) (#408)
 - The mower and a Water Control's valve show the device's name alone, as Home Assistant does for a device's main entity (#408)
 
