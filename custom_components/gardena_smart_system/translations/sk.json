@@ -1,6 +1,9 @@
 {
   "entity": {
     "sensor": {
+      "api_requests_week": {
+        "name": "API požiadavky (týždeň)"
+      },
       "mower_error": {
         "name": "Chybový kód",
         "state": {
@@ -152,6 +155,37 @@
           "connection_not_changed": "Pripojenie sa nezmenilo",
           "unknown": "Neznáma chyba"
         }
+      },
+      "valve_error": {
+        "name": "Error",
+        "state": {
+          "no_message": "Žiadna chyba",
+          "concurrent_limit_reached": "Príliš veľa otvorených ventilov",
+          "not_connected": "Ventil nie je pripojený",
+          "valve_current_max_exceeded": "Prúd ventilu je príliš vysoký",
+          "total_current_max_exceeded": "Celkový prúd je príliš vysoký",
+          "watering_canceled": "Polievanie zrušené",
+          "master_valve": "Hlavný ventil nie je pripojený",
+          "watering_duration_too_short": "Príliš krátky čas zavlažovania",
+          "valve_broken": "Pokazený ventil",
+          "frost_prevents_starting": "Mráz bráni naštartovaniu",
+          "low_battery_prevents_starting": "Slabá batéria bráni naštartovaniu",
+          "valve_power_supply_failed": "Zlyhalo napájanie ventilu",
+          "unknown": "Neznáma chyba"
+        }
+      },
+      "valve_activity": {
+        "name": "Aktivita",
+        "state": {
+          "closed": "Zatvorený",
+          "manual_watering": "Polievanie (manuálne)",
+          "scheduled_watering": "Polievanie (harmonogram)"
+        }
+      }
+    },
+    "binary_sensor": {
+      "valve_problem": {
+        "name": "Problém"
       }
     }
   },
@@ -191,8 +225,28 @@
       }
     }
   },
+  "selector": {
+    "start_mowing_behavior": {
+      "options": {
+        "resume_schedule": "Obnoviť plán",
+        "mow_now": "Pokos teraz"
+      }
+    }
+  },
   "options": {
     "step": {
+      "init": {
+        "title": "Gardena Smart System nastavenia",
+        "description": "Tlačidlo Spustiť pri entite kosačky na trávu. Možnosť Obnoviť harmonogram zachováva aktuálne správanie. Možnosť Kosiť teraz spustí kosenie okamžite na nižšie uvedenú dobu. Obnovenie harmonogramu zostáva k dispozícii prostredníctvom služby `start_automatic`.",
+        "data": {
+          "start_mowing_behavior": "Štart tlačidlo",
+          "mow_now_duration": "Trvanie aktuálneho kosenia"
+        },
+        "data_description": {
+          "start_mowing_behavior": "Funkcia Obnoviť harmonogram mimo kalendára kosenia nič nevykoná. Funkcia Kosiť teraz spustí kosačku okamžite.",
+          "mow_now_duration": "Sekundy, násobok čísla 60. Používa sa len vtedy, keď je možnosť Spustenie nastavená na okamžité kosenie. Predvolená hodnota je 10 800 (3 hodiny)."
+        }
+      },
       "user": {
         "data": {
           "mower_duration": "Trvanie mower (minúty)",
@@ -229,14 +283,6 @@
     "reconnect_websocket": {
       "name": "Znovu pripojiť WebSocket",
       "description": "Vynútiť WebSocket pripojenie pre integráciu Gardena Smart System."
-    },
-    "update_credentials": {
-      "name": "Aktualizácia poverení API",
-      "description": "Overiť a uložiť nové prihlasovacie údaje Husqvarna API. Funguje, aj keď je integrácia vypnutá."
-    },
-    "start_reconfigure": {
-      "name": "Konfigurácia poverení API",
-      "description": "Otvoriť dialógové okno konfigurácie poverení. Funguje, aj keď je integrácia vypnutá."
     },
     "websocket_diagnostics": {
       "name": "Diagnostika WebSocket",
