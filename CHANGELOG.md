@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- The buttons failed to set up on Home Assistant 2026.11 (`'NoneType' object has no attribute 'platform_name'`): a setup log line read the entities' translated names before they were added. The mower's setup log line had the same pattern (#421)
+
 ## [3.4.0] - 2026-11-09
 
 ### Added

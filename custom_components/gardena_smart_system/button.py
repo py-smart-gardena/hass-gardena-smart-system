@@ -45,7 +45,7 @@ async def async_setup_entry(
 
 
     _LOGGER.info(f"Created {len(entities)} button entities")
-    _LOGGER.info(f"Adding button entities to Home Assistant: {[entity.name for entity in entities]}")
+    _LOGGER.info(f"Adding button entities to Home Assistant: {[entity._log_name for entity in entities]}")
     async_add_entities(entities)
     _LOGGER.info("Button entities added to Home Assistant")
 
