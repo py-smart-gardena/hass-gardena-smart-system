@@ -52,7 +52,7 @@ async def async_setup_entry(
                 _LOGGER.debug(f"Device {device.name} ({device.id}) has no MOWER service")
 
             _LOGGER.debug(f"Created {len(entities)} lawn mower entities")
-        _LOGGER.debug(f"Adding entities to Home Assistant: {[entity.name for entity in entities]}")
+        _LOGGER.debug(f"Adding entities to Home Assistant: {[entity._log_name for entity in entities]}")
         async_add_entities(entities)
         _LOGGER.debug("Lawn mower entities added to Home Assistant")
     
